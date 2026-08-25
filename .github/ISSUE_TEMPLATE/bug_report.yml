@@ -1,0 +1,88 @@
+name: Bug report
+description: Report a problem with Mail Workflow
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill in as much of this as you can — it makes the
+        issue much faster to reproduce and fix.
+
+        If this is a **security vulnerability**, please do not file it here — use the private
+        reporting process described in [SECURITY.md](../../SECURITY.md) instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step, so it can be reproduced reliably.
+      placeholder: |
+        1. Connect Gmail account
+        2. Download a folder
+        3. Select subject "..."
+        4. Tree renders with ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      description: Which mail provider were you using?
+      options:
+        - Gmail
+        - Outlook
+        - Both / not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Windows 11, macOS 14.5, Ubuntu 22.04
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: >
+        Mail Workflow requires the File System Access API, which only Chrome/Edge 86+
+        support. Firefox and Safari are unsupported for the local-folder storage flow.
+      placeholder: e.g. Chrome 128, Edge 127
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node -v`.
+      placeholder: e.g. v20.17.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`npm run doctor` output"
+      description: Run `npm run doctor` in the project root and paste the full output here.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Console errors, screenshots, relevant server logs (redact any secrets/tokens).

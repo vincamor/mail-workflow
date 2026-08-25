@@ -1,20 +1,47 @@
 {
-  "name": "mailprojetjul",
+  "name": "mail-workflow",
   "version": "1.0.0",
-  "description": "Application Node.js/Express permettant de récupérer les emails Gmail et Outlook des utilisateurs via OAuth2, avec gestion complète des refresh tokens (stockage en mémoire, pas de base de données). Frontend minimal en HTML/JS vanilla.",
+  "description": "Privacy-first web app to analyze and visualize Gmail/Outlook conversations as interactive trees, with local-only storage and an optional multi-provider AI assistant.",
   "main": "src/app.js",
+  "private": true,
   "scripts": {
     "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "setup": "node scripts/setup.js",
+    "doctor": "node scripts/doctor.js",
+    "demo": "node scripts/demo.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:run": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --ci"
+    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --ci",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "engines": {
     "node": ">=20"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "email",
+    "gmail",
+    "outlook",
+    "oauth2",
+    "conversation-tree",
+    "privacy",
+    "self-hosted",
+    "ai-assistant",
+    "vanilla-js"
+  ],
+  "author": "vincamor",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vincamor/mail-workflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vincamor/mail-workflow/issues"
+  },
+  "homepage": "https://github.com/vincamor/mail-workflow#readme",
   "dependencies": {
     "@azure/msal-node": "^3.6.3",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -29,9 +56,14 @@
     "redis": "^5.11.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.15.0",
     "@jest/globals": "^30.3.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
     "fake-indexeddb": "^6.2.5",
+    "globals": "^15.12.0",
     "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0"
+    "jest-environment-jsdom": "^30.3.0",
+    "prettier": "^3.3.3"
   }
 }

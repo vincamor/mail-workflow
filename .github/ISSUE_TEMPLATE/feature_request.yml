@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement or a new feature for Mail Workflow
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Feature requests are easiest to evaluate when framed
+        around the problem first — the "what" and "why" — before jumping to a specific
+        implementation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve? What's missing or frustrating today?
+      placeholder: >
+        e.g. "There's no way to filter conversation trees by date range, so long threads
+        become hard to navigate."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Be as specific as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >
+        Any other approaches you thought about, workarounds you're currently using, or
+        reasons you ruled out other solutions.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Mockups, links, related issues, or anything else that helps.

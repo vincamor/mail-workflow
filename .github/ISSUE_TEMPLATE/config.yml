@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/vincamor/mail-workflow/discussions
+    about: Usage questions, setup help, and general discussion go here — not the issue tracker.
+  - name: Report a security vulnerability
+    url: https://github.com/vincamor/mail-workflow/security/advisories/new
+    about: Please report vulnerabilities privately instead of filing a public issue. See SECURITY.md.
