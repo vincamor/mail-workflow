@@ -19,6 +19,7 @@ import { restoreTheme, buildThemePicker } from './themeManager.js';
 import { toastSuccess } from './toast.js';
 import { initAIPanel } from './aiPanel.js';
 import { initChatUI } from './aiChatUI.js';
+import { isDemoMode, showDemoBanner, applyDemoReadOnlyUI, DEMO_PROVIDER, DEMO_USER_ID } from './demo.js';
 
 // Connecter showEmailDetail au treeRenderer (remplace window.showEmailDetail)
 setNodeClickHandler(showEmailDetail);
@@ -36,8 +37,13 @@ let availableMessageIds = [];
 document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
+  // Le mode demo lit un dataset embarque via fetch : il n'a besoin ni de dossier
+  // local ni de la File System Access API, donc il fonctionne sur Firefox, Safari
+  // et mobile. La detection de navigateur ne s'applique qu'au mode normal.
+  const demo = isDemoMode();
+
   // Détection navigateur non supporté (plan SaaS 1.5 — File System Access API)
-  if (typeof window.showDirectoryPicker !== 'function') {
+  if (!demo && typeof window.showDirectoryPicker !== 'function') {
     const unsupportedEl = document.getElementById('unsupportedBrowser');
     const loginEl = document.getElementById('loginInterface');
     const appEl = document.getElementById('appInterface');
@@ -63,6 +69,13 @@ async function initApp() {
 
   // Construire le sélecteur de thèmes
   buildThemePicker();
+
+  // Mode demo : interface connectee en lecture seule, sans OAuth ni dossier.
+  // L'IA est desactivee (/api/ai/* exige une session authentifiee → 401).
+  if (demo) {
+    await initDemoInterface();
+    return;
+  }
 
   // Initialiser le panneau de configuration IA
   initAIPanel();
@@ -132,6 +145,42 @@ function initLoginInterface() {
   showLoginInterface();
   
   if (downloadEmailsBtn) downloadEmailsBtn.style.display = "none";
+}
+
+/**
+ * Mode demo : on reutilise le flux connecte tel quel, en sautant tout ce qui
+ * ecrit ou parle au serveur (fetchEmails, restoreFolder, polling, telechargement,
+ * filtres, groupes, IA). Aucun fichier, aucune entree IndexedDB, aucun handle.
+ */
+async function initDemoInterface() {
+  const provider = DEMO_PROVIDER;
+  const email = DEMO_USER_ID;
+
+  // Les modules lisent l'identite dans l'URL (provider / email). On la renseigne
+  // sans navigation pour qu'ils fonctionnent sans modification.
+  const url = new URL(window.location.href);
+  url.searchParams.set('provider', provider);
+  url.searchParams.set('email', email);
+  window.history.replaceState(null, '', url.toString());
+
+  showDemoBanner();
+
+  const statusDiv = document.getElementById('status');
+  if (statusDiv) statusDiv.textContent = `Demo mode — ${email}`;
+
+  showConnectedInterface(provider, email);
+  applyDemoReadOnlyUI();
+
+  showLoadingOverlay('Loading the sample dataset...', 0);
+
+  // Rafraichir l'arbre depuis la banniere de notification re-selectionne le sujet.
+  initTreeNotificationBanner(async (subject) => {
+    await analysisSelectSubject(emailAnalyzer, treeVisualization, subject, provider, email);
+  });
+
+  analysisLaunched = true;
+  const ok = await autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email);
+  if (!ok) hideLoadingOverlay();
 }
 
 // Initialiser l'interface connectée

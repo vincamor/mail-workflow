@@ -16,6 +16,7 @@ import {
   restoreStandardLoadingOverlay
 } from './ui.js';
 import { getCurrentFilters } from './filterUI.js';
+import { isDemoMode, getDemoHtmlFileHandle } from './demo.js';
 
 // ─── Inline progress bar (non-bloquant) ─────────────────────────────────────
 
@@ -1190,6 +1191,14 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
  * @returns {Promise<string|null>} bodyHtml ou null si non trouvé
  */
 export async function loadBodyHtmlForEmail(provider, userId, emailId) {
+  // Mode demo : le companion HTML est un asset embarque, lu via le meme faux
+  // handle que le JSONL principal — la logique de scan ci-dessous est partagee.
+  if (isDemoMode()) {
+    const demoHandle = await getDemoHtmlFileHandle(provider);
+    if (!demoHandle) return null;
+    return await scanHtmlCompanionForEmail(demoHandle, emailId);
+  }
+
   const currentFolderHandle = getCurrentFolderHandle();
   if (!currentFolderHandle) return null;
 
@@ -1199,6 +1208,22 @@ export async function loadBodyHtmlForEmail(provider, userId, emailId) {
     const htmlFileName = getHtmlFileName(provider);
 
     const fileHandle = await userFolderHandle.getFileHandle(htmlFileName);
+    return await scanHtmlCompanionForEmail(fileHandle, emailId);
+  } catch (e) {
+    console.warn('⚠️ Impossible de charger bodyHtml:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Scanne un fichier companion HTML ligne par ligne et retourne le bodyHtml de l'ID.
+ * Lecture en streaming — s'arrête dès que l'ID est trouvé.
+ * @param {FileSystemFileHandle} fileHandle - Handle (reel ou duck-type) du companion
+ * @param {string} emailId
+ * @returns {Promise<string|null>}
+ */
+async function scanHtmlCompanionForEmail(fileHandle, emailId) {
+  try {
     const file = await fileHandle.getFile();
     const stream = file.stream();
     const textDecoder = new TextDecoder();

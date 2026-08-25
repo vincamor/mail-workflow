@@ -17,10 +17,72 @@
     <link rel="stylesheet" href="/styles/components/groups.css" />
     <!-- Tree visualization CSS -->
     <link rel="stylesheet" href="/tree-visualization.css" />
+    <!-- Demo mode (?demo=1) : bandeau permanent + masquage des actions d'ecriture.
+         Couleurs 100% via variables CSS, comme partout ailleurs. -->
+    <style>
+      body.demo-mode {
+        --demo-banner-height: 34px;
+      }
+      .demo-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--demo-banner-height, 34px);
+        z-index: 1200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2, 8px);
+        padding: 0 var(--space-4, 16px);
+        background: var(--warning-light);
+        border-bottom: 1px solid var(--warning-border);
+        color: var(--text-primary);
+        font-size: var(--text-xs);
+        line-height: 1.2;
+      }
+      .demo-banner strong {
+        color: var(--warning);
+        font-weight: var(--font-semibold, 600);
+      }
+      .demo-banner a {
+        color: var(--primary);
+        text-decoration: underline;
+      }
+      /* Le conteneur applicatif est fixed/top:0 : on le decale sous le bandeau. */
+      body.demo-mode .app-container {
+        top: var(--demo-banner-height, 34px);
+        height: calc(
+          100vh - var(--footer-height, 34px) - var(--demo-banner-height, 34px)
+        );
+      }
+      /* Actions d'ecriture creees dynamiquement : masquees, pas grisees.
+         Les favoris et les groupes s'ecrivent dans le dossier local, qui
+         n'existe pas en mode demo — on retire les commandes plutot que de
+         laisser des boutons morts. */
+      body.demo-mode #replyActionsBar,
+      body.demo-mode #replyFormSection,
+      body.demo-mode #filterButton,
+      body.demo-mode .star-btn,
+      body.demo-mode #favoritesFilterBtn {
+        display: none !important;
+      }
+    </style>
   </head>
   <body>
     <!-- Skip link (accessibilité clavier) -->
     <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
+
+    <!-- Bandeau mode demo (?demo=1) — permanent, non dismissible -->
+    <div id="demoBanner" class="demo-banner" role="status" style="display: none">
+      <span><strong>Demo mode</strong> — sample data, read-only.</span>
+      <a
+        href="https://github.com/vincamor/mail-workflow#quick-start"
+        target="_blank"
+        rel="noopener"
+        >Set up the real thing</a
+      >
+    </div>
 
     <!-- Message navigateur non supporté (FileSystem Handle API requise) -->
     <div id="unsupportedBrowser" class="unsupported-browser" style="display: none;">

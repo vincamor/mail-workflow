@@ -6,6 +6,7 @@ import { storeFolderHandle, restoreFolderHandle, deleteFolderHandle, openDB } fr
 import { showLoadingOverlay, hideLoadingOverlay } from './ui.js';
 import { toastError } from './toast.js';
 import { resolveUserFolderHandle } from './folderResolver.js';
+import { isDemoMode, getDemoEmailFileHandle } from './demo.js';
 
 // Handle du dossier actuel
 let currentFolderHandle = null;
@@ -26,6 +27,12 @@ export function setCurrentFolderHandle(handle) {
 
 // Fonction pour obtenir le handle du fichier JSONL
 export async function getEmailFileHandle(userId, provider = "gmail") {
+  // Mode demo : dataset embarque servi en HTTP, lu via un faux handle qui
+  // duck-type FileSystemFileHandle. Aucun dossier local n'est requis.
+  if (isDemoMode()) {
+    return await getDemoEmailFileHandle(provider);
+  }
+
   try {
     if (!currentFolderHandle) {
       console.error("Aucun dossier sélectionné");
