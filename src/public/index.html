@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mail Workflow</title>
+    <!-- Google Fonts preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Design System -->
+    <link rel="stylesheet" href="/styles/main.css" />
+    <!-- Filtres CSS -->
+    <link rel="stylesheet" href="/styles/components/filters.css" />
+    <!-- Interface dossier CSS -->
+    <link rel="stylesheet" href="/styles/components/folder-interface.css" />
+    <!-- Groupes de sujets CSS -->
+    <link rel="stylesheet" href="/styles/components/groups.css" />
+    <!-- Tree visualization CSS -->
+    <link rel="stylesheet" href="/tree-visualization.css" />
+  </head>
+  <body>
+    <!-- Skip link (accessibilité clavier) -->
+    <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
+
+    <!-- Message navigateur non supporté (FileSystem Handle API requise) -->
+    <div id="unsupportedBrowser" class="unsupported-browser" style="display: none;">
+      <div class="unsupported-browser-content">
+        <h1>Navigateur non supporté</h1>
+        <p>Cet outil nécessite <strong>Chrome</strong> ou <strong>Edge 86+</strong> (API File System Access).</p>
+        <p>Vos données restent sur votre ordinateur ; le choix du dossier est indispensable.</p>
+        <a href="https://www.google.com/chrome/" target="_blank" rel="noopener" class="btn-primary">Télécharger Chrome</a>
+      </div>
+    </div>
+
+    <!-- INTERFACE NON CONNECTÉ (Format simple) -->
+    <div id="loginInterface" class="login-container">
+      <div class="content-wrapper">
+        <h1>Mail Workflow</h1>
+
+        <main class="login-main">
+          <!-- Section de connexion -->
+          <div class="login-section">
+            <div class="login-card">
+              <h2><span class="icon icon-lock icon-inline" aria-hidden="true"></span>Connexion</h2>
+              <p>
+                Connectez-vous à votre compte email pour commencer l'analyse de
+                vos conversations
+              </p>
+
+              <div class="connection-buttons">
+                <button id="gmailBtn" class="btn-primary btn-lg">
+                  <span class="icon icon-email icon-lg"></span>
+                  Se connecter avec Gmail
+                </button>
+                <button id="outlookBtn" class="btn-primary btn-lg">
+                  <span class="icon icon-email icon-lg"></span>
+                  Se connecter avec Outlook
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages d'état pour la connexion -->
+          <div id="loginStatus" class="login-status"></div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Overlay de chargement global -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none">
+      <div class="loading-overlay-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-overlay-text" id="loadingOverlayText">
+          Chargement en cours...
+        </div>
+        <div class="loading-overlay-progress">
+          <div class="loading-overlay-bar">
+            <div
+              class="loading-overlay-bar-fill"
+              id="loadingOverlayProgress"
+            ></div>
+          </div>
+          <div class="loading-overlay-percentage" id="loadingOverlayPercentage">
+            0%
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERFACE CONNECTÉ (3 panneaux) -->
+    <div id="appInterface" class="app-container" style="display: none">
+      <!-- Interface 3 panneaux -->
+      <main class="three-panel-layout" id="mainContent">
+        <!-- PANNEAU GAUCHE - Actions -->
+        <aside class="left-panel" aria-label="Sujets">
+          <!-- HEADER AVEC RECHERCHE -->
+          <div class="left-panel-header">
+            <input
+              type="text"
+              id="subjectSearch"
+              placeholder="Rechercher (sujets, contacts, contenu)..."
+              class="search-input-header"
+            />
+            <button
+              id="favoritesFilterBtn"
+              class="favorites-filter-btn"
+              title="Afficher uniquement les favoris"
+              aria-label="Afficher uniquement les favoris"
+            ><span class="icon icon-star" aria-hidden="true"></span></button>
+            <button
+              id="myConversationsBtn"
+              class="favorites-filter-btn"
+              title="Mes conversations (où j'ai participé)"
+              aria-label="Mes conversations (où j'ai participé)"
+            ><span class="icon icon-reply" aria-hidden="true"></span></button>
+          </div>
+
+          <!-- BARRE DE RECHERCHE EN HAUT (sans titre) -->
+          <div class="search-top-section">
+            <!-- Barre de chargement pendant l'analyse -->
+            <div
+              id="loadingAnalysis"
+              style="display: none"
+              class="loading-container"
+            >
+              <div class="loading-bar">
+                <div id="loadingProgress" class="loading-progress"></div>
+              </div>
+              <div class="loading-text">
+                <span id="loadingPercentage">0%</span> - Analyse en cours...
+              </div>
+            </div>
+
+            <!-- Section de recherche (affichée après analyse - cachée maintenant) -->
+            <div
+              id="searchSection"
+              style="display: none"
+              class="search-section"
+            ></div>
+          </div>
+
+          <!-- Navigation Bar avec titre "Sujets" -->
+          <div
+            class="sidebar-navigation-bar"
+            style="display: none"
+            id="subjectNavigationBar"
+          >
+            <div class="navigation-title-container">
+              <h2 class="navigation-title">Sujets</h2>
+            </div>
+          </div>
+
+          <!-- Barre de progression du téléchargement (inline, non-bloquante) -->
+          <div id="downloadProgressBar" class="download-progress-bar" style="display: none">
+            <div class="download-progress-bar-fill" id="downloadProgressFill"></div>
+            <div class="download-progress-bar-text" id="downloadProgressText">Téléchargement...</div>
+          </div>
+
+          <!-- Liste des sujets -->
+          <div id="subjectsList" class="subjects-list" style="display: none">
+            <p class="no-data">En attente de l'analyse...</p>
+          </div>
+        </aside>
+
+        <!-- Barre de redimensionnement gauche -->
+        <div
+          class="resizer resizer-left"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionner le panneau gauche"
+          tabindex="0"
+        ></div>
+
+        <!-- PANNEAU CENTRAL - Visualisation -->
+        <section class="middle-panel" aria-label="Visualisation de la conversation">
+          <!-- Boutons de repli/depli des panneaux lateraux -->
+          <button
+            id="panelToggleLeft"
+            class="panel-toggle panel-toggle-left"
+            type="button"
+            aria-label="Replier ou deplier le panneau gauche"
+            title="Replier / deplier le panneau gauche"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M10 4 L6 8 L10 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <button
+            id="panelToggleRight"
+            class="panel-toggle panel-toggle-right"
+            type="button"
+            aria-label="Replier ou deplier le panneau droit"
+            title="Replier / deplier le panneau droit"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M6 4 L10 8 L6 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="visualization-container">
+            <!-- Rapport de filtrage IA -->
+            <div id="aiFilterReport" style="display: none"></div>
+            <!-- Zone de visualisation de l'arbre -->
+            <div
+              id="treeVisualization"
+              style="display: none"
+              class="tree-visualization"
+            >
+              <!-- Notification de nouveaux emails pour le sujet sélectionné -->
+              <div id="treeNewEmailsBanner" class="tree-new-emails-banner" style="display: none">
+                <span id="treeNewEmailsText">0 nouveaux emails</span>
+                <button id="treeNewEmailsRefreshBtn" class="tree-new-emails-refresh-btn">Rafraîchir l'arbre</button>
+                <button class="tree-new-emails-dismiss-btn" id="treeNewEmailsDismissBtn">&times;</button>
+              </div>
+              <!-- Barre d'outils flottante de la vue (contrôles au plus près de l'arbre) -->
+              <div class="tree-toolbar" role="toolbar" aria-label="Contrôles de la vue">
+                <button id="autoFitTreeBtn" class="tree-tool-btn" type="button" title="Ajuster la vue" aria-label="Ajuster la vue"><span class="icon icon-zoom" aria-hidden="true"></span></button>
+                <button id="toggleTimelinesBtn" class="tree-tool-btn" type="button" title="Afficher/masquer la timeline" aria-label="Afficher ou masquer la timeline"><span class="icon icon-calendar" aria-hidden="true"></span></button>
+                <button id="resetPanelsBtn" class="tree-tool-btn" type="button" title="Réinitialiser la disposition" aria-label="Réinitialiser la disposition des panneaux"><span class="icon icon-reset" aria-hidden="true"></span></button>
+              </div>
+              <div id="treeContainer" class="tree-container">
+                <p>Sélectionnez un sujet pour voir l'arbre</p>
+              </div>
+            </div>
+
+            <!-- État par défaut -->
+            <div id="defaultView" class="default-view">
+              <div class="welcome-content">
+                <div class="welcome-icon">
+                  <span
+                    class="icon icon-email"
+                    style="width: 64px; height: 64px; opacity: 0.5"
+                  ></span>
+                </div>
+                <h2>Bienvenue dans Mail Workflow</h2>
+                <p>
+                  Connectez-vous et téléchargez vos emails pour commencer
+                  l'analyse
+                </p>
+              </div>
+            </div>
+
+            <!-- Messages d'état -->
+            <div id="emails" class="status-messages"></div>
+          </div>
+        </section>
+
+        <!-- Barre de redimensionnement droite -->
+        <div
+          class="resizer resizer-right"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionner le panneau droit"
+          tabindex="0"
+        ></div>
+
+        <!-- PANNEAU DROIT - Outils complet -->
+        <aside class="right-panel" aria-label="Outils">
+          <!-- Titre Outils -->
+          <div class="right-panel-navigation-bar">
+            <div class="right-panel-title-container">
+              <h2 class="right-panel-title">Outils</h2>
+            </div>
+          </div>
+
+          <!-- Section Utilisateur (Tiroir) -->
+          <div id="userSection" class="user-section" style="display: none">
+            <div
+              class="user-avatar-container"
+              role="button"
+              tabindex="0"
+              aria-expanded="false"
+              aria-controls="userDropdown"
+              aria-label="Options du compte"
+            >
+              <div class="user-avatar-left">
+                <div class="user-avatar-bubble" id="userAvatarBubble">?</div>
+                <div class="user-avatar-info">
+                  <div class="user-avatar-email" id="avatarEmail">
+                    email@example.com
+                  </div>
+                  <div class="user-avatar-provider" id="avatarProvider">
+                    via Gmail
+                  </div>
+                </div>
+              </div>
+              <span id="userChevron" class="user-avatar-chevron"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+            </div>
+
+            <!-- Contenu déroulant -->
+            <div id="userDropdown" class="user-dropdown">
+              <button
+                id="disconnectBtn"
+                class="user-dropdown-disconnect"
+              >
+                <span class="icon icon-logout"></span> Se déconnecter
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Dossier (Tiroir) -->
+          <div
+            class="panel-section drawer-section"
+            id="folderSection"
+            style="display: none"
+          >
+            <div
+              class="drawer-header"
+              role="button"
+              tabindex="0"
+              aria-expanded="true"
+              aria-controls="folderDrawer"
+            >
+              <h3><span class="icon icon-folder icon-inline" aria-hidden="true"></span>Dossier</h3>
+              <span id="folderToggle" class="drawer-toggle open"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+            </div>
+            <div id="folderDrawer" class="drawer-content">
+              <div class="folder-content">
+                <!-- Guide étape par étape -->
+                <div class="folder-guide">
+                  <div class="guide-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                      <h4>Choisir un dossier de sauvegarde</h4>
+                      <p>Sélectionnez où sauvegarder vos emails localement</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- État du dossier -->
+                <div
+                  id="folderStatus"
+                  class="folder-status folder-status-empty"
+                >
+                  <div class="folder-status-icon">
+                    <span class="icon icon-folder icon-xl"></span>
+                  </div>
+                  <div class="folder-status-content">
+                    <div class="folder-status-title">
+                      Aucun dossier sélectionné
+                    </div>
+                    <div class="folder-status-path" id="currentFolderPath">
+                      Cliquez sur le bouton ci-dessous pour choisir un dossier
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bouton de sélection -->
+                <button id="changeFolderBtn" class="btn-folder-select">
+                  <span class="icon icon-folder icon-lg"></span>
+                  <span class="btn-text">Choisir un dossier</span>
+                </button>
+
+                <!-- Séparateur avec étape 2 -->
+                <div class="folder-guide" id="step2Guide" style="display: none">
+                  <div class="guide-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                      <h4>Configurer les filtres (optionnel)</h4>
+                      <p>Personnalisez quels emails télécharger</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bouton filtres (sera ajouté ici par filterUI.js) -->
+
+                <!-- Séparateur avec étape 3 -->
+                <div class="folder-guide" id="step3Guide" style="display: none">
+                  <div class="guide-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                      <h4>Télécharger vos emails</h4>
+                      <p>Lancer le téléchargement et la sauvegarde</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bouton de téléchargement -->
+                <button
+                  id="downloadEmailsBtn"
+                  class="btn-download"
+                  style="display: none"
+                  disabled
+                >
+                  <span class="icon icon-download icon-lg"></span>
+                  <span class="btn-text">Télécharger les emails</span>
+                  <span class="btn-badge" id="emailCountBadge">0</span>
+                </button>
+
+                <!-- Bouton de mise à jour incrémentale -->
+                <button
+                  id="updateEmailsBtn"
+                  class="btn-download"
+                  style="display: none"
+                >
+                  <span class="icon icon-download icon-lg"></span>
+                  <span class="btn-text">Mettre à jour</span>
+                  <span class="btn-badge" id="newEmailCountBadge">0</span>
+                </button>
+
+                <!-- Info supplémentaire -->
+                <div
+                  id="downloadInfo"
+                  class="download-info"
+                  style="display: none"
+                >
+                  <div class="info-icon">
+                    <span class="icon icon-info-dot icon-lg"></span>
+                  </div>
+                  <div class="info-text">
+                    <strong>Prêt à télécharger !</strong><br />
+                    Les emails seront sauvegardés dans le dossier sélectionné
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Statistiques (Tiroir) -->
+          <div
+            class="panel-section drawer-section"
+            id="statisticsSection"
+            style="display: none"
+          >
+            <div
+              class="drawer-header"
+              role="button"
+              tabindex="0"
+              aria-expanded="false"
+              aria-controls="statisticsDrawer"
+            >
+              <h3><span class="icon icon-chart icon-inline" aria-hidden="true"></span>Statistiques</h3>
+              <span id="statisticsToggle" class="drawer-toggle"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+            </div>
+            <div id="statisticsDrawer" class="drawer-content closed">
+              <div class="drawer-stats">
+                <div class="drawer-stat-line drawer-stat-primary">
+                  <span id="totalEmails">0</span> mails analysés · <span id="totalConversations">0</span> relations
+                </div>
+                <div
+                  class="drawer-stat-line drawer-stat-secondary"
+                  id="emailCountInfo"
+                  style="display: none"
+                >
+                  <span id="emailCount">0</span> mails disponibles au téléchargement
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Actions (Tiroir) -->
+          <div
+            class="panel-section drawer-section"
+            id="actionsSection"
+            style="display: none"
+          >
+            <div
+              class="drawer-header"
+              role="button"
+              tabindex="0"
+              aria-expanded="false"
+              aria-controls="actionsDrawer"
+            >
+              <h3><span class="icon icon-settings icon-inline" aria-hidden="true"></span>Apparence</h3>
+              <span id="actionsToggle" class="drawer-toggle"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+            </div>
+            <div id="actionsDrawer" class="drawer-content closed">
+              <!-- Theme Picker -->
+              <div class="theme-picker-section">
+                <h4 class="theme-picker-title">Thème</h4>
+                <div id="themePickerList" class="theme-picker-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Assistant IA (Tiroir) -->
+          <div
+            class="panel-section drawer-section"
+            id="aiSection"
+            style="display: none"
+          >
+            <div
+              class="drawer-header"
+              role="button"
+              tabindex="0"
+              aria-expanded="false"
+              aria-controls="aiDrawer"
+            >
+              <h3><span class="icon icon-robot icon-inline" aria-hidden="true"></span>Assistant IA</h3>
+              <span id="aiToggle" class="drawer-toggle"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+            </div>
+            <div id="aiDrawer" class="drawer-content closed">
+              <div class="ai-subdrawer closed" id="aiConfigSubdrawer">
+                <div
+                  class="ai-subdrawer-header"
+                  id="aiConfigSubdrawerHeader"
+                  role="button"
+                  tabindex="0"
+                  aria-expanded="false"
+                >
+                  <span class="ai-subdrawer-title"><span class="icon icon-settings icon-inline" aria-hidden="true"></span>Configuration</span>
+                  <span class="ai-subdrawer-chevron"><span class="icon icon-chevron-right" aria-hidden="true"></span></span>
+                </div>
+                <div class="ai-subdrawer-body">
+                  <div class="ai-config-section">
+                    <div class="ai-config-field">
+                      <label for="aiProvider">Provider</label>
+                      <select id="aiProvider" class="ai-select">
+                        <option value="ollama">Ollama</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Claude (Anthropic)</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+                    <div class="ai-config-field">
+                      <label for="aiBaseUrl">URL</label>
+                      <input type="text" id="aiBaseUrl" class="ai-input" placeholder="http://localhost:11434" />
+                    </div>
+                    <div class="ai-config-field">
+                      <label for="aiApiKey">Cle API</label>
+                      <div class="ai-input-group">
+                        <input type="password" id="aiApiKey" class="ai-input" placeholder="sk-..." />
+                        <button id="aiToggleKeyVisibility" class="btn-icon" type="button" title="Afficher/masquer" aria-label="Afficher ou masquer la clé API"><span class="icon icon-eye" aria-hidden="true"></span></button>
+                      </div>
+                    </div>
+                    <div class="ai-config-field">
+                      <label for="aiModel">Modele</label>
+                      <input type="text" id="aiModel" class="ai-input" placeholder="gemma3:4b" />
+                    </div>
+                    <div class="ai-config-actions">
+                      <button id="aiTestBtn" class="btn-secondary btn-full">Tester la connexion</button>
+                      <button id="aiSaveBtn" class="btn-primary btn-full">Sauvegarder</button>
+                    </div>
+                    <div id="aiTestResult" class="ai-test-result" style="display: none"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ai-filter-section-divider"></div>
+              <div class="ai-filter-launch">
+                <button id="aiFilterBtn" class="btn-primary btn-full" disabled title="Configurez d'abord votre provider IA">
+                  <span class="icon icon-broom icon-inline" aria-hidden="true"></span>Faire le Menage
+                </button>
+                <p class="ai-filter-hint">Analyse vos sujets avec l'IA pour identifier les newsletters et spams</p>
+                <button id="aiChatBtn" class="btn-primary btn-full" disabled
+                        title="Configurez l'IA et selectionnez un sujet"
+                        style="margin-top: 8px;">
+                  <span class="icon icon-chat icon-inline" aria-hidden="true"></span>Discuter du sujet
+                </button>
+                <p class="ai-filter-hint">Pose des questions sur le sujet sélectionné ou rédige une réponse à partir du fil.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Informations système masquées -->
+          <div id="status" style="display: none"></div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- Menu contextuel groupes (positionné en fixed, caché par défaut) -->
+    <div id="groupContextMenu" class="context-menu"></div>
+
+    <!-- Chargement du module principal de l'application -->
+    <script type="module" src="/js/app.js"></script>
+    <!-- Footer légal minimal (obligatoire pour OAuth Google) -->
+    <footer class="app-footer">
+      <div class="app-footer-content">
+        <span>Mail Workflow — bêta personnelle</span>
+        <nav class="app-footer-links">
+          <a href="/privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>
+          <span>·</span>
+          <a href="/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

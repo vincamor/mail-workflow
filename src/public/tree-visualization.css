@@ -1,0 +1,442 @@
+/**
+ * Tree Visualization — Theme-aware
+ * Aubergine & Peach — anti-slop : aurora reservee aux mails self-sent
+ * Refonte 2026-04-26 (taste-skill 5/5/6)
+ */
+
+/* === NODES — base === */
+.node {
+  cursor: pointer;
+  transition: opacity 200ms ease-out, transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.node rect:not(.expand-button):not(.badge-bg) {
+  fill: var(--bg-tertiary);
+  stroke: none;
+  filter: drop-shadow(0 4px 14px var(--shadow-color, rgba(20, 8, 31, 0.5)));
+  rx: 12;
+  ry: 12;
+  transition: fill 220ms ease-out, stroke 220ms ease-out, filter 220ms ease-out;
+}
+
+/* Hover : glow doux peach + leger scale */
+.node:hover rect:not(.expand-button):not(.badge-bg),
+.node.hover rect:not(.expand-button):not(.badge-bg) {
+  fill: var(--bg-elevated);
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 6px 18px var(--primary-light));
+}
+
+/* Pressed feedback (scale tactile) */
+.node.pressing {
+  transform: scale(0.985);
+}
+
+/* Dim non-branch nodes au hover sur un autre nœud */
+.node.dimmed-out {
+  opacity: 0.28;
+}
+
+.node.dimmed-out rect:not(.expand-button):not(.badge-bg) {
+  filter: none;
+}
+
+/* Self-sent : marqueur aurora subtil (le seul accent gradient dans l'arbre) */
+.node.self-sent rect:not(.expand-button):not(.badge-bg) {
+  fill: var(--bg-elevated);
+  stroke: url(#aurora-stroke-gradient);
+  stroke-width: 1.5;
+  stroke-opacity: 0.55;
+}
+
+.node.self-sent:hover rect:not(.expand-button):not(.badge-bg),
+.node.self-sent.hover rect:not(.expand-button):not(.badge-bg) {
+  stroke-opacity: 1;
+  filter: drop-shadow(0 6px 22px var(--primary-light));
+}
+
+/* Root : bord plus epais pour le distinguer (origine du thread) */
+.node.root rect:not(.expand-button):not(.badge-bg) {
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  stroke-opacity: 0.7;
+}
+
+/* Root self-sent : combine epaisseur root + aurora gradient */
+.node.root.self-sent rect:not(.expand-button):not(.badge-bg) {
+  stroke: url(#aurora-stroke-gradient);
+  stroke-width: 2.5;
+  stroke-opacity: 0.85;
+}
+
+/* Root au hover : preserve l'epaisseur (sinon retombe a 1.5 via .node:hover) */
+.node.root:hover rect:not(.expand-button):not(.badge-bg),
+.node.root.hover rect:not(.expand-button):not(.badge-bg),
+.node.root.self-sent:hover rect:not(.expand-button):not(.badge-bg),
+.node.root.self-sent.hover rect:not(.expand-button):not(.badge-bg) {
+  stroke-width: 2.5;
+  stroke-opacity: 1;
+}
+
+/* === NODE TEXT === */
+.node-text-primary {
+  font-size: 14px;
+  font-family: var(--font-family);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  fill: var(--text-primary);
+  pointer-events: none;
+}
+
+.node.root .node-text-primary {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.node-text-secondary {
+  font-size: 12px;
+  font-family: var(--font-family);
+  font-weight: 400;
+  fill: var(--text-secondary);
+  pointer-events: none;
+}
+
+.node-text-meta {
+  font-size: 10px;
+  font-family: var(--font-mono, var(--font-family-mono));
+  font-weight: 500;
+  fill: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+/* === AVATAR === */
+.node-avatar-circle {
+  stroke: var(--border-light);
+  stroke-width: 0.5;
+}
+
+.node-avatar-letter {
+  font-size: 11px;
+  font-family: var(--font-family);
+  font-weight: 600;
+  fill: #ffffff;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* === BADGES === */
+.node-badge-group {
+  pointer-events: none;
+}
+
+.badge-bg {
+  fill: var(--bg-secondary);
+  stroke: var(--border-light);
+  stroke-width: 0.75;
+  rx: 4;
+  ry: 4;
+}
+
+.badge-icon {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badge-self .badge-icon {
+  stroke: var(--primary);
+}
+
+/* === EXPAND BUTTON (le "+") === */
+.expand-button {
+  fill: var(--primary);
+  stroke: none;
+  opacity: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 8px var(--primary-ring));
+  transition: opacity 200ms ease-out, fill 200ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.expand-button:hover {
+  fill: var(--primary-hover);
+  filter: drop-shadow(0 4px 12px var(--primary-ring));
+}
+
+.expand-button:active {
+  transform: scale(0.92);
+}
+
+.node:hover .expand-button,
+.node.hover .expand-button {
+  opacity: 1;
+}
+
+.expand-text {
+  font-size: 18px;
+  font-family: var(--font-family);
+  font-weight: 600;
+  fill: var(--text-inverse);
+  text-anchor: middle;
+  dominant-baseline: central;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+
+.node:hover .expand-text,
+.node.hover .expand-text {
+  opacity: 1;
+}
+
+/* Ecrans tactiles/stylet : pas de :hover fiable — le bouton "+" doit rester
+   visible en permanence, sinon il est invisible ET inatteignable. */
+@media (hover: none) {
+  .expand-button,
+  .expand-text {
+    opacity: 1;
+  }
+}
+
+/* === LINKS === */
+.link {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  opacity: 0.42;
+  transition: stroke 220ms ease-out, opacity 220ms ease-out, stroke-width 220ms ease-out;
+}
+
+.link:hover,
+.link.highlight {
+  stroke: var(--primary);
+  stroke-width: 2;
+  opacity: 0.95;
+}
+
+.link.dimmed-out {
+  opacity: 0.12;
+}
+
+/* === ARROW MARKERS === */
+#arrow path { fill: var(--text-secondary); }
+#arrow-gradient stop:first-child { stop-color: var(--text-secondary); }
+#arrow-gradient stop:last-child { stop-color: var(--text-secondary); }
+marker { overflow: visible; }
+
+/* === TIMELINES === */
+.timeline {
+  stroke: var(--text-tertiary);
+  stroke-width: 1;
+  stroke-dasharray: 4, 4;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.timeline-label {
+  font-size: 11px;
+  font-family: var(--font-mono, var(--font-family-mono));
+  fill: var(--text-secondary);
+  text-anchor: start;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+/* === STATES (Phase 6) === */
+.tree-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-8);
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.tree-empty-state-icon {
+  width: 56px;
+  height: 56px;
+  opacity: 0.45;
+  color: var(--text-secondary);
+}
+
+.tree-empty-state-title {
+  font-family: var(--font-family);
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tree-empty-state-body {
+  font-family: var(--font-family);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-secondary);
+  max-width: 380px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.tree-loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 60px 80px;
+  width: 100%;
+  height: 100%;
+}
+
+.tree-loading-skeleton-row {
+  display: flex;
+  gap: 60px;
+  align-items: center;
+}
+
+.tree-skeleton-node {
+  width: 280px;
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    var(--bg-elevated) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation: tree-skeleton-shimmer 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes tree-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* === CUSTOM TOOLTIP (Phase 7) === */
+.tree-tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 240px;
+  max-width: 360px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-family);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+
+.tree-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tree-tooltip-subject {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.tree-tooltip-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-family: var(--font-mono, var(--font-family-mono));
+  letter-spacing: 0.02em;
+}
+
+.tree-tooltip-body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+}
+
+/* === STAGGERED ENTRY (Phase 7) === */
+@keyframes treeNodeEntry {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.node.entering {
+  animation: treeNodeEntry 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes treeLinkEntry {
+  from { opacity: 0; }
+  to   { opacity: 0.42; }
+}
+
+.link.entering {
+  animation: treeLinkEntry 280ms ease-out backwards;
+}
+
+/* === GLOBAL ANIMATIONS === */
+.node, .link, .expand-button, .expand-text {
+  transition-property: opacity, fill, stroke, stroke-width, filter, transform;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === BARRE D'OUTILS FLOTTANTE DE LA VUE ===
+   Contrôles (ajuster / timeline / réinitialiser) posés au plus près de l'arbre,
+   plutôt qu'enterrés dans un drawer du panneau droit. */
+.tree-toolbar {
+  position: absolute;
+  top: var(--space-3, 12px);
+  right: var(--space-3, 12px);
+  z-index: 5;
+  display: flex;
+  gap: var(--space-1, 4px);
+  padding: var(--space-1, 4px);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg, 8px);
+  backdrop-filter: var(--glass-blur-light, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur-light, blur(12px));
+  box-shadow: var(--shadow-md);
+}
+
+.tree-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out, transform 120ms ease-out;
+}
+.tree-tool-btn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+.tree-tool-btn:active { transform: scale(0.94); }
+.tree-tool-btn .icon { width: 18px; height: 18px; }

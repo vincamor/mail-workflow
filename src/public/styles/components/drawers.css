@@ -1,0 +1,51 @@
+/**
+ * Shared Accordion / Drawer pattern
+ * Unified base for: .drawer-section, .group-item, .subject-drawer
+ * Specific overrides remain in three-panel.css and groups.css
+ */
+
+/* === ACCORDION CONTAINER === */
+.drawer-section,
+.group-item,
+.subject-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+/* === ACCORDION HEADER === */
+.drawer-header,
+.group-header,
+.subject-drawer-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.drawer-header:hover,
+.group-header:hover,
+.subject-drawer-header:hover {
+  background-color: var(--bg-hover);
+}
+
+/* === CHEVRON / TOGGLE === */
+.drawer-toggle,
+.group-chevron,
+.subject-drawer-chevron {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  transition: transform 300ms var(--ease-out), color var(--transition-fast);
+}
+
+/* Open state chevron rotation */
+.drawer-toggle.open,
+.group-item.open > .group-header .group-chevron {
+  transform: rotate(90deg);
+  color: var(--primary);
+}

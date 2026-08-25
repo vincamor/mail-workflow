@@ -1,0 +1,89 @@
+/* ─── Inline download progress bar (left panel) ──────────────────────────── */
+
+.download-progress-bar {
+  position: relative;
+  height: 28px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 12px;
+  border: 1px solid var(--border-light);
+}
+
+.download-progress-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 6px;
+  transition: width 0.3s ease-out;
+}
+
+.download-progress-bar-text {
+  position: relative;
+  z-index: 1;
+  line-height: 28px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
+/* ─── Tree notification banner ────────────────────────────────────────────── */
+
+.tree-new-emails-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.tree-new-emails-banner span {
+  flex: 1;
+}
+
+.tree-new-emails-refresh-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+
+.tree-new-emails-refresh-btn:hover {
+  background: var(--primary);
+  color: var(--bg-primary);
+}
+
+.tree-new-emails-dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.tree-new-emails-dismiss-btn:hover {
+  color: var(--text-primary);
+}

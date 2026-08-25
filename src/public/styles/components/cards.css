@@ -1,0 +1,167 @@
+/**
+ * Card System — Deep Cosmos
+ * Glass surfaces with luminous borders
+ */
+
+/* === BASE CARD === */
+.card,
+.download-section,
+.email {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  position: relative;
+}
+
+.card:hover, .email:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--glass-border-hover);
+}
+
+.card-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+/* === CARD PARTS === */
+.card-header {
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-tertiary);
+}
+
+.card-header h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.card-header p {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: var(--space-1) 0 0;
+}
+
+.card-body { padding: var(--space-5); }
+.card-body > *:first-child { margin-top: 0; }
+.card-body > *:last-child { margin-bottom: 0; }
+
+.card-footer {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* === DOWNLOAD SECTION === */
+.download-section {
+  background: var(--bg-secondary);
+  padding: var(--space-6);
+  margin: var(--space-4) 0;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+/* === USER CONNECTED === */
+.user-connected {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+#userEmail {
+  font-weight: var(--font-semibold);
+  color: var(--primary);
+  font-size: var(--text-base);
+}
+
+#userProvider {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  background: var(--bg-tertiary);
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+/* === EMAIL CARDS === */
+.email {
+  padding: var(--space-4);
+  margin: var(--space-2) 0;
+  border-left: 3px solid var(--primary-light);
+}
+
+.email:hover {
+  border-left-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.email b {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+}
+
+.email b:first-of-type {
+  color: var(--primary);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+}
+
+/* === SUBJECT SEARCH === */
+#subjectSearch {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition-normal);
+}
+
+#subjectSearch:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring), var(--shadow-glow);
+}
+
+#subjectSearch::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* === CARD VARIANTS === */
+.card-elevated {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--glass-border);
+}
+.card-outlined { border: 2px solid var(--border-medium); box-shadow: none; }
+.card-filled { background: var(--primary-light); border-color: rgba(242, 160, 123, 0.15); }
+.card-compact .card-body { padding: var(--space-3); }
+.card-spacious .card-body { padding: var(--space-8); }
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .card-body, .download-section { padding: var(--space-4); }
+  .card-header { padding: var(--space-3); }
+  .card-footer { padding: var(--space-2) var(--space-3); flex-direction: column; }
+  .user-connected { flex-direction: column; text-align: center; }
+}

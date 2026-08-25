@@ -1,0 +1,262 @@
+/**
+ * Groups, Favorites, Context Menu — Deep Cosmos
+ * Subtle glows, amber favorites, glass context menu
+ */
+
+/* === GROUP ITEM (base in drawers.css) === */
+.group-header {
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-4);
+  min-height: 40px;
+  user-select: none;
+}
+
+.group-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.group-name {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-badge {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-semibold);
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* group-chevron base in drawers.css */
+
+/* === COLLAPSIBLE CONTENT === */
+.group-content {
+  display: none;
+  flex-direction: column;
+}
+
+.group-item.open > .group-content {
+  display: flex;
+}
+
+/* open-state chevron rotation in drawers.css */
+
+/* === NESTED GROUP (level 2) === */
+.group-item--nested {
+  border-bottom: none;
+  background: var(--bg-secondary);
+}
+
+.group-item--nested > .group-header {
+  padding-left: 28px;
+  min-height: 36px;
+}
+
+.group-item--nested > .group-content {
+  padding-left: var(--space-2);
+}
+
+/* === SUBJECTS INSIDE GROUP === */
+.subject-drawer--grouped {
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.subject-drawer--grouped .subject-drawer-header {
+  padding-left: 24px;
+  background: var(--bg-secondary);
+}
+
+.group-item--nested .subject-drawer--grouped .subject-drawer-header {
+  padding-left: 36px;
+}
+
+/* === FOLDER ICON (SVG colorable) === */
+.group-folder-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+/* === COLOR PICKER === */
+.color-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.2);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+.color-swatch--none {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-medium);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === UNGROUPED SEPARATOR === */
+.ungrouped-separator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-4);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.group-empty-placeholder {
+  padding: var(--space-2) var(--space-4) var(--space-2) 24px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.ungrouped-separator span {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+/* === STAR BUTTON (Favorites) === */
+.star-btn {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 5px;
+  flex-shrink: 0;
+  /* Visible par defaut : sur ecran tactile/stylet, ":hover" ne se declenche
+     jamais de facon fiable, donc l'etoile serait sinon invisible ET inatteignable. */
+  opacity: 1;
+  color: var(--text-muted);
+  transition: opacity var(--transition-fast), color var(--transition-fast), text-shadow var(--transition-fast);
+}
+
+.star-btn:focus { outline: none; box-shadow: none; }
+.star-btn:hover { color: var(--accent); }
+
+/* Uniquement sur les dispositifs a hover fiable (souris) : etoile cachee au
+   repos, revelee au survol du sujet/groupe parent. */
+@media (hover: hover) {
+  .star-btn { opacity: 0; }
+  .subject-drawer:hover .star-btn { opacity: 1; }
+  .group-header:hover .star-btn { opacity: 1; }
+}
+
+.star-btn.is-favorite {
+  opacity: 1;
+  color: var(--accent);
+  text-shadow: var(--warning-glow);
+}
+
+/* === CONTEXT MENU === */
+.context-menu {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  background: var(--bg-secondary);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl), var(--aurora-glow);
+  padding: var(--space-1) 0;
+  display: none;
+  animation: scaleIn 150ms var(--ease-out);
+}
+
+.context-menu-section {
+  padding: 2px 0;
+}
+
+.context-menu-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  padding: var(--space-1-5) var(--space-3) var(--space-1);
+}
+
+.context-menu-item {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  padding: var(--space-1-5) var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0;
+}
+
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+.context-menu-item--child {
+  padding-left: 26px;
+  color: var(--text-secondary);
+}
+
+.context-menu-item--accent {
+  color: var(--primary);
+  font-weight: var(--font-medium);
+}
+
+.context-menu-item--checked {
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.context-menu-item--danger {
+  color: var(--error);
+}
+
+.context-menu-item--danger:hover {
+  background-color: var(--error-light);
+  color: var(--error);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: var(--border-light);
+  margin: var(--space-1) 0;
+}

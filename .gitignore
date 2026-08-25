@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets (ne jamais committer)
+.env
+.env.*
+!.env.example
+
+# Données emails (JSONL, metadata, groupes — stockés localement par l'app)
+*.jsonl
+*_emails.jsonl
+*_sync_metadata.json
+*_groups.json
+.temp
+*.temp
+
+# Logs & debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python (si utilisé, ex. python_analyzer)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+
+# Build / sorties
+dist/
+build/
+*.tgz
+
+# Optionnel : dossiers de test locaux (si vous en créez à la racine)
+test-data/
+fixtures/local/

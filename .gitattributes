@@ -1,0 +1,25 @@
+# Normalise les fins de ligne dans l'historique git.
+# Sans ce fichier, un dépôt créé sous Windows stocke des CRLF et chaque
+# contributeur Linux/macOS voit tout le fichier comme modifié.
+# Règle : LF dans le dépôt, conversion locale laissée à core.autocrlf.
+
+* text=auto eol=lf
+
+# Fichiers binaires — jamais de conversion.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.mp4   binary
+
+# Jeux de données de démonstration : JSONL, une ligne = un objet JSON.
+# eol=lf explicite, le parseur découpe sur \n.
+*.jsonl text eol=lf
+
+# Fichiers générés — masqués dans les diffs GitHub et exclus des stats de langage.
+package-lock.json  linguist-generated=true -diff

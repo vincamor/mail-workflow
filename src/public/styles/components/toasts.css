@@ -1,0 +1,400 @@
+/**
+ * Toasts & Guide Modal — Deep Cosmos
+ * 100 % CSS variables — s'adapte a tous les themes
+ */
+
+/* ================================================================
+   TOAST CONTAINER — pile en bas a droite
+   ================================================================ */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  max-width: 420px;
+  width: 100%;
+}
+
+/* ================================================================
+   TOAST ITEM
+   ================================================================ */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toastSlideIn 300ms var(--ease-spring) both;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+}
+
+/* Accent bar gauche */
+.toast::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+}
+
+/* ── Variantes de couleur ── */
+.toast-success { border-color: var(--success-border); }
+.toast-success::before { background: var(--success); }
+.toast-success .toast-icon { color: var(--success); }
+
+.toast-error { border-color: var(--error-border); }
+.toast-error::before { background: var(--error); }
+.toast-error .toast-icon { color: var(--error); }
+
+.toast-warning { border-color: var(--warning-border); }
+.toast-warning::before { background: var(--warning); }
+.toast-warning .toast-icon { color: var(--warning); }
+
+.toast-info { border-color: var(--info-border); }
+.toast-info::before { background: var(--info); }
+.toast-info .toast-icon { color: var(--info); }
+
+/* ── Elements internes ── */
+.toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+}
+
+.toast-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Animations ── */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.toast-exit {
+  animation: toastSlideOut 200ms var(--ease-in) forwards;
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(40px) scale(0.96);
+  }
+}
+
+/* ================================================================
+   GUIDE MODAL — remplace l'alert() onboarding
+   ================================================================ */
+.guide-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: modalFadeIn 200ms var(--ease-out);
+}
+
+.guide-modal {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  min-width: 340px;
+  max-width: 480px;
+  width: 90vw;
+  text-align: center;
+  box-shadow: var(--shadow-2xl), var(--aurora-glow);
+  animation: modalSlideIn 300ms var(--ease-spring);
+  overflow: hidden;
+}
+
+/* Aurora accent bar en haut */
+.guide-modal-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--aurora-gradient-h);
+  background-size: 200% 100%;
+  animation: aurora-shift 4s ease-in-out infinite;
+}
+
+/* Variantes — accent bar couleur semantique */
+.guide-modal-warning .guide-modal-accent { background: var(--warning); }
+.guide-modal-error .guide-modal-accent { background: var(--error); }
+.guide-modal-success .guide-modal-accent { background: var(--success); }
+
+/* ── Icon ── */
+.guide-modal-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-3);
+  line-height: 1;
+}
+
+/* ── Title ── */
+.guide-modal-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+/* ── Body ── */
+.guide-modal-body {
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-6);
+}
+
+.guide-modal-body p {
+  margin: 0 0 var(--space-2);
+}
+
+.guide-modal-body .guide-steps {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.guide-modal-body .guide-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.guide-modal-body .guide-step-badge {
+  width: 22px;
+  height: 22px;
+  background: var(--aurora-gradient);
+  color: white;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.guide-modal-body .guide-step-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+}
+
+.guide-modal-body .guide-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--info-light);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--info-border);
+  font-size: var(--text-xs);
+  color: var(--info);
+  line-height: var(--leading-normal);
+}
+
+.guide-modal-body code {
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+}
+
+/* ── Button ── */
+.guide-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: var(--space-2-5) var(--space-6);
+  background: var(--aurora-gradient);
+  background-size: 200% 200%;
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-primary);
+}
+
+.guide-modal-btn:hover {
+  animation: aurora-shift 3s ease-in-out infinite;
+  box-shadow: var(--shadow-primary-lg);
+  transform: translateY(-1px);
+}
+
+.guide-modal-btn:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+/* Variante success */
+.guide-modal-btn-success {
+  background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+  box-shadow: var(--success-glow);
+}
+
+/* ── Confirm modal actions ── */
+.confirm-modal-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.confirm-modal-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  padding: var(--space-2-5) var(--space-6);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.confirm-modal-cancel:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--glass-border-hover);
+}
+
+/* ── Exit animation ── */
+.guide-modal-exit {
+  animation: modalFadeOut 150ms var(--ease-in) forwards;
+}
+
+.guide-modal-exit .guide-modal {
+  animation: modalSlideOut 150ms var(--ease-in) forwards;
+}
+
+/* Reuse keyframes from modals.css — fallback if not loaded */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes modalFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modalSlideOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(8px); }
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+    max-width: none;
+  }
+
+  .guide-modal {
+    min-width: 0;
+    padding: var(--space-6);
+    margin: var(--space-4);
+  }
+}
+
+/* ================================================================
+   REDUCED MOTION
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast-exit,
+  .guide-modal-overlay,
+  .guide-modal,
+  .guide-modal-exit,
+  .guide-modal-exit .guide-modal {
+    animation-duration: 0.01ms !important;
+  }
+}

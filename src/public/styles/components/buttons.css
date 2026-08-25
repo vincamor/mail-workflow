@@ -1,0 +1,213 @@
+/**
+ * Button System — Deep Cosmos
+ * Aurora gradients, glow effects, spring animations
+ */
+
+/* === BASE === */
+button {
+  font-family: var(--font-family);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  border: 1px solid transparent;
+  outline: none;
+  position: relative;
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-sm);
+  min-height: 32px;
+  line-height: var(--leading-tight);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-glow);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* === SIZES === */
+.btn-sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  min-height: 28px;
+}
+
+.btn-md {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-base);
+  min-height: 36px;
+}
+
+.btn-lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-lg);
+  min-height: 44px;
+}
+
+/* === VARIANTS === */
+.btn-primary {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  min-height: 36px;
+  background: var(--aurora-gradient);
+  background-size: 200% 200%;
+  color: var(--text-inverse);
+  border-color: rgba(242, 160, 123, 0.3);
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-primary-lg);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  box-shadow: var(--shadow-xs);
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-medium);
+  color: var(--primary);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border-color: rgba(242, 160, 123, 0.25);
+}
+
+.btn-outline:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* === STATE VARIANTS === */
+.btn-success {
+  background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+  color: white;
+  border-color: var(--success-border);
+}
+
+.btn-success:hover {
+  box-shadow: var(--success-glow);
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, var(--warning) 0%, var(--accent-hover) 100%);
+  color: var(--text-inverse);
+  border-color: var(--warning-border);
+}
+
+.btn-error {
+  background: var(--error);
+  color: white;
+  border-color: var(--error-border);
+}
+
+.btn-error:hover {
+  box-shadow: var(--error-glow);
+  transform: translateY(-1px);
+}
+
+/* === SPECIAL === */
+.btn-icon {
+  min-width: 36px;
+  padding: var(--space-2);
+}
+
+.btn-icon.btn-sm {
+  min-width: 28px;
+  padding: var(--space-1);
+}
+
+.btn-circle {
+  border-radius: var(--radius-full);
+  aspect-ratio: 1;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* === BUTTON GROUPS === */
+.btn-group {
+  display: inline-flex;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-group button {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.btn-group button:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.btn-group button:last-child {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  border-right-width: 1px;
+}
+
+/* === LOADING STATE === */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 50%;
+  left: 50%;
+  margin-left: -7px;
+  margin-top: -7px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: var(--radius-full);
+  animation: spin 0.6s linear infinite;
+}
