@@ -27,44 +27,17 @@ function decodeBase64Data(data) {
 }
 
 /**
- * Charge les emails depuis le fichier JSONL
- * @param {string} filePath - Chemin vers le fichier JSONL
- * @returns {Array} - Liste des emails
- */
-async function loadEmails(filePath) {
-  
-  const emails = [];
-  
-  try {
-    const content = await fileManager.readFile(filePath);
-    const lines = content.split('\n').filter(line => line.trim());
-    
-    for (const line of lines) {
-      const email = JSON.parse(line);
-      emails.push(email);
-    }
-    
-    console.log(`✅ ${emails.length} emails chargés`);
-    return emails;
-  } catch (error) {
-    console.error('Erreur chargement emails:', error);
-    return [];
-  }
-}
-
-/**
  * Charge les emails depuis un FileSystemHandle par chunks
  * @param {FileSystemFileHandle} fileHandle - Handle du fichier
  * @param {number} chunkSize - Taille des chunks (défaut: 500)
  * @returns {Array} - Liste des emails avec index des chunks
  */
-async function loadEmailsFromHandle(fileHandle, chunkSize = 500) {
+async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
   const emails = [];
-  
+
   try {
     const file = await fileHandle.getFile();
-    const fileSize = file.size;
-    
+
     let chunkCount = 0;
     const stream = file.stream();
     const textDecoder = new TextDecoder();
@@ -574,7 +547,7 @@ function createTemporalGroupTree(emails, subject) {
     // 2. Sinon utiliser inReplyTo
     if (parentIndex === null) {
       const parentId = currentEmail.inReplyTo;
-      if (parentId && emailToIndex.hasOwnProperty(parentId)) {
+      if (parentId && Object.prototype.hasOwnProperty.call(emailToIndex, parentId)) {
         parentIndex = emailToIndex[parentId];
       }
     }
@@ -632,47 +605,6 @@ function setsAreEqual(set1, set2) {
 // === FONCTIONS D'UTILISATION ===
 
 /**
- * Traite un fichier JSONL et retourne les analyses
- * @param {string} filePath - Chemin vers le fichier JSONL
- * @returns {Object} - Résultats de l'analyse
- */
-function analyzeEmailFile(filePath) {
-  console.log('🔍 Début de l\'analyse du fichier emails...');
-  
-  // Charger les emails
-  const emails = loadEmails(filePath);
-  if (emails.length === 0) {
-    return { error: 'Aucun email trouvé dans le fichier' };
-  }
-  
-  // Appliquer le nettoyage
-  const emailsClean = emails.map(cleanEmail);
-  console.log(`✅ ${emailsClean.length} emails nettoyés`);
-  
-  // Obtenir les sujets avec minimum 3 emails
-  const validSubjects = getSubjectsWithMinEmails(emailsClean, 3);
-  console.log(`📧 ${validSubjects.length} conversations avec 3+ emails trouvées`);
-  
-  // Créer un exemple d'arbre pour le premier sujet
-  let sampleTree = null;
-  if (validSubjects.length > 0) {
-    const firstSubject = validSubjects[0].subject;
-    sampleTree = createTemporalGroupTree(emailsClean, firstSubject);
-    console.log(`🌳 Arbre créé pour "${firstSubject}" avec ${sampleTree.nodes.length} nodes et ${sampleTree.links.length} links`);
-  }
-  
-  return {
-    totalEmails: emailsClean.length,
-    validSubjects: validSubjects,
-    sampleTree: sampleTree,
-    metadata: {
-      processedAt: new Date().toISOString(),
-      filePath: filePath
-    }
-  };
-}
-
-/**
  * Récupère les emails d'un sujet (version simplifiée)
  * @param {FileSystemFileHandle} fileHandle - Handle du fichier
  * @param {Object} subjectInfo - Informations du sujet
@@ -704,11 +636,9 @@ async function getEmailsForSubjectOptimized(fileHandle, subjectInfo) {
 
 // ✅ AJOUTER à la fin du fichier :
 export default {
-  analyzeEmailFile,
   createTemporalGroupTree,
   getSubjectsWithMinEmails,
   decodeBase64Data,
-  loadEmails,
   loadEmailsFromHandle,
   getEmailsForSubjectOptimized,
   extractSubject,

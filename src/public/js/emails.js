@@ -3,12 +3,11 @@
  */
 
 import { getCurrentFolderHandle } from './folders.js';
-import { analyzeEmailFile, getEmailStats } from './folders.js';
+import { analyzeEmailFile } from './folders.js';
 import { resolveUserFolderHandle } from './folderResolver.js';
 import { toastSuccess, toastWarning, toastError, toastInfo, showConfirmModal } from './toast.js';
-import { 
-  showLoadingOverlay, 
-  hideLoadingOverlay, 
+import {
+  hideLoadingOverlay,
   updateLoadingOverlay,
   showEmailDownloadAnimation,
   updateEmailDownloadCounter,
@@ -275,7 +274,7 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                   await htmlWritable.write(JSON.stringify({ id: email.id, bodyHtml: email.bodyHtml }) + '\n');
                 }
                 // Write main email without bodyHtml and unused fields
-                const { bodyHtml, sizeEstimate, historyId, labelIds, ...emailWithoutHtml } = email;
+                const { bodyHtml: _bodyHtml, sizeEstimate: _sizeEstimate, historyId: _historyId, labelIds: _labelIds, ...emailWithoutHtml } = email;
                 await writable.write(JSON.stringify(emailWithoutHtml) + '\n');
                 emailsWritten++;
                 // Suivre la date max pour la metadata de sync
@@ -1417,7 +1416,7 @@ export async function migrateJsonlIfNeeded(provider, userId) {
           if (email.bodyHtml) {
             await htmlWritable.write(JSON.stringify({ id: email.id, bodyHtml: email.bodyHtml }) + '\n');
           }
-          const { bodyHtml, sizeEstimate, historyId, labelIds, ...clean } = email;
+          const { bodyHtml: _bodyHtml, sizeEstimate: _sizeEstimate, historyId: _historyId, labelIds: _labelIds, ...clean } = email;
           await mainWritable.write(JSON.stringify(clean) + '\n');
           migrated++;
         } catch (e) {
@@ -1432,7 +1431,7 @@ export async function migrateJsonlIfNeeded(provider, userId) {
         if (email.bodyHtml) {
           await htmlWritable.write(JSON.stringify({ id: email.id, bodyHtml: email.bodyHtml }) + '\n');
         }
-        const { bodyHtml, sizeEstimate, historyId, labelIds, ...clean } = email;
+        const { bodyHtml: _bodyHtml, sizeEstimate: _sizeEstimate, historyId: _historyId, labelIds: _labelIds, ...clean } = email;
         await mainWritable.write(JSON.stringify(clean) + '\n');
         migrated++;
       } catch (e) {

@@ -443,7 +443,7 @@ exports.getEmailCount = async (req, res) => {
 
   // Helper local pour lister les IDs (sans récupérer les détails)
   async function listMessageIds(labelIds, query) {
-    let ids = new Map();
+    const ids = new Map();
     let nextPageToken = null;
     do {
       const params = { userId: 'me', maxResults: 5000 };

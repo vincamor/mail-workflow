@@ -3,13 +3,13 @@
  */
 
 import { getEmailFileHandle } from './folders.js';
-import { showLoadingOverlay, hideLoadingOverlay, updateLoadingOverlay } from './ui.js';
+import { hideLoadingOverlay, updateLoadingOverlay } from './ui.js';
 import { showGuideModal } from './toast.js';
 import { getCurrentFilters } from './filterUI.js';
 import { migrateJsonlIfNeeded } from './emails.js';
 import {
   readGroups, writeGroups, getUserFolderHandle,
-  getChildGroups, getSubjectsInGroup, isSubjectGrouped,
+  getChildGroups, getSubjectsInGroup,
   toggleFavoriteSubject, toggleFavoriteGroup,
   isSubjectFavorite, isGroupFavorite
 } from './groups.js';
@@ -21,7 +21,7 @@ export function setSelectSubjectHandler(fn) {
 }
 
 // Callbacks notifiés quand un sujet devient actif (sélectionné dans la sidebar)
-let subjectSelectedCallbacks = [];
+const subjectSelectedCallbacks = [];
 
 export function onSubjectSelected(callback) {
   subjectSelectedCallbacks.push(callback);
@@ -37,7 +37,7 @@ function notifySubjectSelected(subjectKey, subjectInfo) {
 let currentSubjects = [];
 let currentOpenSubject = null;
 let currentTreeContainerId = null;
-let currentEmailsMap = new Map(); // Map pour stocker les emails complets par ID
+const currentEmailsMap = new Map(); // Map pour stocker les emails complets par ID
 
 // Variables pour les groupes (chargées après chaque analyse)
 let currentGroupsData = null;

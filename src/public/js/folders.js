@@ -2,8 +2,7 @@
  * Module de gestion des dossiers locaux (FileSystem Handle API)
  */
 
-import { storeFolderHandle, restoreFolderHandle, deleteFolderHandle, openDB } from './storage.js';
-import { showLoadingOverlay, hideLoadingOverlay } from './ui.js';
+import { storeFolderHandle, restoreFolderHandle, openDB } from './storage.js';
 import { toastError } from './toast.js';
 import { resolveUserFolderHandle } from './folderResolver.js';
 import { isDemoMode, getDemoEmailFileHandle } from './demo.js';
@@ -148,7 +147,7 @@ export function getEmailStats(emails) {
 }
 
 // UI - Modal et info dossier
-export function showFolderInfo(folderName) {
+export function showFolderInfo(_folderName) {
   document.getElementById("folderSection").style.display = "block";
   // currentFolderName n'existe plus dans la nouvelle interface
   // Le nom est géré par currentFolderPath dans updateFolderStatus

@@ -180,7 +180,7 @@ describe('milestone triggering logic', () => {
   it('does not trigger milestone if less than interval', () => {
     let triggered = false;
     const milestoneInterval = 1000;
-    let lastMilestoneCount = 0;
+    const lastMilestoneCount = 0;
     const accumulated = [];
 
     for (let i = 0; i < 999; i++) {

@@ -9,9 +9,9 @@ import treeVisualization, { setNodeClickHandler } from "./treeRenderer.js";
 import { setupFetchInterceptor, initLoginButtons } from './auth.js';
 import { showLoadingOverlay, hideLoadingOverlay, updateLoadingOverlay, showConnectedInterface, showLoginInterface, initUIEvents } from './ui.js';
 import { initPanelResizers } from './panels.js';
-import { initFolderHandlers, restoreFolder, getEmailFileHandle } from './folders.js';
+import { initFolderHandlers, restoreFolder } from './folders.js';
 import { downloadEmails, syncEmails, startEmailPolling, updateNewEmailsBadge, redownloadMissingEmails } from './emails.js';
-import { autoAnalyzeConversations, selectSubject as analysisSelectSubject, getEmailById, setSelectSubjectHandler, incrementalAnalyze, initTreeNotificationBanner, clearTreeNotification } from './analysis.js';
+import { autoAnalyzeConversations, selectSubject as analysisSelectSubject, setSelectSubjectHandler, incrementalAnalyze, initTreeNotificationBanner, clearTreeNotification } from './analysis.js';
 import { showEmailDetail } from './email-detail.js';
 import { initFilterUI, setOnFiltersSaved, setOnSubjectRestored } from './filterUI.js';
 import { initGroupContextMenu } from './groupContextMenu.js';
@@ -29,7 +29,6 @@ restoreTheme();
 
 
 // Variables globales de l'état de l'application
-let lastFetchedEmails = [];
 let analysisLaunched = false;
 let availableMessageIds = [];
 
@@ -269,7 +268,7 @@ async function initConnectedInterface(provider, email) {
 }
 
 // Récupérer les emails depuis le serveur
-async function fetchEmails(provider, email) {
+async function fetchEmails(provider) {
   const emailsDiv = document.getElementById("emails");
   const downloadEmailsBtn = document.getElementById("downloadEmailsBtn");
   
@@ -302,7 +301,6 @@ async function fetchEmails(provider, email) {
     
     if (data.displayEmails && Array.isArray(data.displayEmails)) {
       // Nouveau format avec séparation affichage/téléchargement
-      lastFetchedEmails = data.displayEmails;
       availableMessageIds = data.messageIds || [];
       
       // Mettre à jour le compteur dans le panneau gauche
@@ -328,7 +326,6 @@ async function fetchEmails(provider, email) {
       }
     } else if (Array.isArray(data)) {
       // Ancien format (fallback)
-      lastFetchedEmails = data;
       availableMessageIds = data.map((e) => ({
         id: e.id,
         type: e.type,

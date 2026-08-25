@@ -35,7 +35,7 @@ function stripQuotedText(body) {
     }
   }
 
-  let result = body.slice(0, earliestIndex);
+  const result = body.slice(0, earliestIndex);
 
   // Retire aussi les lignes commencant par > (citation classique) presentes avant un marker
   const lines = result.split('\n');

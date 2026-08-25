@@ -202,6 +202,7 @@ export function parseAIFilterResponse(text) {
     throw new Error('Aucun JSON trouve dans la reponse IA');
   }
   // Nettoyer les caracteres de controle qui cassent JSON.parse
+  // eslint-disable-next-line no-control-regex -- match intentionnel des caracteres de controle a nettoyer
   let cleanJson = objectMatch[0].replace(/[\x00-\x1F\x7F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
 
   // Tenter de reparer un JSON tronque (array non ferme)
@@ -444,7 +445,6 @@ async function callAIWithAutoSplit(systemPrompt, subjectBatch, buildMessage, sub
 export async function startAIFiltering(subjects, getEmailsForSubject, onProgress = () => {}) {
   // subjects peut etre un array d'objets {subject, participants, userReplied, ...} ou de strings
   const subjectObjects = subjects.map(s => typeof s === 'string' ? { subject: s } : s);
-  const allSubjectNames = subjectObjects.map(s => s.subject);
   const subjectMap = new Map(subjectObjects.map(s => [s.subject, s]));
 
   // Reset stats

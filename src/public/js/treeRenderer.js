@@ -52,7 +52,7 @@ const STAGGER_STEP_MS = 25;
 
 let currentContainerId = null;
 let positionedNodes = [];
-let viewState = { x: 0, y: 0, scale: 1 };
+const viewState = { x: 0, y: 0, scale: 1 };
 let resizeObserver = null;
 let nodeClickHandler = null;
 let parentIndex = new Map(); // targetId → sourceId (child → parent)
@@ -1050,7 +1050,7 @@ function renderTree(containerId) {
 // INTERFACE COMPATIBLE
 // ========================================
 
-function createCompleteVisualization(tree, options = {}) {
+function createCompleteVisualization(tree, _options = {}) {
   if (!tree || !tree.nodes || tree.nodes.length === 0 || tree.nodes.length === 1) {
     return `
       <div class="d3-tree-container" style="width: 100%; height: 100%; display: flex; flex-direction: column;">

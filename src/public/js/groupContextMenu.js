@@ -11,7 +11,6 @@
 
 import {
   getCurrentGroupsData,
-  getCurrentSubjects,
   saveGroupsData,
   refreshSubjectsDisplay
 } from './analysis.js';

@@ -52,7 +52,7 @@ export function hideLoadingOverlay() {
  * Affiche l'overlay avec animation d'emails et compteur
  * @param {number} totalEmails - Nombre total d'emails à télécharger
  */
-export function showEmailDownloadAnimation(totalEmails) {
+export function showEmailDownloadAnimation(_totalEmails) {
   const overlay = document.getElementById("loadingOverlay");
   const content = overlay?.querySelector(".loading-overlay-content");
   

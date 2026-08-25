@@ -16,7 +16,7 @@ export async function openDB() {
 
       // Créer l'object store pour les handles de dossiers
       if (!db.objectStoreNames.contains("folderHandles")) {
-        const store = db.createObjectStore("folderHandles", {
+        db.createObjectStore("folderHandles", {
           keyPath: "userId",
         });
         console.log('✅ ObjectStore "folderHandles" créé');

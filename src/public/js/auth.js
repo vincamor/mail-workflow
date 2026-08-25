@@ -16,28 +16,24 @@ export function handleAutoLogout() {
 export function setupFetchInterceptor() {
   const originalFetch = window.fetch;
   window.fetch = async function (...args) {
-    try {
-      const response = await originalFetch(...args);
+    const response = await originalFetch(...args);
 
-      // Si erreur 401 (non authentifié)
-      if (response.status === 401) {
-        const clonedResponse = response.clone();
-        try {
-          const data = await clonedResponse.json();
-          if (data.requiresLogout) {
-            handleAutoLogout();
-            return response;
-          }
-        } catch (e) {
-          // Si pas de JSON, juste déconnecter
+    // Si erreur 401 (non authentifié)
+    if (response.status === 401) {
+      const clonedResponse = response.clone();
+      try {
+        const data = await clonedResponse.json();
+        if (data.requiresLogout) {
           handleAutoLogout();
+          return response;
         }
+      } catch (e) {
+        // Si pas de JSON, juste déconnecter
+        handleAutoLogout();
       }
-
-      return response;
-    } catch (error) {
-      throw error;
     }
+
+    return response;
   };
 }
 
