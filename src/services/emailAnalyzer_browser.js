@@ -9,7 +9,10 @@ function decodeBase64Data(data) {
   if (!data) return '';
   try {
     // Gestion des caractères spéciaux dans base64
-    const cleanData = data.replace(/-/g, '+').replace(/_/g, '/');
+    // `let`, pas `const` : le padding est ajouté juste en dessous. Avec `const`,
+    // l'affectation levait une TypeError avalée par le catch, et la fonction
+    // retournait le base64 brut au lieu du texte décodé — silencieusement.
+    let cleanData = data.replace(/-/g, '+').replace(/_/g, '/');
     const missingPadding = cleanData.length % 4;
     if (missingPadding) {
       cleanData += '='.repeat(4 - missingPadding);
