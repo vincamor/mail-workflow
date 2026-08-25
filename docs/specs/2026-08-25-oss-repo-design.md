@@ -292,8 +292,59 @@ project's `--experimental-vm-modules` setup.
 
 ---
 
-## 7. Open items
+## 7. Where the work stopped — 2026-08-25
 
-- Workstream B has no spec yet; the glossary (B0) is its blocking prerequisite.
-- Workstream C's design (C2) waits on C1's research findings.
-- Screenshots and the demo GIF are wave 4, after the English migration.
+**Wave 0 and wave 1 are complete.** 16 commits on `main`. Three indicators green
+at once: 11 suites / 159 tests, `npm run lint` clean, `npm audit` at 0
+vulnerabilities (down from 11, of which 7 high).
+
+**Nothing has been pushed.** The remote `https://github.com/vincamor/mail-workflow.git`
+is configured but still empty. The repository was created **private**, per the
+approach-A decision to publish at v1.0.0. The first push is
+`git push -u origin main` and needs an explicit go-ahead.
+
+### Delivered in wave 1
+
+| Commit | Lane |
+|--------|------|
+| `48bba75` | Initial import, `.gitattributes`, secret audit |
+| `f02a221` | Governance files, package metadata fixed |
+| `9609ef0` | ESLint flat config + Prettier |
+| `7e367b4`, `b2c2b38` | This spec |
+| `5150f49` | Google Cloud and Azure AD setup guides |
+| `c5d7ac3` | CI hardening, CodeQL, Dependabot |
+| `6412d8e` | Attachments API research |
+| `b50bcfe` | `npm run setup` and `npm run doctor` |
+| `accbce9` | Demo mode |
+| `0f31c5b`, `f376a76`, `b9854cf` | Three application bug fixes |
+| `2c5f84f`, `32e023e` | `@azure/msal-node` dropped, all advisories resolved |
+| `b303fe5` | Clean lint baseline, dead code removed |
+
+Four latent bugs were found and fixed along the way; they are described in
+section 6, which also still lists the one **not** fixed (the front-end test that
+duplicates the code it claims to test).
+
+### Next session — in this order
+
+1. **Decide on the first push.** Everything below assumes it has happened, since
+   the bug reports in section 6 should become GitHub issues.
+2. **Wave 2**, three parallel lanes: A6 restructure `docs/` (separate user guides
+   from internal notes, add `DATA_FORMAT.md` and `ROADMAP.md`), A7 README v2
+   without images, C2 the full attachments design built on `docs/design/attachments-research.md`.
+3. **Run Prettier once, as its own commit.** This must land before wave 3.
+   Mixing a reformat with a 36-file translation produces an unreviewable diff.
+4. **Wave 3**, the English migration. B0 (the glossary) blocks the fan-out and
+   is not written yet. Scope measured: ~250-400 user-visible strings, ~600 French
+   comments and log lines across 36 files. The AI prompts are the risk zone —
+   translating them changes model behaviour and
+   `tests/backend/aiFilterPrompts.test.js` asserts on their content.
+5. **Wave 4**, release: screenshots of the English UI, README illustration,
+   `v1.0.0`, switch to public.
+
+### Two latent issues noticed but deliberately left alone
+
+`loadEmailsFromHandle(fileHandle, _chunkSize)` and
+`createCompleteVisualization(tree, _options)` both have call sites passing real
+values for parameters the body never reads. Callers believe they are configuring
+something that is ignored. Not fixed: doing so would change runtime behaviour and
+belongs in its own reviewed change.
