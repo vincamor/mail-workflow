@@ -38,24 +38,12 @@ require('dotenv').config({ quiet: true });
 const PORT = process.env.PORT || 3000;
 const URL = `http://localhost:${PORT}/?demo=1`;
 
-// src/services/outlookService.js builds an MSAL ConfidentialClientApplication at
-// require() time, and MSAL throws outright when the client secret is empty. So
-// without these placeholders the server cannot even boot with no .env — which is
-// exactly the situation `npm run demo` is meant to support. Demo mode never walks
-// an OAuth path (no login screen, no /gmail or /outlook call), so these values are
-// only ever there to let the modules load.
-const OAUTH_PLACEHOLDERS = {
-  GMAIL_CLIENT_ID: 'demo-mode-not-configured',
-  GMAIL_CLIENT_SECRET: 'demo-mode-not-configured',
-  GMAIL_REDIRECT_URI: `http://localhost:${PORT}/gmail/callback`,
-  OUTLOOK_CLIENT_ID: 'demo-mode-not-configured',
-  OUTLOOK_CLIENT_SECRET: 'demo-mode-not-configured',
-  OUTLOOK_TENANT_ID: 'common',
-  OUTLOOK_REDIRECT_URI: `http://localhost:${PORT}/outlook/callback`,
-};
-for (const [key, value] of Object.entries(OAUTH_PLACEHOLDERS)) {
-  if (!process.env[key]) process.env[key] = value;
-}
+// No OAuth placeholders are needed here. The provider modules used to build an
+// MSAL client at require() time, which threw on an empty secret and stopped the
+// server from booting without a .env — precisely the situation this script
+// exists to support. That dead client has been removed, so the app now loads
+// with no credentials at all. Demo mode never walks an OAuth path anyway: no
+// login screen, no /gmail or /outlook call.
 
 require('../src/app.js');
 

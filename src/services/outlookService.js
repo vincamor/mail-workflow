@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const msal = require('@azure/msal-node');
 const oauthConfig = require('../config/oauth');
 const { streamEmailChunks, isTokenError, parseFiltersFromRequest } = require('./emailUtils');
 const { stripQuotedText } = require('./quoteStripper');
@@ -18,17 +17,22 @@ const fetch = async (url, options = {}) => {
 };
 
 // ─────────────────────────────────────────────
-//  MSAL config (inchangé)
+//  Endpoint Microsoft Identity
 // ─────────────────────────────────────────────
-const msalConfig = {
-  auth: {
-    clientId: oauthConfig.outlook.clientId,
-    authority: `https://login.microsoftonline.com/${oauthConfig.outlook.tenantId}`,
-    clientSecret: oauthConfig.outlook.clientSecret,
-  },
-};
+// OUTLOOK_TENANT_ID était auparavant lu pour construire un client MSAL qui
+// n'était JAMAIS utilisé : les trois appels OAuth ci-dessous codaient /common/
+// en dur. La variable était donc documentée mais sans effet, et une inscription
+// Entra mono-tenant échouait sans explication.
+//
+// Ce client MSAL faisait pire encore : `new ConfidentialClientApplication()`
+// lève `invalid_client_credential` quand le secret est vide — donc un
+// utilisateur qui copiait .env.example tel quel voyait le serveur planter au
+// démarrage, avant même d'avoir configuré quoi que ce soit.
+//
+// La variable est maintenant réellement honorée, et le client mort a disparu.
+const OUTLOOK_TENANT = oauthConfig.outlook.tenantId || 'common';
+const MS_LOGIN_BASE = `https://login.microsoftonline.com/${OUTLOOK_TENANT}/oauth2/v2.0`;
 const REDIRECT_URI = oauthConfig.outlook.redirectUri;
-const pca = new msal.ConfidentialClientApplication(msalConfig);
 
 // ─────────────────────────────────────────────
 //  Refresh token Outlook (évite déconnexion après 1h)
@@ -49,7 +53,7 @@ async function refreshOutlookAccessToken(session) {
     throw err;
   }
 
-  const res = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+  const res = await fetch(`${MS_LOGIN_BASE}/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -557,7 +561,7 @@ exports.initAuth = (req, res) => {
     state
   });
   req.session.save(() =>
-    res.redirect('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?' + params.toString())
+    res.redirect(`${MS_LOGIN_BASE}/authorize?` + params.toString())
   );
 };
 
@@ -577,7 +581,7 @@ exports.handleCallback = async (req, res) => {
 
   console.log('🔐 Outlook handleCallback — échange du code contre les tokens');
   try {
-    const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    const tokenRes = await fetch(`${MS_LOGIN_BASE}/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
