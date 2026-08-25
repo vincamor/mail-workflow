@@ -246,7 +246,53 @@ would not be worth adding.
 
 ---
 
-## 6. Open items
+## 6. Bugs found during the release work
+
+Preparing the repository surfaced real defects in the application. None are
+fixed here — each needs its own change and its own review. They become GitHub
+issues once the repository is pushed.
+
+### 6.1 `OUTLOOK_TENANT_ID` has no effect
+
+`.env.example` documents `OUTLOOK_TENANT_ID`, and `src/config/oauth.js:10` reads
+it. It is used to build the MSAL authority at `outlookService.js:26`, but the
+resulting `ConfidentialClientApplication` (`pca`, line 31) is **never used
+again** — it is the only occurrence in the file. All three real OAuth calls
+hard-code `/common/`:
+
+- `outlookService.js:52` — token refresh
+- `outlookService.js:560` — authorize redirect
+- `outlookService.js:580` — token exchange
+
+Consequence: a user with a single-tenant Entra registration who sets
+`OUTLOOK_TENANT_ID` to their tenant GUID is still sent to `/common/`, and
+sign-in fails with no indication why. The real gate is the "Supported account
+types" setting in the app registration.
+
+Two possible fixes: honour the variable in the three endpoints, or remove it
+from `.env.example` and drop the unused `@azure/msal-node` dependency along with
+it. The first is the better behaviour; the second is the smaller surface.
+
+### 6.2 A front-end test duplicates the code it claims to test
+
+`tests/frontend/progressiveLoading.test.js` does not import
+`src/services/emailAnalyzer_browser.js`. It **inlines a copy of that module's
+functions**, with a comment stating the ES module cannot be required directly in
+Jest.
+
+Consequence: this test can stay green while the real analyzer is broken. Since
+`emailAnalyzer_browser.js` produces the `{nodes, links}` shape the whole
+visualisation depends on, this is the least covered critical path in the
+project, despite appearances.
+
+The demo mode's regression test (wave 1, lane A8) loads the fixture through the
+real module, which is the first genuine coverage of that path — and it will
+prove whether the "cannot be required in Jest" premise still holds under the
+project's `--experimental-vm-modules` setup.
+
+---
+
+## 7. Open items
 
 - Workstream B has no spec yet; the glossary (B0) is its blocking prerequisite.
 - Workstream C's design (C2) waits on C1's research findings.
