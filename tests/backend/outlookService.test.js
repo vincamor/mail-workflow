@@ -1,13 +1,9 @@
 const { describe, it, expect } = require('@jest/globals');
 
-// On neutralise MSAL dans l'environnement de test pour éviter
-// l'initialisation réelle de ConfidentialClientApplication.
-jest.mock('@azure/msal-node', () => ({
-  ConfidentialClientApplication: function MockConfidentialClientApplication() {
-    return {};
-  },
-}));
-
+// Aucun mock MSAL n'est nécessaire : le ConfidentialClientApplication mort a été
+// supprimé du service. Ce mock existait pour empêcher son initialisation réelle,
+// et c'est précisément lui qui masquait le crash au démarrage avec des secrets
+// vides. Le service se charge maintenant sans aucune credential.
 const { formatOutlookEmail, buildOutlookQuery } = require('../../src/services/outlookService');
 
 describe('formatOutlookEmail', () => {
