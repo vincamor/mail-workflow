@@ -1,15 +1,23 @@
 name: CI
 
-# Intégration continue : à chaque push et pull request, on installe les
-# dépendances de façon reproductible (npm ci) et on lance toute la suite Jest.
-# L'app est du Node/Express + frontend vanilla ES6 servi statiquement :
-# il n'y a AUCUNE étape de bundling/transpilation — le "build" se limite à
-# l'install des deps et à la validation par les tests.
+# Continuous integration: on every push and pull request we install the
+# dependencies reproducibly (npm ci) and run the whole Jest suite.
+# The app is Node/Express + a vanilla ES6 front-end served statically:
+# there is NO bundling/transpilation step — the "build" is limited to
+# installing deps and validating with the tests.
 #
-# Déploiement (job deploy) : uniquement sur push vers main, APRÈS succès des
-# tests, vers Railway via la CLI. Nécessite le secret RAILWAY_TOKEN (et
-# éventuellement la variable RAILWAY_SERVICE). Sans le secret, le job se
-# contente d'un avertissement et ne déploie rien.
+# Deployment (deploy job): only on push to main, AFTER the test and lint jobs
+# succeed, to Railway via its CLI. Requires the RAILWAY_TOKEN secret (and
+# optionally the RAILWAY_SERVICE variable). Without the secret the job just
+# emits a warning and deploys nothing.
+#
+# Supply-chain hardening notes:
+#   - Third-party actions are pinned to full commit SHAs (a tag is mutable and
+#     can be re-pointed at malicious code; a SHA cannot). The comment next to
+#     each pin names the tag it corresponds to. `.github/dependabot.yml` keeps
+#     these pins fresh via the github-actions ecosystem.
+#   - GITHUB_TOKEN permissions are read-only by default (top-level block) and
+#     widened per job only where genuinely required.
 
 on:
   push:
@@ -17,25 +25,34 @@ on:
   pull_request:
     branches: [main]
 
-# Annule les runs obsolètes quand on pousse plusieurs fois d'affilée.
+# Least privilege for GITHUB_TOKEN. Without this block the workflow inherits
+# the repository default, which on many repos is read-write for everything.
+# Jobs that need more must opt in with their own `permissions:` block.
+permissions:
+  contents: read
+
+# Cancel stale runs when several pushes land back to back.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
-    name: Lint parse + tests (Node ${{ matrix.node }})
+    name: Syntax check + tests (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # only needs to read the code out of the repo
     strategy:
       fail-fast: false
       matrix:
         node: ['20', '22']
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -54,28 +71,68 @@ jobs:
         env:
           NODE_ENV: test
 
-  deploy:
-    name: Deploy to Railway
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  lint:
+    name: Lint + format check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies (reproducible)
+        run: npm ci
+
+      # NOTE: this job is intentionally blocking (no continue-on-error). The
+      # ESLint/Prettier configuration is landing alongside this workflow, so the
+      # very first run may go red until `eslint.config.js` / `.prettierrc` and
+      # the matching devDependencies are committed. Fix the config — do not mute
+      # the job.
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier (check only)
+        run: npm run format:check
+
+  deploy:
+    name: Deploy to Railway
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # deployment happens through the Railway CLI, not the GitHub API
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # `secrets` is NOT available in a job-level `if:` — GitHub only exposes the
+      # secrets context to steps. Hence this step-level probe writing to
+      # GITHUB_OUTPUT, which the later steps gate on. The secret is passed via
+      # `env:` rather than interpolated into the script, so its value never
+      # becomes part of the shell command line.
       - name: Check Railway token
         id: check
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
+          if [ -z "$RAILWAY_TOKEN" ]; then
             echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::RAILWAY_TOKEN absent — déploiement ignoré. Ajoute-le dans Settings > Secrets and variables > Actions."
+            echo "::warning::RAILWAY_TOKEN is missing — deployment skipped. Add it under Settings > Secrets and variables > Actions."
           else
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Node
         if: steps.check.outputs.has_token == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
 
@@ -87,9 +144,10 @@ jobs:
         if: steps.check.outputs.has_token == 'true'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
         run: |
-          if [ -n "${{ vars.RAILWAY_SERVICE }}" ]; then
-            railway up --detach --service "${{ vars.RAILWAY_SERVICE }}"
+          if [ -n "$RAILWAY_SERVICE" ]; then
+            railway up --detach --service "$RAILWAY_SERVICE"
           else
             railway up --detach
           fi

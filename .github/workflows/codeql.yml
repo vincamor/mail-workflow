@@ -1,0 +1,62 @@
+name: CodeQL
+
+# Static application security testing for the whole JavaScript codebase
+# (CommonJS backend under src/ + ES-module front-end under src/public/js).
+# Results land in the repository's Security > Code scanning tab and, on pull
+# requests, as inline annotations.
+#
+# The `javascript-typescript` language pack covers both .js and .ts; this
+# project has no compilation step, hence `build-mode: none`.
+#
+# Actions are pinned to full commit SHAs (see .github/workflows/ci.yml for the
+# rationale); Dependabot's github-actions ecosystem keeps them current.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly re-scan so newly published CodeQL queries also run against code
+    # that has not changed. Mondays at 05:17 UTC (off the hour to avoid the
+    # scheduling stampede at :00).
+    - cron: '17 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write # required to upload the SARIF results to code scanning
+      contents: read # read the source to analyze
+      actions: read # read workflow run metadata (needed on private repos)
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          # security-extended adds the lower-precision security queries on top of
+          # the default set; worth it for a project that proxies OAuth tokens.
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          category: '/language:${{ matrix.language }}'

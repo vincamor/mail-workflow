@@ -1,0 +1,65 @@
+version: 2
+
+# Automated dependency updates.
+#
+# Two ecosystems matter here:
+#   - npm            ~11 runtime deps + the Jest/ESLint/Prettier toolchain.
+#   - github-actions this is what keeps the full-SHA pins in .github/workflows/
+#                    from rotting: Dependabot rewrites the SHA *and* the
+#                    trailing `# vX.Y.Z` comment in the same PR.
+#
+# Grouping keeps minor+patch bumps to a single PR per ecosystem per week instead
+# of a flood; majors stay separate so they get reviewed on their own.
+
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    # `include: scope` makes Dependabot append the scope to the prefix itself,
+    # so prefix `chore` yields `chore(deps): …` for runtime deps and
+    # `chore(deps-dev): …` for devDependencies — matching this project's
+    # conventional-commit style. Do NOT write `prefix: chore(deps)` here: the
+    # scope would be appended a second time (`chore(deps)(deps): …`).
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
+    groups:
+      # One PR for all non-breaking production bumps.
+      production-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      # One PR for all non-breaking tooling bumps (jest, eslint, prettier…).
+      development-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+    # Majors are deliberately left ungrouped: one PR each, reviewed individually.
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    open-pull-requests-limit: 3
+    # Same as above: yields `chore(deps): bump actions/checkout …`.
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      actions-all:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
