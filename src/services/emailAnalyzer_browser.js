@@ -102,6 +102,7 @@ async function loadEmailsFromHandle(fileHandle, chunkSize = 500) {
               bodyText:     full.bodyText,
               snippet:      full.snippet,
               labelIds:     full.labelIds,
+              hasAttachments: full.hasAttachments,
               _chunkIndex:  chunkCount,
             });
           } catch (e) {
@@ -130,6 +131,7 @@ async function loadEmailsFromHandle(fileHandle, chunkSize = 500) {
           bodyText:     full.bodyText,
           snippet:      full.snippet,
           labelIds:     full.labelIds,
+          hasAttachments: full.hasAttachments,
           _chunkIndex:  chunkCount,
         });
       } catch (e) {
