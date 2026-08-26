@@ -1,89 +1,94 @@
-# Deploying to Railway
+# Self-hosting
 
 **Who this is for:** anyone who wants to host Mail Workflow somewhere other than
 their own laptop.
 
-Deployment is **optional**. Mail Workflow is designed to run locally, and the
-emails never leave the machine that downloads them either way — the server is
-only an OAuth proxy. Hosting it buys you a stable HTTPS origin and a URL you can
-open from any of your own machines.
+Deployment is **optional, and it is yours to run**. Mail Workflow is meant to be
+cloned and run by each person on their own machine; this repository does not
+deploy anywhere and ships no deployment job. Emails never leave the machine that
+downloads them either way — the server is only an OAuth proxy. Hosting it buys
+you a stable HTTPS origin and a URL you can open from any of your own devices.
 
-`.github/workflows/ci.yml` contains a `deploy` job that pushes to Railway
-**on every push to `main`**, after the `test` and `lint` jobs pass. The job stays
-inert — it prints a GitHub warning and deploys nothing — until the
-`RAILWAY_TOKEN` secret exists, so nothing breaks before you configure it.
-
-Two places that are easy to confuse:
-
-- **GitHub Actions secrets/variables** — used by the _deployment_ (authenticating
-  to Railway).
-- **Railway variables** — used by the _running app_ (`SESSION_SECRET`, OAuth
-  credentials, `REDIS_URL`, `APP_ORIGIN`, `ALLOW_LOCAL_AI`, …). These go on the
-  Railway side, never in GitHub.
+The examples below use Railway because it is the smallest amount of setup, but
+nothing here is Railway-specific: the app is a plain Node process started with
+`npm start`, so any host that runs Node 20+ works the same way.
 
 ---
 
-## 1. Get a Railway token
+## 1. Put the app on a host
 
-1. Go to https://railway.app and open **your project**.
-2. **Settings → Tokens** — a _project_ token is recommended, since it is scoped
-   to that project alone.
-   - Alternative: an account token from https://railway.app/account/tokens.
-3. Click **Create Token**, name it (e.g. `github-actions`), and **copy the
-   value** — it is shown only once.
+Pick either approach — you do not need both.
 
-## 2. Add the token to GitHub as a secret
+**Option A — connect the repository (deploys on every push)**
 
-1. In the GitHub repository: **Settings → Secrets and variables → Actions**.
-2. **Secrets** tab → **New repository secret**.
-3. Name: `RAILWAY_TOKEN`
-4. Secret: _(paste the token from step 1)_
-5. **Add secret**.
+1. Fork or push your copy to your own GitHub repository.
+2. On https://railway.app: **New Project → Deploy from GitHub repo**, and pick
+   that repository.
+3. Railway builds it and re-deploys on each push. Nothing is configured on the
+   GitHub side: no secret, no token, no workflow.
 
-## 3. (Optional) Target a specific service
+**Option B — deploy from your machine**
 
-Only useful if your Railway project has **several services**.
+```bash
+npm i -g @railway/cli
+railway login
+railway up
+```
 
-1. Same page → **Variables** tab → **New repository variable**.
-2. Name: `RAILWAY_SERVICE`
-3. Value: the exact service name as displayed in Railway.
-4. **Add variable**.
+Useful when you would rather not connect a repository at all.
 
-If you set nothing, the workflow runs `railway up --detach` and Railway deploys
-the project's default service.
+> Do **not** add a `RAILWAY_TOKEN` secret to a GitHub Actions workflow unless you
+> have written that workflow yourself. This repository's CI only runs tests and
+> lint — it has no deploy step to feed a token to.
 
-## 4. Configure the app on the Railway side (runtime variables)
+## 2. Configure the app (runtime variables)
 
-In **Railway → your service → Variables**, add the variables the app needs at
-runtime (these do **not** go in GitHub):
+In **Railway → your service → Variables** (or your host's equivalent), set the
+variables the app needs at runtime:
 
-| Variable                                                               | Role                                                                                                                         |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `SESSION_SECRET`                                                       | Required outside development — the app refuses to start without it when `NODE_ENV=production`                                |
-| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REDIRECT_URI`       | Gmail OAuth                                                                                                                  |
-| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` / `OUTLOOK_REDIRECT_URI` | Outlook OAuth                                                                                                                |
-| `OUTLOOK_TENANT_ID`                                                    | `common` for personal + multi-tenant accounts, or your tenant GUID for a single-tenant Entra registration                    |
-| `APP_ORIGIN`                                                           | Public origin of the app (e.g. `https://<project>.up.railway.app`), used for CORS                                            |
-| `REDIS_URL`                                                            | Provided automatically if you add the Railway Redis plugin. Without it, sessions are in-memory and are lost on every restart |
-| `ALLOW_LOCAL_AI`                                                       | `true` only if you point the AI proxy at a local Ollama — pointless in production, and it relaxes the anti-SSRF guard        |
-| `PORT`                                                                 | Managed by Railway automatically — do not set it                                                                             |
+| Variable                                                               | Role                                                                                                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `SESSION_SECRET`                                                       | Required outside development — the app refuses to start without it when `NODE_ENV=production`                            |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REDIRECT_URI`       | Gmail OAuth                                                                                                              |
+| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` / `OUTLOOK_REDIRECT_URI` | Outlook OAuth                                                                                                            |
+| `OUTLOOK_TENANT_ID`                                                    | `common` for personal + multi-tenant accounts, or your tenant GUID for a single-tenant Entra registration                |
+| `APP_ORIGIN`                                                           | Public origin of the app (e.g. `https://<project>.up.railway.app`), used for CORS                                        |
+| `REDIS_URL`                                                            | Provided automatically if you add the Railway Redis plugin. Without it, sessions are in-memory and lost on every restart |
+| `ALLOW_LOCAL_AI`                                                       | `true` only if you point the AI proxy at a local Ollama — pointless in production, and it relaxes the anti-SSRF guard    |
+| `PORT`                                                                 | Set by the host automatically — do not set it yourself                                                                   |
 
-See `.env.example` for the full list and the inline notes on each variable.
+See [`.env.example`](../../.env.example) for the full list and the inline notes
+on each variable.
 
-Remember to update the **OAuth redirect URIs** on the provider side (Google Cloud
-Console / Azure portal) with the Railway URL, and to keep them byte-identical to
-`GMAIL_REDIRECT_URI` and `OUTLOOK_REDIRECT_URI`. A mismatch here is the single
-most common cause of a failed sign-in. `npm run doctor` checks that consistency
-for you.
+Generate a strong session secret with:
 
-## 5. Trigger and verify
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
-1. Merge or push to **`main`**. On a `feature/*` branch the deploy job is
-   deliberately skipped (`if: github.ref == 'refs/heads/main'`).
-2. GitHub → **Actions** tab → open the run → **Deploy to Railway** job.
-3. If something goes wrong: check that `RAILWAY_TOKEN` is present (the job emits
-   a warning when it is missing) and that the Railway service starts with
-   `npm start`.
+## 3. Update the OAuth redirect URIs
+
+Go back to the provider consoles (Google Cloud Console, Azure portal) and add the
+deployed URLs, keeping them **byte-identical** to `GMAIL_REDIRECT_URI` and
+`OUTLOOK_REDIRECT_URI`:
+
+```
+https://<your-domain>/gmail/callback
+https://<your-domain>/outlook/callback
+```
+
+A mismatch here is the single most common cause of a failed sign-in. See
+[`docs/setup/google-cloud.md`](../setup/google-cloud.md) and
+[`docs/setup/azure-ad.md`](../setup/azure-ad.md).
+
+## 4. Verify
+
+`npm run doctor` checks the consistency between `PORT`, `APP_ORIGIN` and the
+redirect URIs, and tells you exactly which value to change when they disagree.
+Run it against the same environment the server sees.
+
+The app also exposes `GET /health`, which returns `{"status":"ok"}` — useful as
+a host health check.
 
 ---
 
@@ -94,5 +99,7 @@ for you.
   works everywhere — see [the demo mode notes](../internal/architecture.md#15-demo-mode).)
 - **The server still stores nothing.** No database is provisioned or needed; the
   only server-side state is the session, in Redis or in memory.
+- **Your emails still land on your own disk**, in the local folder you pick from
+  the browser. Hosting the server does not move them anywhere.
 - **Docker is an explicit non-goal** — see
   [the release design spec](../specs/2026-08-25-oss-repo-design.md), section 2.

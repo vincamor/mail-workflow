@@ -21,9 +21,9 @@ the symptom.
 
 ## I want to deploy it
 
-| Document                                     | For you if…                                                                                                                                                 |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [guides/deployment.md](guides/deployment.md) | You want the app hosted rather than local. Railway via GitHub Actions: the token, the secrets, the runtime variables, and what deployment does _not_ change |
+| Document                                     | For you if…                                                                                                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [guides/deployment.md](guides/deployment.md) | You want the app hosted rather than local. Self-hosting on your own account: the runtime variables, the redirect URIs to update, and what hosting does _not_ change |
 
 ## I want to change it
 

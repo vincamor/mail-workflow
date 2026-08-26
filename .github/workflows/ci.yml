@@ -6,10 +6,11 @@ name: CI
 # there is NO bundling/transpilation step — the "build" is limited to
 # installing deps and validating with the tests.
 #
-# Deployment (deploy job): only on push to main, AFTER the test and lint jobs
-# succeed, to Railway via its CLI. Requires the RAILWAY_TOKEN secret (and
-# optionally the RAILWAY_SERVICE variable). Without the secret the job just
-# emits a warning and deploys nothing.
+# There is deliberately NO deploy job. Mail Workflow is meant to be cloned and
+# run by each user on their own machine; it is not a service this repository
+# deploys anywhere. Self-hosting instructions live in docs/guides/deployment.md,
+# where they belong — as documentation a reader chooses to follow, not as a
+# pipeline step that warns on every run about a secret nobody else has.
 #
 # Supply-chain hardening notes:
 #   - Third-party actions are pinned to full commit SHAs (a tag is mutable and
@@ -103,54 +104,3 @@ jobs:
 
       - name: Prettier (check only)
         run: npm run format:check
-
-  deploy:
-    name: Deploy to Railway
-    needs: [test, lint]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read # deployment happens through the Railway CLI, not the GitHub API
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # `secrets` is NOT available in a job-level `if:` — GitHub only exposes the
-      # secrets context to steps. Hence this step-level probe writing to
-      # GITHUB_OUTPUT, which the later steps gate on. The secret is passed via
-      # `env:` rather than interpolated into the script, so its value never
-      # becomes part of the shell command line.
-      - name: Check Railway token
-        id: check
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::RAILWAY_TOKEN is missing — deployment skipped. Add it under Settings > Secrets and variables > Actions."
-          else
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup Node
-        if: steps.check.outputs.has_token == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '20'
-
-      - name: Install Railway CLI
-        if: steps.check.outputs.has_token == 'true'
-        run: npm i -g @railway/cli
-
-      - name: Deploy
-        if: steps.check.outputs.has_token == 'true'
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
-        run: |
-          if [ -n "$RAILWAY_SERVICE" ]; then
-            railway up --detach --service "$RAILWAY_SERVICE"
-          else
-            railway up --detach
-          fi
