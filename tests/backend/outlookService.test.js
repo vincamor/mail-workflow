@@ -14,25 +14,21 @@ describe('formatOutlookEmail', () => {
       subject: 'Hello world',
       bodyPreview: 'Preview',
       from: {
-        emailAddress: { name: 'Alice', address: 'alice@example.com' }
+        emailAddress: { name: 'Alice', address: 'alice@example.com' },
       },
-      toRecipients: [
-        { emailAddress: { name: 'Bob', address: 'bob@example.com' } }
-      ],
-      ccRecipients: [
-        { emailAddress: { name: 'Carol', address: 'carol@example.com' } }
-      ],
+      toRecipients: [{ emailAddress: { name: 'Bob', address: 'bob@example.com' } }],
+      ccRecipients: [{ emailAddress: { name: 'Carol', address: 'carol@example.com' } }],
       sentDateTime: '2025-03-12T10:00:00Z',
       internetMessageId: '<o-msg-1@example.com>',
       categories: ['cat1'],
       body: {
         contentType: 'HTML',
-        content: '<p>Hello <b>world</b></p>'
+        content: '<p>Hello <b>world</b></p>',
       },
       internetMessageHeaders: [
         { name: 'In-Reply-To', value: '<prev@example.com>' },
-        { name: 'References', value: '<root@example.com> <prev@example.com>' }
-      ]
+        { name: 'References', value: '<root@example.com> <prev@example.com>' },
+      ],
     };
 
     const formatted = formatOutlookEmail(raw);
@@ -63,10 +59,10 @@ describe('formatOutlookEmail', () => {
           { name: 'Subject', value: 'Hello world' },
           { name: 'From', value: 'Alice <alice@example.com>' },
           { name: 'To', value: 'Bob <bob@example.com>' },
-          { name: 'Cc', value: 'Carol <carol@example.com>' }
+          { name: 'Cc', value: 'Carol <carol@example.com>' },
         ],
-        body: { data: '' }
-      }
+        body: { data: '' },
+      },
     };
 
     const gmailFormatted = {
@@ -76,7 +72,7 @@ describe('formatOutlookEmail', () => {
       from: 'Alice <alice@example.com>',
       to: 'Bob <bob@example.com>',
       cc: 'Carol <carol@example.com>',
-      internalDate: gmailLike.internalDate
+      internalDate: gmailLike.internalDate,
     };
 
     const outlookFormatted = formatOutlookEmail({
@@ -91,7 +87,7 @@ describe('formatOutlookEmail', () => {
       internetMessageId: '<o-1@example.com>',
       categories: [],
       body: { contentType: 'Text', content: 'Preview' },
-      internetMessageHeaders: []
+      internetMessageHeaders: [],
     });
 
     expect(outlookFormatted.subject).toBe(gmailFormatted.subject);
@@ -112,4 +108,3 @@ describe('buildOutlookQuery', () => {
     expect(filter).toMatch(/^receivedDateTime gt 2025-03-12T00:00:00\.000Z$/);
   });
 });
-

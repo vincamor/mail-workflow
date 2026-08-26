@@ -12,17 +12,15 @@
       <section>
         <h2>1. Données traitées</h2>
         <p>
-          Mail Workflow est un outil d’analyse locale de boîtes mail. Les emails
-          sont téléchargés depuis votre compte Gmail ou Outlook vers votre
-          navigateur, puis écrits dans des fichiers
-          <code>JSONL</code> sur le dossier que vous avez choisi sur votre
-          ordinateur.
+          Mail Workflow est un outil d’analyse locale de boîtes mail. Les emails sont téléchargés
+          depuis votre compte Gmail ou Outlook vers votre navigateur, puis écrits dans des fichiers
+          <code>JSONL</code> sur le dossier que vous avez choisi sur votre ordinateur.
         </p>
         <ul>
           <li>Aucun contenu d’email n’est stocké en base de données distante.</li>
           <li>
-            Les fichiers d’emails et de métadonnées sont créés uniquement dans le
-            dossier local que vous sélectionnez via l’API File System Access.
+            Les fichiers d’emails et de métadonnées sont créés uniquement dans le dossier local que
+            vous sélectionnez via l’API File System Access.
           </li>
         </ul>
       </section>
@@ -30,28 +28,27 @@
       <section>
         <h2>2. Données qui transitent par le serveur</h2>
         <p>
-          Le serveur Node.js/Express sert uniquement de passerelle OAuth et
-          d’accès aux APIs Gmail / Microsoft Graph.
+          Le serveur Node.js/Express sert uniquement de passerelle OAuth et d’accès aux APIs Gmail /
+          Microsoft Graph.
         </p>
         <ul>
           <li>Tokens OAuth (access_token, refresh_token) en session HTTP.</li>
           <li>
-            Informations techniques nécessaires aux appels d’API (IDs de
-            messages, filtres, paramètres de pagination).
+            Informations techniques nécessaires aux appels d’API (IDs de messages, filtres,
+            paramètres de pagination).
           </li>
         </ul>
         <p>
-          Ces informations sont stockées en session (en mémoire ou Redis selon la
-          configuration) et ne sont pas persistées dans une base de données
-          applicative.
+          Ces informations sont stockées en session (en mémoire ou Redis selon la configuration) et
+          ne sont pas persistées dans une base de données applicative.
         </p>
       </section>
 
       <section>
         <h2>3. Cookies et sessions</h2>
         <p>
-          L’application utilise un cookie de session HTTP pour maintenir votre
-          authentification pendant la durée de la session.
+          L’application utilise un cookie de session HTTP pour maintenir votre authentification
+          pendant la durée de la session.
         </p>
         <ul>
           <li>Cookie signé via <code>express-session</code>.</li>
@@ -62,18 +59,15 @@
       <section>
         <h2>4. Hébergement et journaux</h2>
         <p>
-          En production, l’application est prévue pour être hébergée sur une
-          plateforme type Railway/Render. Les journaux serveurs (logs) peuvent
-          contenir des informations techniques (erreurs d’API, compteurs,
-          métadonnées), mais jamais le contenu complet des emails.
+          En production, l’application est prévue pour être hébergée sur une plateforme type
+          Railway/Render. Les journaux serveurs (logs) peuvent contenir des informations techniques
+          (erreurs d’API, compteurs, métadonnées), mais jamais le contenu complet des emails.
         </p>
       </section>
 
       <section>
         <h2>5. Vos droits</h2>
-        <p>
-          Vous pouvez à tout moment :
-        </p>
+        <p>Vous pouvez à tout moment :</p>
         <ul>
           <li>Révoquer l’accès à votre compte depuis les consoles Google / Microsoft.</li>
           <li>Supprimer les fichiers JSONL et métadonnées créés sur votre disque.</li>
@@ -82,4 +76,3 @@
     </main>
   </body>
 </html>
-

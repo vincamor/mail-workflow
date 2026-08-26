@@ -66,7 +66,7 @@ export async function appendMessage(subjectKey, message) {
     tokensIn: 0,
     tokensOut: 0,
     msgCount: 0,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
   chat.messages.push(message);
   chat.msgCount = chat.messages.length;

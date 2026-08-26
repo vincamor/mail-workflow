@@ -15,25 +15,25 @@ on GitHub.
 Three independent workstreams were identified. They are tracked separately
 because each has its own risk profile and its own definition of done:
 
-| ID | Workstream | Status |
-|----|-----------|--------|
-| **A** | Repository foundation — structure, governance, docs, tooling, CI, demo mode | In execution |
-| **B** | Full migration to English — UI, comments, logs, AI prompts | Not started |
-| **C** | Attachment support — design only, not implemented | Research in progress |
+| ID    | Workstream                                                                  | Status               |
+| ----- | --------------------------------------------------------------------------- | -------------------- |
+| **A** | Repository foundation — structure, governance, docs, tooling, CI, demo mode | In execution         |
+| **B** | Full migration to English — UI, comments, logs, AI prompts                  | Not started          |
+| **C** | Attachment support — design only, not implemented                           | Research in progress |
 
 ---
 
 ## 2. Decisions taken
 
-| Question | Decision | Rationale |
-|----------|----------|-----------|
-| Repository name | `mail-workflow` | Matches README and CLAUDE.md. Also fixes `package.json` still being named `mailprojetjul` |
-| Visibility | **Private** until v1.0.0 | An English README over a French UI destroys the credibility the release is meant to build |
-| Documentation language | English only | Maximum reach |
-| UI language | English — **direct replacement, no i18n layer** | Simplest to maintain. Accepted cost: the French UI is retired, and reintroducing it later means paying for string extraction again |
-| Attachments | Full design spec, **not implemented** | The decision to build it comes after the spec, not before |
-| Install experience | Step-by-step OAuth guides + one-command bootstrap | The two real friction points |
-| Docker | **Explicit non-goal** | The app requires Chrome/Edge client-side and a writable local folder either way; containerising the Express server removes neither friction |
+| Question               | Decision                                          | Rationale                                                                                                                                   |
+| ---------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository name        | `mail-workflow`                                   | Matches README and CLAUDE.md. Also fixes `package.json` still being named `mailprojetjul`                                                   |
+| Visibility             | **Private** until v1.0.0                          | An English README over a French UI destroys the credibility the release is meant to build                                                   |
+| Documentation language | English only                                      | Maximum reach                                                                                                                               |
+| UI language            | English — **direct replacement, no i18n layer**   | Simplest to maintain. Accepted cost: the French UI is retired, and reintroducing it later means paying for string extraction again          |
+| Attachments            | Full design spec, **not implemented**             | The decision to build it comes after the spec, not before                                                                                   |
+| Install experience     | Step-by-step OAuth guides + one-command bootstrap | The two real friction points                                                                                                                |
+| Docker                 | **Explicit non-goal**                             | The app requires Chrome/Edge client-side and a writable local folder either way; containerising the Express server removes neither friction |
 
 ---
 
@@ -47,12 +47,12 @@ Three ordering constraints are non-negotiable:
    30-file translation and a reformat land in the same diff and nobody can
    review it.
 3. **The terminology glossary is written before the translation fan-out.**
-   Without it, ten agents render "sujet" as *subject*, *topic* and *thread* in
+   Without it, ten agents render "sujet" as _subject_, _topic_ and _thread_ in
    ten different files.
 
 And one dependency that is easy to miss: **README screenshots depend on
 workstream B.** Illustrating an English README with a French UI defeats the
-purpose. The README is therefore *structured* in wave 1 and *illustrated* in
+purpose. The README is therefore _structured_ in wave 1 and _illustrated_ in
 wave 4.
 
 ### Wave 0 — sequential (done)
@@ -61,6 +61,7 @@ wave 4.
 Baseline test suite verified green: **10 suites, 146 tests**.
 
 Two things fixed before the first commit:
+
 - Added `.gitattributes` — without it a Windows-authored repository ships CRLF
   and every Linux/macOS contributor sees whole files as modified.
 - Identified `src/public/js/package.json` (`{"type":"module"}`) as load-bearing:
@@ -69,15 +70,15 @@ Two things fixed before the first commit:
 
 ### Wave 1 — 7 parallel lanes, partitioned by exclusive file ownership
 
-| Lane | Deliverable | Model |
-|------|-------------|-------|
-| A1 | `package.json` fixes, `.editorconfig`, `.nvmrc`, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG, issue/PR templates | Sonnet 5 |
-| A2 | `docs/setup/google-cloud.md`, `docs/setup/azure-ad.md` | Sonnet 5 + live docs |
-| A3 | `scripts/setup.js`, `scripts/doctor.js` | Opus 5 |
-| A4 | `eslint.config.js`, `.prettierrc`, `.prettierignore` | Sonnet 5 |
-| A5 | CI hardening, CodeQL, Dependabot | Opus 5 |
-| A8 | Demo mode (see section 5) | Opus 5 |
-| C1 | `docs/design/attachments-research.md` | Sonnet 5 + Context7 |
+| Lane | Deliverable                                                                                                             | Model                |
+| ---- | ----------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| A1   | `package.json` fixes, `.editorconfig`, `.nvmrc`, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG, issue/PR templates | Sonnet 5             |
+| A2   | `docs/setup/google-cloud.md`, `docs/setup/azure-ad.md`                                                                  | Sonnet 5 + live docs |
+| A3   | `scripts/setup.js`, `scripts/doctor.js`                                                                                 | Opus 5               |
+| A4   | `eslint.config.js`, `.prettierrc`, `.prettierignore`                                                                    | Sonnet 5             |
+| A5   | CI hardening, CodeQL, Dependabot                                                                                        | Opus 5               |
+| A8   | Demo mode (see section 5)                                                                                               | Opus 5               |
+| C1   | `docs/design/attachments-research.md`                                                                                   | Sonnet 5 + Context7  |
 
 **Ownership rule:** each lane owns its files exclusively. The single contended
 file, `package.json`, belongs to A1 alone; A3, A4 and A8 declare what they need
@@ -123,7 +124,7 @@ compressible:
 - **Technical** — clone, install, run: reduced to two commands.
 - **OAuth provider** — creating a Google Cloud project or an Azure AD app:
   ~15 minutes, and **no script can automate it**. Reading mail uses Google
-  *restricted* scopes; nobody can create that project on the user's behalf, nor
+  _restricted_ scopes; nobody can create that project on the user's behalf, nor
   distribute their own client secret.
 
 A weak repository hides that cost behind an optimistic `npm install` and lets
@@ -203,15 +204,15 @@ leaving without seeing anything.
 
 ### Scope
 
-| Feature | In demo |
-|---------|---------|
-| Conversation tree, zoom, pan, timelines | Yes |
-| Subject list, filters, search, groups | Yes |
-| Email detail, rich HTML, quote toggle | Yes |
-| Themes | Yes |
-| Download, sync, delete, reply | **Hidden** — a dead button is worse than an absent one |
-| AI assistant | **Disabled** — `/api/ai/*` requires an authenticated session, so it would 401 |
-| IndexedDB, folder handles | **Never written** |
+| Feature                                 | In demo                                                                       |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
+| Conversation tree, zoom, pan, timelines | Yes                                                                           |
+| Subject list, filters, search, groups   | Yes                                                                           |
+| Email detail, rich HTML, quote toggle   | Yes                                                                           |
+| Themes                                  | Yes                                                                           |
+| Download, sync, delete, reply           | **Hidden** — a dead button is worse than an absent one                        |
+| AI assistant                            | **Disabled** — `/api/ai/*` requires an authenticated session, so it would 401 |
+| IndexedDB, folder handles               | **Never written**                                                             |
 
 ### The dataset is fabricated, not anonymised
 
@@ -305,20 +306,20 @@ approach-A decision to publish at v1.0.0. The first push is
 
 ### Delivered in wave 1
 
-| Commit | Lane |
-|--------|------|
-| `48bba75` | Initial import, `.gitattributes`, secret audit |
-| `f02a221` | Governance files, package metadata fixed |
-| `9609ef0` | ESLint flat config + Prettier |
-| `7e367b4`, `b2c2b38` | This spec |
-| `5150f49` | Google Cloud and Azure AD setup guides |
-| `c5d7ac3` | CI hardening, CodeQL, Dependabot |
-| `6412d8e` | Attachments API research |
-| `b50bcfe` | `npm run setup` and `npm run doctor` |
-| `accbce9` | Demo mode |
-| `0f31c5b`, `f376a76`, `b9854cf` | Three application bug fixes |
-| `2c5f84f`, `32e023e` | `@azure/msal-node` dropped, all advisories resolved |
-| `b303fe5` | Clean lint baseline, dead code removed |
+| Commit                          | Lane                                                |
+| ------------------------------- | --------------------------------------------------- |
+| `48bba75`                       | Initial import, `.gitattributes`, secret audit      |
+| `f02a221`                       | Governance files, package metadata fixed            |
+| `9609ef0`                       | ESLint flat config + Prettier                       |
+| `7e367b4`, `b2c2b38`            | This spec                                           |
+| `5150f49`                       | Google Cloud and Azure AD setup guides              |
+| `c5d7ac3`                       | CI hardening, CodeQL, Dependabot                    |
+| `6412d8e`                       | Attachments API research                            |
+| `b50bcfe`                       | `npm run setup` and `npm run doctor`                |
+| `accbce9`                       | Demo mode                                           |
+| `0f31c5b`, `f376a76`, `b9854cf` | Three application bug fixes                         |
+| `2c5f84f`, `32e023e`            | `@azure/msal-node` dropped, all advisories resolved |
+| `b303fe5`                       | Clean lint baseline, dead code removed              |
 
 Four latent bugs were found and fixed along the way; they are described in
 section 6, which also still lists the one **not** fixed (the front-end test that

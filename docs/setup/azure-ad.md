@@ -27,17 +27,19 @@ Total time: ~10 minutes.
 
 The registration form offers four options:
 
-| Option | Meaning |
-|---|---|
-| **Single tenant only – \<your tenant\>** | Only users (or guests) inside your own Entra tenant can sign in. |
-| **Multiple Entra ID tenants** | Any work/school account from any Entra tenant can sign in. |
-| **Any Entra ID Tenant + Personal Microsoft accounts** | Any work/school account *and* personal accounts (Outlook.com, Hotmail, Xbox, Skype) can sign in. |
-| **Personal accounts only** | Only Outlook.com/Hotmail/personal accounts. |
+| Option                                                | Meaning                                                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Single tenant only – \<your tenant\>**              | Only users (or guests) inside your own Entra tenant can sign in.                                 |
+| **Multiple Entra ID tenants**                         | Any work/school account from any Entra tenant can sign in.                                       |
+| **Any Entra ID Tenant + Personal Microsoft accounts** | Any work/school account _and_ personal accounts (Outlook.com, Hotmail, Xbox, Skype) can sign in. |
+| **Personal accounts only**                            | Only Outlook.com/Hotmail/personal accounts.                                                      |
 
 `.env.example` ships with:
+
 ```
 OUTLOOK_TENANT_ID=common
 ```
+
 `common` is Microsoft's shared endpoint that accepts **both** work/school and
 personal accounts, which is why **Any Entra ID Tenant + Personal Microsoft
 accounts** is the option that matches it — pick that one unless you
@@ -95,15 +97,15 @@ production) — no need for a second app registration.
 Read directly from `src/services/outlookService.js` (`initAuth` and the
 token-exchange call in `handleCallback` request the identical scope list):
 
-| Scope | Why it's needed |
-|---|---|
-| `openid` | Standard OpenID Connect sign-in. |
-| `profile` | Basic profile info alongside the identity token. |
+| Scope            | Why it's needed                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openid`         | Standard OpenID Connect sign-in.                                                                                                                          |
+| `profile`        | Basic profile info alongside the identity token.                                                                                                          |
 | `offline_access` | Issues a refresh token, so the app can renew access without asking you to sign in again every hour (`getValidAccessToken` / `refreshOutlookAccessToken`). |
-| `User.Read` | Retrieve your account's email address after sign-in (`GET /v1.0/me`), used as your local folder name and session identifier. |
-| `Mail.Read` | Read messages in Inbox and Sent Items to download and analyze them. |
-| `Mail.ReadWrite` | Required alongside `Mail.Read` by Microsoft Graph for some mailbox operations the app performs (folder/message access beyond plain read). |
-| `Mail.Send` | Send replies from the app's "Répondre" feature (`POST /outlook/reply`, via `/me/messages/{id}/reply`). |
+| `User.Read`      | Retrieve your account's email address after sign-in (`GET /v1.0/me`), used as your local folder name and session identifier.                              |
+| `Mail.Read`      | Read messages in Inbox and Sent Items to download and analyze them.                                                                                       |
+| `Mail.ReadWrite` | Required alongside `Mail.Read` by Microsoft Graph for some mailbox operations the app performs (folder/message access beyond plain read).                 |
+| `Mail.Send`      | Send replies from the app's "Répondre" feature (`POST /outlook/reply`, via `/me/messages/{id}/reply`).                                                    |
 
 These are **delegated permissions** (the app acts as the signed-in user, not
 as itself) — that's the correct type; you don't need to add anything under
@@ -124,12 +126,15 @@ Combine with the secret **Value** from step 4:
 ```
 OUTLOOK_CLIENT_ID=<Application (client) ID>
 ```
+
 ```
 OUTLOOK_CLIENT_SECRET=<the secret Value, copied at creation time>
 ```
+
 ```
 OUTLOOK_TENANT_ID=common
 ```
+
 ```
 OUTLOOK_REDIRECT_URI=http://localhost:3000/outlook/callback
 ```
@@ -141,16 +146,20 @@ Restart the server (`npm start`) after editing `.env`.
 ## Troubleshooting
 
 ### `AADSTS50011` — reply URL / redirect URI mismatch
+
 The redirect URI sent by the app doesn't exactly match what's registered
 (case-sensitive, trailing slash matters).
 
 **Fix**: under **Authentication → Web → Redirect URIs**, make sure
+
 ```
 http://localhost:3000/outlook/callback
 ```
+
 is present character-for-character, and matches `OUTLOOK_REDIRECT_URI` in `.env`.
 
 ### `AADSTS7000215` — invalid client secret
+
 Either the secret's **expiry date has passed**, the wrong value was copied
 (the **Secret ID** instead of the **Value**), or there's stray whitespace.
 
@@ -158,6 +167,7 @@ Either the secret's **expiry date has passed**, the wrong value was copied
 copy the **Value** column immediately, and update `OUTLOOK_CLIENT_SECRET`.
 
 ### `AADSTS650057` — invalid resource / permission not found in requested permissions
+
 The app requested a scope that isn't present in its own **API permissions**
 list (a mismatch between what the code asks for and what the app
 registration declares).
@@ -168,6 +178,7 @@ registration declares).
 `Mail.ReadWrite`, `Mail.Send`.
 
 ### Consent-required errors (e.g. "Need admin approval", `AADSTS65001`)
+
 A work/school (Entra) tenant can have a policy that disables users from
 consenting to app permissions themselves — common in managed organizations.
 
@@ -185,8 +196,8 @@ test against your own tenant where you are the admin.
 - **Work/school account** = an identity inside a Microsoft Entra tenant
   (e.g. `you@yourcompany.com` on Microsoft 365).
 
-With **Supported account types** set to *Any Entra ID Tenant + Personal
-Microsoft accounts* and `OUTLOOK_TENANT_ID=common` (the shipped default),
+With **Supported account types** set to _Any Entra ID Tenant + Personal
+Microsoft accounts_ and `OUTLOOK_TENANT_ID=common` (the shipped default),
 both kinds of accounts can sign in. If you instead register the app as
 **Single tenant only**, personal accounts and accounts from other
 organizations will be rejected outright, regardless of what

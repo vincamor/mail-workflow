@@ -10,21 +10,21 @@ const oauthLimiter = rateLimit({
   max: 5,
   message: { error: 'Trop de requêtes OAuth. Réessayez dans une minute.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 const downloadLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 3,
   message: { error: 'Trop de téléchargements. Réessayez dans une minute.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 const pollingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   message: { error: 'Trop de requêtes de polling.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Initie OAuth Gmail
@@ -44,4 +44,4 @@ router.post('/download-chunks', downloadLimiter, requireAuth, gmailService.downl
 // Envoie une réponse à un email dans un thread existant
 router.post('/reply', requireAuth, gmailService.sendReply);
 
-module.exports = router; 
+module.exports = router;

@@ -64,11 +64,11 @@ without Google's verification.
 The real limits of Testing mode:
 
 - **Up to ~100 test users** can be listed — irrelevant for a single self-hosted user, but relevant if you're setting this up for a small team.
-- **The "Google hasn't verified this app" warning screen** appears every time a test user signs in. This is expected and safe to click through *because you created the app yourself* — click **Advanced**, then **Go to Mail Workflow (unsafe)** to continue.
+- **The "Google hasn't verified this app" warning screen** appears every time a test user signs in. This is expected and safe to click through _because you created the app yourself_ — click **Advanced**, then **Go to Mail Workflow (unsafe)** to continue.
 - **Refresh tokens issued to test users expire after 7 days** ([confirmed in Google's current documentation](https://support.google.com/cloud/answer/15549945)). In practice this rarely matters here: the app's own session cookie already expires after **2 hours** (`maxAge` in `src/app.js`), so you re-run the Google sign-in flow well before the 7-day mark in normal use. If you leave the app connected and idle for more than a week, the next API call will fail and you'll simply need to reconnect via the "Connect Gmail" button — no data is lost, since emails already downloaded live in your local folder, not in the token.
 
 > **Trap**: don't confuse "Testing" (fine forever for personal use) with the
-> idea that you *must* eventually verify. You only need verification if you
+> idea that you _must_ eventually verify. You only need verification if you
 > want to hand this app to the public with more than ~100 users, or remove
 > the warning screen.
 
@@ -97,13 +97,13 @@ You now have a **Client ID** and a **Client secret**.
 
 Mail Workflow requests these scopes (read directly from `src/services/gmailService.js`, `initAuth`):
 
-| Scope | Why it's needed |
-|---|---|
+| Scope                                            | Why it's needed                                                                                     |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | `https://www.googleapis.com/auth/gmail.readonly` | Read your inbox/sent/archived messages so they can be downloaded to your local folder and analyzed. |
-| `https://www.googleapis.com/auth/gmail.send` | Send replies from the app's "Répondre" / "Répondre à tous" feature (`POST /gmail/reply`). |
-| `openid` | Standard OpenID Connect sign-in, required to retrieve your identity. |
-| `email` | Retrieve your email address, used as your local folder name and session identifier (`userId`). |
-| `profile` | Basic profile info returned alongside `email` by Google's userinfo endpoint. |
+| `https://www.googleapis.com/auth/gmail.send`     | Send replies from the app's "Répondre" / "Répondre à tous" feature (`POST /gmail/reply`).           |
+| `openid`                                         | Standard OpenID Connect sign-in, required to retrieve your identity.                                |
+| `email`                                          | Retrieve your email address, used as your local folder name and session identifier (`userId`).      |
+| `profile`                                        | Basic profile info returned alongside `email` by Google's userinfo endpoint.                        |
 
 None of these are declared as a fixed scope list on the consent screen in
 Testing mode — they are requested live by `oauth2Client.generateAuthUrl()`
@@ -117,9 +117,11 @@ Open `.env` (copied from `.env.example`) and fill in:
 ```
 GMAIL_CLIENT_ID=<your client ID>.apps.googleusercontent.com
 ```
+
 ```
 GMAIL_CLIENT_SECRET=<your client secret>
 ```
+
 ```
 GMAIL_REDIRECT_URI=http://localhost:3000/gmail/callback
 ```
@@ -131,6 +133,7 @@ Restart the server (`npm start`) after editing `.env`.
 ## Troubleshooting
 
 ### `redirect_uri_mismatch`
+
 The redirect URI your app sent doesn't exactly match one registered on the
 OAuth client (case-sensitive, and `http` vs `https` / trailing slash matter).
 
@@ -139,6 +142,7 @@ the **Authorized redirect URIs** entry character-by-character against
 `GMAIL_REDIRECT_URI` in `.env`. They must be identical.
 
 ### `invalid_client`
+
 The client ID or client secret is wrong, has extra whitespace, was rotated,
 or belongs to a different Google Cloud project than the one you enabled the
 Gmail API in.
@@ -148,6 +152,7 @@ in the same project where you enabled the Gmail API. If you lost the secret,
 rotate it (a new one is generated) and update `.env`.
 
 ### `access_denied`
+
 Either you clicked "Cancel" on the consent screen, or you signed in with a
 Google account that **isn't listed as a test user** while the app is in
 Testing mode.
@@ -156,6 +161,7 @@ Testing mode.
 try connecting again.
 
 ### "App is blocked" / "Google hasn't verified this app"
+
 This is the expected unverified-app warning for a Testing-mode app — it is
 not an error. It only lets **test users** through.
 
@@ -164,6 +170,7 @@ listed as a test user, they'll get `access_denied` instead of this screen —
 add them as a test user first.
 
 ### `Error 403: org_internal`
+
 The OAuth consent screen's **User type** (Audience) was set to **Internal**,
 which restricts sign-in to accounts inside a specific Google Workspace
 organization. A personal `@gmail.com` account (or any account outside that

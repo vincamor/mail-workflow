@@ -102,7 +102,10 @@
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   cursor: pointer;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   flex-shrink: 0;
   padding: 0;
 }
@@ -165,18 +168,32 @@
      jamais de facon fiable, donc l'etoile serait sinon invisible ET inatteignable. */
   opacity: 1;
   color: var(--text-muted);
-  transition: opacity var(--transition-fast), color var(--transition-fast), text-shadow var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast),
+    text-shadow var(--transition-fast);
 }
 
-.star-btn:focus { outline: none; box-shadow: none; }
-.star-btn:hover { color: var(--accent); }
+.star-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+.star-btn:hover {
+  color: var(--accent);
+}
 
 /* Uniquement sur les dispositifs a hover fiable (souris) : etoile cachee au
    repos, revelee au survol du sujet/groupe parent. */
 @media (hover: hover) {
-  .star-btn { opacity: 0; }
-  .subject-drawer:hover .star-btn { opacity: 1; }
-  .group-header:hover .star-btn { opacity: 1; }
+  .star-btn {
+    opacity: 0;
+  }
+  .subject-drawer:hover .star-btn {
+    opacity: 1;
+  }
+  .group-header:hover .star-btn {
+    opacity: 1;
+  }
 }
 
 .star-btn.is-favorite {

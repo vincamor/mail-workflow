@@ -22,13 +22,19 @@
 }
 
 .modal.show,
-#folderModal[style*="flex"] {
+#folderModal[style*='flex'] {
   display: flex;
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; backdrop-filter: blur(0); }
-  to { opacity: 1; backdrop-filter: blur(12px); }
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
 }
 
 /* === CONTENT === */
@@ -62,8 +68,14 @@
 }
 
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: scale(0.95) translateY(-12px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* === HEADER === */
@@ -150,7 +162,7 @@
   display: none;
 }
 
-#folderModal p[style*="color: #666"] {
+#folderModal p[style*='color: #666'] {
   background: var(--primary-light);
   border: 1px solid rgba(242, 160, 123, 0.15);
   border-radius: var(--radius-lg);
@@ -160,13 +172,19 @@
   font-size: var(--text-sm) !important;
 }
 
-#folderModal p[style*="color: #666"] strong {
+#folderModal p[style*='color: #666'] strong {
   color: var(--primary);
 }
 
 /* === VARIANTS === */
-.modal-sm .modal-content { min-width: 300px; padding: var(--space-6); }
-.modal-lg .modal-content { min-width: 600px; max-width: 95vw; }
+.modal-sm .modal-content {
+  min-width: 300px;
+  padding: var(--space-6);
+}
+.modal-lg .modal-content {
+  min-width: 600px;
+  max-width: 95vw;
+}
 
 .modal-fullscreen .modal-content {
   width: 95vw;
@@ -178,7 +196,8 @@
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .modal-content, #folderModal > div {
+  .modal-content,
+  #folderModal > div {
     padding: var(--space-6);
     min-width: 280px;
     margin: var(--space-4);
@@ -187,7 +206,9 @@
   .modal-footer {
     flex-direction: column;
   }
-  .modal-footer button { width: 100%; }
+  .modal-footer button {
+    width: 100%;
+  }
 }
 
 /* === CLOSE ANIMATION === */
@@ -200,17 +221,29 @@
 }
 
 @keyframes modalFadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes modalSlideOut {
-  from { opacity: 1; transform: scale(1) translateY(0); }
-  to { opacity: 0; transform: scale(0.96) translateY(8px); }
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
 }
 
 /* === ACCESSIBILITY === */
-.modal[aria-hidden="true"] { display: none; }
+.modal[aria-hidden='true'] {
+  display: none;
+}
 
 .modal-content:focus {
   outline: 2px solid var(--primary);

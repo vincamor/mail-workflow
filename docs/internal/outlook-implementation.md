@@ -6,16 +6,16 @@ Outlook behaves subtly differently from Gmail in one specific place.
 Outlook is feature-complete: it behaves like Gmail in the interface — same
 pipeline, same local files, same visualisation.
 
-| Capability | File(s) |
-|---|---|
-| OAuth + session tokens + automatic refresh | `outlookService.js`, `routes/outlook.js` |
-| `formatOutlookEmail()` — the unified JSONL shape | `outlookService.js` |
-| `GET /outlook/emails` — ids + 20 display emails | `routes/outlook.js`, `outlookService.js` |
+| Capability                                              | File(s)                                  |
+| ------------------------------------------------------- | ---------------------------------------- |
+| OAuth + session tokens + automatic refresh              | `outlookService.js`, `routes/outlook.js` |
+| `formatOutlookEmail()` — the unified JSONL shape        | `outlookService.js`                      |
+| `GET /outlook/emails` — ids + 20 display emails         | `routes/outlook.js`, `outlookService.js` |
 | `GET /outlook/email/:messageId` — single-message detail | `routes/outlook.js`, `outlookService.js` |
-| `POST /outlook/download-chunks` — chunked SSE download | `routes/outlook.js`, `outlookService.js` |
-| `GET /outlook/count` — badge polling | `routes/outlook.js`, `outlookService.js` |
-| `POST /outlook/reply` — reply through Graph | `routes/outlook.js`, `outlookService.js` |
-| Dynamic `/${provider}/…` URLs on the client | `emails.js`, `reply.js` |
+| `POST /outlook/download-chunks` — chunked SSE download  | `routes/outlook.js`, `outlookService.js` |
+| `GET /outlook/count` — badge polling                    | `routes/outlook.js`, `outlookService.js` |
+| `POST /outlook/reply` — reply through Graph             | `routes/outlook.js`, `outlookService.js` |
+| Dynamic `/${provider}/…` URLs on the client             | `emails.js`, `reply.js`                  |
 
 ---
 
@@ -39,15 +39,15 @@ most important rule in this document.
 
 ## Routes
 
-| Method | Route | Handler | Description |
-|---|---|---|---|
-| `GET` | `/outlook` | `initAuth` | Starts Microsoft OAuth |
-| `GET` | `/outlook/callback` | `handleCallback` | OAuth callback → stores tokens in `req.session.tokens` |
-| `GET` | `/outlook/emails` | `getEmails` | Ids + 20 display emails. Params: `?filters=`, `?afterDate=` |
-| `GET` | `/outlook/email/:messageId` | `getEmailDetail` | Full detail of one message, in the unified JSONL shape |
-| `GET` | `/outlook/count` | `getEmailCount` | New-email count for polling. Params: `?filters=`, `?afterDate=` |
-| `POST` | `/outlook/download-chunks` | `downloadEmailsInChunks` | SSE download in batches of 500 |
-| `POST` | `/outlook/reply` | `sendReply` | Replies via `POST /me/messages/{id}/reply` |
+| Method | Route                       | Handler                  | Description                                                     |
+| ------ | --------------------------- | ------------------------ | --------------------------------------------------------------- |
+| `GET`  | `/outlook`                  | `initAuth`               | Starts Microsoft OAuth                                          |
+| `GET`  | `/outlook/callback`         | `handleCallback`         | OAuth callback → stores tokens in `req.session.tokens`          |
+| `GET`  | `/outlook/emails`           | `getEmails`              | Ids + 20 display emails. Params: `?filters=`, `?afterDate=`     |
+| `GET`  | `/outlook/email/:messageId` | `getEmailDetail`         | Full detail of one message, in the unified JSONL shape          |
+| `GET`  | `/outlook/count`            | `getEmailCount`          | New-email count for polling. Params: `?filters=`, `?afterDate=` |
+| `POST` | `/outlook/download-chunks`  | `downloadEmailsInChunks` | SSE download in batches of 500                                  |
+| `POST` | `/outlook/reply`            | `sendReply`              | Replies via `POST /me/messages/{id}/reply`                      |
 
 Everything past the OAuth entry points requires `requireAuth`, and the same rate
 limiters apply as for Gmail: OAuth 5/min, download 3/min, count 30/min.
@@ -80,22 +80,22 @@ Turns a Microsoft Graph message into the JSONL record. This is the central
 function — the whole client pipeline depends on its output matching
 `formatGmailEmail()`.
 
-| JSONL field | Graph source | Notes |
-|---|---|---|
-| `id` | `message.id` | Outlook internal id (`AAMkADAwATM0…`) |
-| `threadId` | `message.conversationId` | |
-| `snippet` | `message.bodyPreview` | |
-| `subject` | `message.subject` | |
-| `internalDate` | `sentDateTime`, falling back to `receivedDateTime` | `new Date(…).getTime().toString()` — **milliseconds in a string** |
-| `date` | the same source string, unconverted | ISO 8601 here, where Gmail gives RFC 2822 |
-| `messageId` | `message.internetMessageId`, falling back to the `Message-ID` header | RFC Message-ID (`<…@…>`) |
-| `inReplyTo` | `internetMessageHeaders["In-Reply-To"]` | Empty when the headers are unavailable |
-| `references` | `internetMessageHeaders["References"]` | Same |
-| `from` | `message.from.emailAddress` | Formatted `"Name <email>"` |
-| `to` / `cc` | `toRecipients[]` / `ccRecipients[]` | Arrays joined with `", "` |
-| `hasAttachments` | `message.hasAttachments` | |
-| `bodyText` | `message.body.content` | HTML stripped when `contentType == "html"`, then quote-stripped by `stripQuotedText()` |
-| `bodyHtml` | `message.body.content` | Only when `contentType == "html"`. Split into the HTML companion file at write time |
+| JSONL field      | Graph source                                                         | Notes                                                                                  |
+| ---------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `id`             | `message.id`                                                         | Outlook internal id (`AAMkADAwATM0…`)                                                  |
+| `threadId`       | `message.conversationId`                                             |                                                                                        |
+| `snippet`        | `message.bodyPreview`                                                |                                                                                        |
+| `subject`        | `message.subject`                                                    |                                                                                        |
+| `internalDate`   | `sentDateTime`, falling back to `receivedDateTime`                   | `new Date(…).getTime().toString()` — **milliseconds in a string**                      |
+| `date`           | the same source string, unconverted                                  | ISO 8601 here, where Gmail gives RFC 2822                                              |
+| `messageId`      | `message.internetMessageId`, falling back to the `Message-ID` header | RFC Message-ID (`<…@…>`)                                                               |
+| `inReplyTo`      | `internetMessageHeaders["In-Reply-To"]`                              | Empty when the headers are unavailable                                                 |
+| `references`     | `internetMessageHeaders["References"]`                               | Same                                                                                   |
+| `from`           | `message.from.emailAddress`                                          | Formatted `"Name <email>"`                                                             |
+| `to` / `cc`      | `toRecipients[]` / `ccRecipients[]`                                  | Arrays joined with `", "`                                                              |
+| `hasAttachments` | `message.hasAttachments`                                             |                                                                                        |
+| `bodyText`       | `message.body.content`                                               | HTML stripped when `contentType == "html"`, then quote-stripped by `stripQuotedText()` |
+| `bodyHtml`       | `message.body.content`                                               | Only when `contentType == "html"`. Split into the HTML companion file at write time    |
 
 > **Watch out:** `internalDate` is a millisecond timestamp **as a string**.
 > Always `parseInt()` before comparing. It is the reference for incremental sync.
@@ -147,20 +147,20 @@ Graph answers **202 Accepted with no body** on success, unlike Gmail's
 
 ## Outlook vs Gmail
 
-| Aspect | Gmail | Outlook |
-|---|---|---|
-| Mail API | Google APIs (`googleapis`) | Microsoft Graph, via plain `fetch` |
-| Auth | OAuth2 through `google.auth.OAuth2` | OAuth2 by direct code exchange with `fetch` |
-| Token lifetime | Long-lived, with a refresh token | Access token expires after 1 h; refreshed automatically |
-| Pagination | `nextPageToken` in the response | `@odata.nextLink` in the response |
-| Filtering | Gmail query string (`after:2025/01/01 -from:noreply`) | OData filter (`receivedDateTime gt 2025-01-01T00:00:00Z`) |
-| Folders queried | INBOX + SENT + ALL MAIL | `inbox` + `sentitems` |
-| Threading headers | Always present | `internetMessageHeaders` sometimes missing — see below |
-| Sending a reply | RFC 2822 MIME + base64url | `POST /me/messages/{id}/reply` with JSON |
-| Success response | `{ success: true, messageId }` | HTTP 202 Accepted, no body |
-| Internal id | `email.id` = Gmail id (`17abc…`) | `email.id` = Outlook id (`AAMkADAwATM0…`) |
-| RFC Message-ID | `email.messageId` = `<…@gmail.com>` | `email.messageId` = `<…@outlook.com>` when headers are available |
-| Single-message detail route | none — detail comes from the local JSONL | `GET /outlook/email/:messageId` |
+| Aspect                      | Gmail                                                 | Outlook                                                          |
+| --------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
+| Mail API                    | Google APIs (`googleapis`)                            | Microsoft Graph, via plain `fetch`                               |
+| Auth                        | OAuth2 through `google.auth.OAuth2`                   | OAuth2 by direct code exchange with `fetch`                      |
+| Token lifetime              | Long-lived, with a refresh token                      | Access token expires after 1 h; refreshed automatically          |
+| Pagination                  | `nextPageToken` in the response                       | `@odata.nextLink` in the response                                |
+| Filtering                   | Gmail query string (`after:2025/01/01 -from:noreply`) | OData filter (`receivedDateTime gt 2025-01-01T00:00:00Z`)        |
+| Folders queried             | INBOX + SENT + ALL MAIL                               | `inbox` + `sentitems`                                            |
+| Threading headers           | Always present                                        | `internetMessageHeaders` sometimes missing — see below           |
+| Sending a reply             | RFC 2822 MIME + base64url                             | `POST /me/messages/{id}/reply` with JSON                         |
+| Success response            | `{ success: true, messageId }`                        | HTTP 202 Accepted, no body                                       |
+| Internal id                 | `email.id` = Gmail id (`17abc…`)                      | `email.id` = Outlook id (`AAMkADAwATM0…`)                        |
+| RFC Message-ID              | `email.messageId` = `<…@gmail.com>`                   | `email.messageId` = `<…@outlook.com>` when headers are available |
+| Single-message detail route | none — detail comes from the local JSONL              | `GET /outlook/email/:messageId`                                  |
 
 ---
 

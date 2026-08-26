@@ -28,7 +28,7 @@ function createEmptyGroupsData() {
     groups: [],
     subjectMemberships: [],
     favoriteSubjects: [],
-    favoriteGroups: []
+    favoriteGroups: [],
   };
 }
 
@@ -49,7 +49,7 @@ export async function getUserFolderHandle(userId) {
     // Résolution tolérante (racine / EmailWorkflow / dossier compte), create si absent.
     return await resolveUserFolderHandle(rootHandle, userId, { create: true });
   } catch (e) {
-    console.error('❌ [groups] Impossible d\'obtenir le userFolderHandle:', e);
+    console.error("❌ [groups] Impossible d'obtenir le userFolderHandle:", e);
     return null;
   }
 }
@@ -107,13 +107,13 @@ export async function writeGroups(userFolderHandle, provider, data) {
  */
 export function createGroup(data, name, parentId = null) {
   if (parentId !== null) {
-    const parent = data.groups.find(g => g.id === parentId);
+    const parent = data.groups.find((g) => g.id === parentId);
     if (!parent) throw new Error(`Groupe parent "${parentId}" introuvable.`);
     if (parent.parentId !== null) throw new Error('Profondeur maximale (2 niveaux) atteinte.');
   }
 
   const newId = generateGroupId();
-  const siblings = data.groups.filter(g => g.parentId === parentId);
+  const siblings = data.groups.filter((g) => g.parentId === parentId);
   const maxOrder = siblings.reduce((max, g) => Math.max(max, g.order ?? 0), -1);
 
   data.groups.push({
@@ -121,7 +121,7 @@ export function createGroup(data, name, parentId = null) {
     name: name.trim(),
     parentId: parentId,
     order: maxOrder + 1,
-    color: null
+    color: null,
   });
 
   return newId;
@@ -134,7 +134,7 @@ export function createGroup(data, name, parentId = null) {
  * @param {string} newName
  */
 export function renameGroup(data, groupId, newName) {
-  const group = data.groups.find(g => g.id === groupId);
+  const group = data.groups.find((g) => g.id === groupId);
   if (group) {
     group.name = newName.trim();
   }
@@ -148,19 +148,19 @@ export function renameGroup(data, groupId, newName) {
 export function deleteGroup(data, groupId) {
   // Collecter les IDs à supprimer : le groupe lui-même + ses enfants directs
   const idsToDelete = new Set([groupId]);
-  data.groups.forEach(g => {
+  data.groups.forEach((g) => {
     if (g.parentId === groupId) idsToDelete.add(g.id);
   });
 
-  data.groups = data.groups.filter(g => !idsToDelete.has(g.id));
+  data.groups = data.groups.filter((g) => !idsToDelete.has(g.id));
 
   // Nettoyer les memberships
   data.subjectMemberships = data.subjectMemberships
-    .map(m => ({
+    .map((m) => ({
       ...m,
-      groupIds: m.groupIds.filter(id => !idsToDelete.has(id))
+      groupIds: m.groupIds.filter((id) => !idsToDelete.has(id)),
     }))
-    .filter(m => m.groupIds.length > 0);
+    .filter((m) => m.groupIds.length > 0);
 }
 
 // ─── Opérations sur les memberships ──────────────────────────────────────────
@@ -172,7 +172,7 @@ export function deleteGroup(data, groupId) {
  * @param {string} groupId
  */
 export function addSubjectToGroup(data, subjectKey, groupId) {
-  const existing = data.subjectMemberships.find(m => m.subjectKey === subjectKey);
+  const existing = data.subjectMemberships.find((m) => m.subjectKey === subjectKey);
   if (existing) {
     if (!existing.groupIds.includes(groupId)) {
       existing.groupIds.push(groupId);
@@ -189,13 +189,13 @@ export function addSubjectToGroup(data, subjectKey, groupId) {
  * @param {string} groupId
  */
 export function removeSubjectFromGroup(data, subjectKey, groupId) {
-  const existing = data.subjectMemberships.find(m => m.subjectKey === subjectKey);
+  const existing = data.subjectMemberships.find((m) => m.subjectKey === subjectKey);
   if (!existing) return;
 
-  existing.groupIds = existing.groupIds.filter(id => id !== groupId);
+  existing.groupIds = existing.groupIds.filter((id) => id !== groupId);
 
   if (existing.groupIds.length === 0) {
-    data.subjectMemberships = data.subjectMemberships.filter(m => m.subjectKey !== subjectKey);
+    data.subjectMemberships = data.subjectMemberships.filter((m) => m.subjectKey !== subjectKey);
   }
 }
 
@@ -208,7 +208,7 @@ export function removeSubjectFromGroup(data, subjectKey, groupId) {
  * @returns {string[]}
  */
 export function getGroupsForSubject(data, subjectKey) {
-  const membership = data.subjectMemberships.find(m => m.subjectKey === subjectKey);
+  const membership = data.subjectMemberships.find((m) => m.subjectKey === subjectKey);
   return membership ? [...membership.groupIds] : [];
 }
 
@@ -220,8 +220,8 @@ export function getGroupsForSubject(data, subjectKey) {
  */
 export function getSubjectsInGroup(data, groupId) {
   return data.subjectMemberships
-    .filter(m => m.groupIds.includes(groupId))
-    .map(m => m.subjectKey);
+    .filter((m) => m.groupIds.includes(groupId))
+    .map((m) => m.subjectKey);
 }
 
 /**
@@ -231,7 +231,7 @@ export function getSubjectsInGroup(data, groupId) {
  * @param {string|null} color - Code couleur CSS (ex: "#ef4444") ou null
  */
 export function setGroupColor(data, groupId, color) {
-  const group = data.groups.find(g => g.id === groupId);
+  const group = data.groups.find((g) => g.id === groupId);
   if (group) group.color = color || null;
 }
 
@@ -243,7 +243,7 @@ export function setGroupColor(data, groupId, color) {
  */
 export function getChildGroups(data, parentId = null) {
   return data.groups
-    .filter(g => g.parentId === parentId)
+    .filter((g) => g.parentId === parentId)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
@@ -254,7 +254,7 @@ export function getChildGroups(data, parentId = null) {
  * @returns {boolean}
  */
 export function isSubjectGrouped(data, subjectKey) {
-  return data.subjectMemberships.some(m => m.subjectKey === subjectKey && m.groupIds.length > 0);
+  return data.subjectMemberships.some((m) => m.subjectKey === subjectKey && m.groupIds.length > 0);
 }
 
 // ─── Favoris ──────────────────────────────────────────────────────────────────

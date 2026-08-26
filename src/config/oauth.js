@@ -10,4 +10,4 @@ module.exports = {
     tenantId: process.env.OUTLOOK_TENANT_ID,
     redirectUri: process.env.OUTLOOK_REDIRECT_URI,
   },
-}; 
+};

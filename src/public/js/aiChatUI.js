@@ -97,7 +97,7 @@ function injectPanelIfMissing() {
 
   // Hauteur restauree depuis localStorage
   const saved = parseInt(localStorage.getItem(STORAGE_KEY) || '', 10);
-  const initial = (Number.isFinite(saved) && saved >= MIN_HEIGHT_PX) ? saved : DEFAULT_HEIGHT_PX;
+  const initial = Number.isFinite(saved) && saved >= MIN_HEIGHT_PX ? saved : DEFAULT_HEIGHT_PX;
   panel.style.height = `${initial}px`;
 }
 
@@ -220,7 +220,9 @@ function renderMessages(messages) {
       icon.className = 'icon icon-attachment icon-inline';
       icon.setAttribute('aria-hidden', 'true');
       bubble.appendChild(icon);
-      bubble.appendChild(document.createTextNode(`Contexte du thread injecte (${mailCount} mails)`));
+      bubble.appendChild(
+        document.createTextNode(`Contexte du thread injecte (${mailCount} mails)`)
+      );
     } else if (msg.role === 'user') {
       bubble.classList.add('ai-chat-message-user');
       bubble.textContent = msg.content;
@@ -232,14 +234,16 @@ function renderMessages(messages) {
       const actions = document.createElement('div');
       actions.className = 'ai-chat-message-actions';
       const draftBtn = document.createElement('button');
-      draftBtn.innerHTML = '<span class="icon icon-edit icon-sm" aria-hidden="true"></span>Utiliser comme brouillon';
+      draftBtn.innerHTML =
+        '<span class="icon icon-edit icon-sm" aria-hidden="true"></span>Utiliser comme brouillon';
       draftBtn.addEventListener('click', () => {
         if (useDraftCallback) useDraftCallback(msg.content);
       });
       actions.appendChild(draftBtn);
       if (isLast) {
         const regenBtn = document.createElement('button');
-        regenBtn.innerHTML = '<span class="icon icon-refresh icon-sm" aria-hidden="true"></span>Regenerer';
+        regenBtn.innerHTML =
+          '<span class="icon icon-refresh icon-sm" aria-hidden="true"></span>Regenerer';
         regenBtn.addEventListener('click', handleRegenerate);
         actions.appendChild(regenBtn);
       }
@@ -295,7 +299,7 @@ async function handleSend() {
       toastError(`Chat IA : ${err}`);
       isSending = false;
       setInputsDisabled(false);
-    }
+    },
   });
 }
 
@@ -332,7 +336,7 @@ async function handleRegenerate() {
       toastError(`Regeneration : ${err}`);
       isSending = false;
       setInputsDisabled(false);
-    }
+    },
   });
 }
 
@@ -340,9 +344,9 @@ async function handleNewConv() {
   if (isSending || !currentSubjectKey) return;
   const ok = await showConfirmModal({
     title: 'Nouvelle conversation',
-    message: 'Effacer l\'historique du chat pour ce sujet ?',
+    message: "Effacer l'historique du chat pour ce sujet ?",
     type: 'warning',
-    confirmText: 'Effacer'
+    confirmText: 'Effacer',
   });
   if (!ok) return;
   await resetConversation(currentSubjectKey);

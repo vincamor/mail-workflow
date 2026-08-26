@@ -4,9 +4,9 @@
 syncing, or anything that reads and writes the local JSONL. It traces the call
 chains end to end.
 
-The *format* of what lands on disk is documented separately, for users as well
+The _format_ of what lands on disk is documented separately, for users as well
 as contributors: [guides/data-format.md](../guides/data-format.md). This
-document is about the *mechanics* — handles, permissions, streams, and the order
+document is about the _mechanics_ — handles, permissions, streams, and the order
 in which things happen.
 
 ---
@@ -347,29 +347,29 @@ mail) is higher than the cost of a re-download.
 
 ### Gmail
 
-| Method | Route | Handler | Description |
-|---|---|---|---|
-| `GET` | `/gmail` | `initAuth` | Starts OAuth |
-| `GET` | `/gmail/callback` | `handleCallback` | OAuth callback → session |
-| `GET` | `/gmail/emails` | `getEmails` | Ids + 20 display emails. Params: `?filters=`, `?afterDate=` |
-| `GET` | `/gmail/count` | `getEmailCount` | New-email count for polling. Params: `?filters=`, `?afterDate=` |
-| `POST` | `/gmail/download-chunks` | `downloadEmailsInChunks` | SSE download in batches of 500 |
-| `POST` | `/gmail/reply` | `sendReply` | Replies inside an existing thread. Body: `{ to, cc?, subject, body, threadId, messageId, references? }` |
+| Method | Route                    | Handler                  | Description                                                                                             |
+| ------ | ------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/gmail`                 | `initAuth`               | Starts OAuth                                                                                            |
+| `GET`  | `/gmail/callback`        | `handleCallback`         | OAuth callback → session                                                                                |
+| `GET`  | `/gmail/emails`          | `getEmails`              | Ids + 20 display emails. Params: `?filters=`, `?afterDate=`                                             |
+| `GET`  | `/gmail/count`           | `getEmailCount`          | New-email count for polling. Params: `?filters=`, `?afterDate=`                                         |
+| `POST` | `/gmail/download-chunks` | `downloadEmailsInChunks` | SSE download in batches of 500                                                                          |
+| `POST` | `/gmail/reply`           | `sendReply`              | Replies inside an existing thread. Body: `{ to, cc?, subject, body, threadId, messageId, references? }` |
 
 There is no `/gmail/email/:id` — the Gmail detail view is served from the local
 JSONL.
 
 ### Outlook
 
-| Method | Route | Handler | Description |
-|---|---|---|---|
-| `GET` | `/outlook` | `initAuth` | Starts Microsoft OAuth |
-| `GET` | `/outlook/callback` | `handleCallback` | OAuth callback → `req.session.tokens` |
-| `GET` | `/outlook/emails` | `getEmails` | Ids + 20 display emails; queries `inbox` + `sentitems`, paginated via `@odata.nextLink` |
-| `GET` | `/outlook/email/:messageId` | `getEmailDetail` | Full detail of one message, in the unified JSONL shape |
-| `GET` | `/outlook/count` | `getEmailCount` | New-email count; parallel inbox + sentitems, `$select=id` only |
-| `POST` | `/outlook/download-chunks` | `downloadEmailsInChunks` | SSE download, same event shape as Gmail |
-| `POST` | `/outlook/reply` | `sendReply` | Replies via `POST /me/messages/{id}/reply`. Returns HTTP 202 |
+| Method | Route                       | Handler                  | Description                                                                             |
+| ------ | --------------------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `GET`  | `/outlook`                  | `initAuth`               | Starts Microsoft OAuth                                                                  |
+| `GET`  | `/outlook/callback`         | `handleCallback`         | OAuth callback → `req.session.tokens`                                                   |
+| `GET`  | `/outlook/emails`           | `getEmails`              | Ids + 20 display emails; queries `inbox` + `sentitems`, paginated via `@odata.nextLink` |
+| `GET`  | `/outlook/email/:messageId` | `getEmailDetail`         | Full detail of one message, in the unified JSONL shape                                  |
+| `GET`  | `/outlook/count`            | `getEmailCount`          | New-email count; parallel inbox + sentitems, `$select=id` only                          |
+| `POST` | `/outlook/download-chunks`  | `downloadEmailsInChunks` | SSE download, same event shape as Gmail                                                 |
+| `POST` | `/outlook/reply`            | `sendReply`              | Replies via `POST /me/messages/{id}/reply`. Returns HTTP 202                            |
 
 All routes except the OAuth entry points are behind `requireAuth`, and all are
 rate-limited (OAuth 5/min, download 3/min, count 30/min).

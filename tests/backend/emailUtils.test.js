@@ -1,5 +1,12 @@
 const { describe, it, expect } = require('@jest/globals');
-const { shouldExcludeEmail, isTokenError, parseFiltersFromRequest, normalizeSubject, isSenderRepetitive, extractEmailAddress } = require('../../src/services/emailUtils');
+const {
+  shouldExcludeEmail,
+  isTokenError,
+  parseFiltersFromRequest,
+  normalizeSubject,
+  isSenderRepetitive,
+  extractEmailAddress,
+} = require('../../src/services/emailUtils');
 
 // ─────────────────────────────────────────────
 //  shouldExcludeEmail
@@ -43,15 +50,14 @@ describe('shouldExcludeEmail', () => {
     // Match dans from
     expect(shouldExcludeEmail(email, filters)).toBe(true);
     // Match dans subject (keyword 'notifications' dans le sujet)
-    expect(shouldExcludeEmail(
-      { subject: 'Your notifications are ready', from: 'user@corp.com' },
-      filters
-    )).toBe(true);
+    expect(
+      shouldExcludeEmail(
+        { subject: 'Your notifications are ready', from: 'user@corp.com' },
+        filters
+      )
+    ).toBe(true);
     // Pas de match
-    expect(shouldExcludeEmail(
-      { subject: 'Hello', from: 'alice@corp.com' },
-      filters
-    )).toBe(false);
+    expect(shouldExcludeEmail({ subject: 'Hello', from: 'alice@corp.com' }, filters)).toBe(false);
   });
 
   it('exclut les promotions par keyword dans le sujet', () => {
@@ -60,10 +66,9 @@ describe('shouldExcludeEmail', () => {
       promotionalKeywords: ['newsletter', 'promo'],
     };
     expect(shouldExcludeEmail(email, filters)).toBe(true);
-    expect(shouldExcludeEmail(
-      { subject: 'Meeting tomorrow', from: 'boss@corp.com' },
-      filters
-    )).toBe(false);
+    expect(
+      shouldExcludeEmail({ subject: 'Meeting tomorrow', from: 'boss@corp.com' }, filters)
+    ).toBe(false);
   });
 
   it('exclut les expediteurs blacklistes', () => {
@@ -71,10 +76,7 @@ describe('shouldExcludeEmail', () => {
       blacklistedSenders: ['notifications.example.com'],
     };
     expect(shouldExcludeEmail(email, filters)).toBe(true);
-    expect(shouldExcludeEmail(
-      { subject: 'Hi', from: 'friend@other.com' },
-      filters
-    )).toBe(false);
+    expect(shouldExcludeEmail({ subject: 'Hi', from: 'friend@other.com' }, filters)).toBe(false);
   });
 
   it('exclut par mots-cles blacklistes dans le sujet', () => {
@@ -82,10 +84,9 @@ describe('shouldExcludeEmail', () => {
       blacklistedKeywords: ['newsletter'],
     };
     expect(shouldExcludeEmail(email, filters)).toBe(true);
-    expect(shouldExcludeEmail(
-      { subject: 'Project update', from: 'team@corp.com' },
-      filters
-    )).toBe(false);
+    expect(shouldExcludeEmail({ subject: 'Project update', from: 'team@corp.com' }, filters)).toBe(
+      false
+    );
   });
 
   it('exclut les sujets blacklistés (avec normalisation Re:/Fwd:)', () => {
@@ -95,25 +96,35 @@ describe('shouldExcludeEmail', () => {
     // Exact match
     expect(shouldExcludeEmail({ subject: 'Project Update', from: 'a@b.com' }, filters)).toBe(true);
     // With Re: prefix — should still match
-    expect(shouldExcludeEmail({ subject: 'Re: Project Update', from: 'a@b.com' }, filters)).toBe(true);
+    expect(shouldExcludeEmail({ subject: 'Re: Project Update', from: 'a@b.com' }, filters)).toBe(
+      true
+    );
     // With Fwd: prefix
-    expect(shouldExcludeEmail({ subject: 'Fwd: Weekly Report', from: 'a@b.com' }, filters)).toBe(true);
+    expect(shouldExcludeEmail({ subject: 'Fwd: Weekly Report', from: 'a@b.com' }, filters)).toBe(
+      true
+    );
     // With FW: prefix
-    expect(shouldExcludeEmail({ subject: 'FW: Weekly Report', from: 'a@b.com' }, filters)).toBe(true);
+    expect(shouldExcludeEmail({ subject: 'FW: Weekly Report', from: 'a@b.com' }, filters)).toBe(
+      true
+    );
     // No match
     expect(shouldExcludeEmail({ subject: 'Something Else', from: 'a@b.com' }, filters)).toBe(false);
     // Empty blacklistedSubjects
-    expect(shouldExcludeEmail({ subject: 'Project Update', from: 'a@b.com' }, { blacklistedSubjects: [] })).toBe(false);
+    expect(
+      shouldExcludeEmail(
+        { subject: 'Project Update', from: 'a@b.com' },
+        { blacklistedSubjects: [] }
+      )
+    ).toBe(false);
   });
 
   it('est case-insensitive', () => {
     const filters = {
       blacklistedKeywords: ['NEWSLETTER'],
     };
-    expect(shouldExcludeEmail(
-      { subject: 'weekly Newsletter update', from: 'a@b.com' },
-      filters
-    )).toBe(true);
+    expect(
+      shouldExcludeEmail({ subject: 'weekly Newsletter update', from: 'a@b.com' }, filters)
+    ).toBe(true);
   });
 
   it('combine plusieurs filtres (OR logic — premier match suffit)', () => {
@@ -126,15 +137,11 @@ describe('shouldExcludeEmail', () => {
     // Match via notifications
     expect(shouldExcludeEmail(email, filters)).toBe(true);
     // Match via blacklistedSenders
-    expect(shouldExcludeEmail(
-      { subject: 'Buy now!', from: 'spam@evil.com' },
-      filters
-    )).toBe(true);
+    expect(shouldExcludeEmail({ subject: 'Buy now!', from: 'spam@evil.com' }, filters)).toBe(true);
     // Aucun match
-    expect(shouldExcludeEmail(
-      { subject: 'Real email', from: 'colleague@work.com' },
-      filters
-    )).toBe(false);
+    expect(shouldExcludeEmail({ subject: 'Real email', from: 'colleague@work.com' }, filters)).toBe(
+      false
+    );
   });
 });
 
@@ -337,8 +344,16 @@ describe('isSenderRepetitive', () => {
 
   it('fonctionne avec 10 samples (reevaluation)', () => {
     const subjects = [
-      'Digest #1', 'Digest #2', 'Digest #3', 'Digest #4', 'Digest #5',
-      'Digest #6', 'Welcome!', 'Digest #7', 'Digest #8', 'Settings update',
+      'Digest #1',
+      'Digest #2',
+      'Digest #3',
+      'Digest #4',
+      'Digest #5',
+      'Digest #6',
+      'Welcome!',
+      'Digest #7',
+      'Digest #8',
+      'Settings update',
     ];
     // 8/10 identiques apres normalisation = 80% > 60% → spam
     expect(isSenderRepetitive(subjects, new Array(10).fill(100))).toBe(true);
@@ -377,9 +392,13 @@ describe('normalizeSubject — edge cases', () => {
 
 describe('extractEmailAddress', () => {
   it('extrait email depuis le format "Name <email>"', () => {
-    expect(extractEmailAddress('Railway <hello@notify.railway.app>')).toBe('hello@notify.railway.app');
+    expect(extractEmailAddress('Railway <hello@notify.railway.app>')).toBe(
+      'hello@notify.railway.app'
+    );
     expect(extractEmailAddress('Banque Populaire <bcpmail@cpm.co.ma>')).toBe('bcpmail@cpm.co.ma');
-    expect(extractEmailAddress('"Disney+" <disneyplus@mail.disney.com>')).toBe('disneyplus@mail.disney.com');
+    expect(extractEmailAddress('"Disney+" <disneyplus@mail.disney.com>')).toBe(
+      'disneyplus@mail.disney.com'
+    );
   });
 
   it('retourne email tel quel si pas de chevrons', () => {
@@ -395,6 +414,8 @@ describe('extractEmailAddress', () => {
 
   it('gere les noms avec caracteres speciaux', () => {
     expect(extractEmailAddress('"Sélection Quora" <digest@quora.com>')).toBe('digest@quora.com');
-    expect(extractEmailAddress('=?UTF-8?Q?Railway?= <hello@notify.railway.app>')).toBe('hello@notify.railway.app');
+    expect(extractEmailAddress('=?UTF-8?Q?Railway?= <hello@notify.railway.app>')).toBe(
+      'hello@notify.railway.app'
+    );
   });
 });

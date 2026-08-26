@@ -71,49 +71,49 @@ Three principles shape everything else:
 
 ### Backend (`src/`)
 
-| File | Role | Notes |
-|---|---|---|
-| `src/app.js` | Express entry point | Async start-up. Helmet, CORS pinned to `APP_ORIGIN`, session store in Redis when `REDIS_URL` is set and in memory otherwise, `POST /auth/logout`, `GET /health`, static serving of `public/` and of `/services/emailAnalyzer_browser.js` |
-| `src/config/oauth.js` | Reads the OAuth environment variables | Gmail and Outlook client id/secret, redirect URIs, `OUTLOOK_TENANT_ID` |
-| `src/middleware/authMiddleware.js` | `requireAuth` | Rejects requests without OAuth tokens in the session |
-| `src/routes/gmail.js` | Gmail routes + rate limiters | OAuth 5/min, download 3/min, count 30/min |
-| `src/routes/outlook.js` | Outlook routes + the same limiters | Adds `GET /outlook/email/:messageId`, which has no Gmail equivalent |
-| `src/routes/ai.js` | AI proxy routes | `POST /api/ai/model-info`, `/health`, `/chat` — all behind `requireAuth` and rate-limited |
-| `src/services/gmailService.js` | Gmail OAuth + Gmail API | `formatGmailEmail`, `buildGmailQuery`, `getEmails`, `getEmailCount`, `downloadEmailsInChunks`, `sendReply`. Requests the `gmail.send` scope alongside `gmail.readonly` |
-| `src/services/outlookService.js` | Outlook OAuth + Microsoft Graph | Automatic token refresh (`getValidAccessToken`), `formatOutlookEmail`, `buildOutlookQuery`, `getAllMessagesFromFolder`, `downloadEmailsInChunks`, `getEmailCount`, `getEmailDetail`, `sendReply`. See [outlook-implementation.md](outlook-implementation.md) |
-| `src/services/emailUtils.js` | Shared provider-agnostic logic | `streamEmailChunks` (the SSE engine used by both providers), `shouldExcludeEmail`, `normalizeSubject`, `isSenderRepetitive` (auto-exclusion), `parseFiltersFromRequest`, `isTokenError`, `isRateLimitError` |
-| `src/services/aiService.js` | Multi-provider AI request building | `assertSafeProviderUrl` — the anti-SSRF `baseUrl` validation — plus `buildProviderRequest` and `sendToProvider` |
-| `src/services/quoteStripper.js` | `stripQuotedText` | Shared by the back end (before writing `bodyText`) and the front end (AI context) |
-| `src/services/emailAnalyzer_browser.js` | **Client-side** analyser, served to the browser | Lives under `src/services/` but never runs on the server. ES module, `export default`. Must have **no imports** — `tests/frontend/demoMode.test.js` asserts that |
+| File                                    | Role                                            | Notes                                                                                                                                                                                                                                                        |
+| --------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/app.js`                            | Express entry point                             | Async start-up. Helmet, CORS pinned to `APP_ORIGIN`, session store in Redis when `REDIS_URL` is set and in memory otherwise, `POST /auth/logout`, `GET /health`, static serving of `public/` and of `/services/emailAnalyzer_browser.js`                     |
+| `src/config/oauth.js`                   | Reads the OAuth environment variables           | Gmail and Outlook client id/secret, redirect URIs, `OUTLOOK_TENANT_ID`                                                                                                                                                                                       |
+| `src/middleware/authMiddleware.js`      | `requireAuth`                                   | Rejects requests without OAuth tokens in the session                                                                                                                                                                                                         |
+| `src/routes/gmail.js`                   | Gmail routes + rate limiters                    | OAuth 5/min, download 3/min, count 30/min                                                                                                                                                                                                                    |
+| `src/routes/outlook.js`                 | Outlook routes + the same limiters              | Adds `GET /outlook/email/:messageId`, which has no Gmail equivalent                                                                                                                                                                                          |
+| `src/routes/ai.js`                      | AI proxy routes                                 | `POST /api/ai/model-info`, `/health`, `/chat` — all behind `requireAuth` and rate-limited                                                                                                                                                                    |
+| `src/services/gmailService.js`          | Gmail OAuth + Gmail API                         | `formatGmailEmail`, `buildGmailQuery`, `getEmails`, `getEmailCount`, `downloadEmailsInChunks`, `sendReply`. Requests the `gmail.send` scope alongside `gmail.readonly`                                                                                       |
+| `src/services/outlookService.js`        | Outlook OAuth + Microsoft Graph                 | Automatic token refresh (`getValidAccessToken`), `formatOutlookEmail`, `buildOutlookQuery`, `getAllMessagesFromFolder`, `downloadEmailsInChunks`, `getEmailCount`, `getEmailDetail`, `sendReply`. See [outlook-implementation.md](outlook-implementation.md) |
+| `src/services/emailUtils.js`            | Shared provider-agnostic logic                  | `streamEmailChunks` (the SSE engine used by both providers), `shouldExcludeEmail`, `normalizeSubject`, `isSenderRepetitive` (auto-exclusion), `parseFiltersFromRequest`, `isTokenError`, `isRateLimitError`                                                  |
+| `src/services/aiService.js`             | Multi-provider AI request building              | `assertSafeProviderUrl` — the anti-SSRF `baseUrl` validation — plus `buildProviderRequest` and `sendToProvider`                                                                                                                                              |
+| `src/services/quoteStripper.js`         | `stripQuotedText`                               | Shared by the back end (before writing `bodyText`) and the front end (AI context)                                                                                                                                                                            |
+| `src/services/emailAnalyzer_browser.js` | **Client-side** analyser, served to the browser | Lives under `src/services/` but never runs on the server. ES module, `export default`. Must have **no imports** — `tests/frontend/demoMode.test.js` asserts that                                                                                             |
 
 ### Front end (`src/public/js/`)
 
-| File | Role |
-|---|---|
-| `app.js` | Single entry point (`type="module"` from `index.html`); orchestrates every other module |
-| `auth.js` | OAuth buttons, fetch interceptor that catches 401s |
-| `folders.js` | File System Access API, owns `currentFolderHandle`, `getEmailFileHandle`, `analyzeEmailFile`, `restoreFolder` |
-| `folderResolver.js` | Pure function resolving the data folder from whichever level the user picked — see [data-format.md](../guides/data-format.md#tolerant-folder-resolution) |
-| `storage.js` | IndexedDB persistence of directory handles (`EmailWorkflowDB` → `folderHandles`) |
-| `emails.js` | SSE download, incremental sync, sync metadata, polling, JSONL cleanup and migration, lazy HTML body loading |
-| `analysis.js` | Analysis orchestration and the subject list: groups, favourites, search, incremental analysis, tree loading |
-| `groups.js` | Subject groups and favourites — reads/writes `<provider>_groups.json` |
-| `groupContextMenu.js` | Right-click menu on subjects and groups |
-| `treeRenderer.js` | The conversation tree: native SVG, layout, zoom/pan, timelines, auto-fit |
-| `email-detail.js` | Email detail modal, sandboxed body iframe, reply buttons |
-| `reply.js` | Reply form: recipient pre-fill, send, feedback |
-| `filterUI.js` / `emailFilters.js` | Filter UI and filter logic (`shouldExcludeEmail`, client side) |
-| `aiConfig.js` | AI provider/model/key configuration, persisted in `localStorage` |
-| `aiPanel.js` / `aiChatUI.js` | AI panel and chat surface |
-| `aiChat.js` | Per-subject chat: context building, streaming, persistence |
-| `aiChatStore.js` | IndexedDB store for chats (`AIChatsDB` → `chats`, keyed by `subjectKey`) |
-| `aiFilter.js` / `aiFilterReport.js` | Clean-up: code pre-filter, two AI passes, interactive report |
-| `themeManager.js` | Theme switching, restored before first paint |
-| `panels.js` | Three-panel resizer |
-| `ui.js` | Overlays, animations, progress bar |
-| `toast.js` | Transient notifications |
-| `demo.js` | Demo mode: fake file handles over a bundled fixture |
-| `package.json` | `{"type":"module"}` — **load-bearing**. It marks these files as ES modules for Node and Jest resolution. It looks like junk; do not delete it |
+| File                                | Role                                                                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app.js`                            | Single entry point (`type="module"` from `index.html`); orchestrates every other module                                                                  |
+| `auth.js`                           | OAuth buttons, fetch interceptor that catches 401s                                                                                                       |
+| `folders.js`                        | File System Access API, owns `currentFolderHandle`, `getEmailFileHandle`, `analyzeEmailFile`, `restoreFolder`                                            |
+| `folderResolver.js`                 | Pure function resolving the data folder from whichever level the user picked — see [data-format.md](../guides/data-format.md#tolerant-folder-resolution) |
+| `storage.js`                        | IndexedDB persistence of directory handles (`EmailWorkflowDB` → `folderHandles`)                                                                         |
+| `emails.js`                         | SSE download, incremental sync, sync metadata, polling, JSONL cleanup and migration, lazy HTML body loading                                              |
+| `analysis.js`                       | Analysis orchestration and the subject list: groups, favourites, search, incremental analysis, tree loading                                              |
+| `groups.js`                         | Subject groups and favourites — reads/writes `<provider>_groups.json`                                                                                    |
+| `groupContextMenu.js`               | Right-click menu on subjects and groups                                                                                                                  |
+| `treeRenderer.js`                   | The conversation tree: native SVG, layout, zoom/pan, timelines, auto-fit                                                                                 |
+| `email-detail.js`                   | Email detail modal, sandboxed body iframe, reply buttons                                                                                                 |
+| `reply.js`                          | Reply form: recipient pre-fill, send, feedback                                                                                                           |
+| `filterUI.js` / `emailFilters.js`   | Filter UI and filter logic (`shouldExcludeEmail`, client side)                                                                                           |
+| `aiConfig.js`                       | AI provider/model/key configuration, persisted in `localStorage`                                                                                         |
+| `aiPanel.js` / `aiChatUI.js`        | AI panel and chat surface                                                                                                                                |
+| `aiChat.js`                         | Per-subject chat: context building, streaming, persistence                                                                                               |
+| `aiChatStore.js`                    | IndexedDB store for chats (`AIChatsDB` → `chats`, keyed by `subjectKey`)                                                                                 |
+| `aiFilter.js` / `aiFilterReport.js` | Clean-up: code pre-filter, two AI passes, interactive report                                                                                             |
+| `themeManager.js`                   | Theme switching, restored before first paint                                                                                                             |
+| `panels.js`                         | Three-panel resizer                                                                                                                                      |
+| `ui.js`                             | Overlays, animations, progress bar                                                                                                                       |
+| `toast.js`                          | Transient notifications                                                                                                                                  |
+| `demo.js`                           | Demo mode: fake file handles over a bundled fixture                                                                                                      |
+| `package.json`                      | `{"type":"module"}` — **load-bearing**. It marks these files as ES modules for Node and Jest resolution. It looks like junk; do not delete it            |
 
 ### Styles (`src/public/styles/`, plus `src/public/tree-visualization.css`)
 
@@ -231,26 +231,33 @@ doing anything.
 Default-exports `{ loadEmailsFromHandle, cleanEmail, getSubjectsWithMinEmails,
 getEmailsForSubjectOptimized, createTemporalGroupTree }`.
 
-| Function | In | Out | Notes |
-|---|---|---|---|
-| `loadEmailsFromHandle(fileHandle)` | file handle | `Array<email>` with `_chunkIndex` | Streams the JSONL and builds a **trimmed** object per line, so the fully parsed record goes out of scope immediately |
-| `cleanEmail(email)` | raw email | normalised email | Unifies subject, from, date, bodyText |
-| `getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail)` | cleaned emails | `Array<subjectInfo>` | Groups by normalised subject and keeps those with at least `minCount` messages. Also computes participants, recipients, date range, `hasAttachments`, `userReplied` / `userInTo` / `userInCcOnly`, and a heuristic `isNewsletter` score |
-| `getEmailsForSubjectOptimized(fileHandle, subjectInfo)` | file handle, subject | `Array<email>` | Reads the whole file and filters in memory — deliberately one stream, not several |
-| `createTemporalGroupTree(emails, subject)` | cleaned emails, subject | `{ subject, nodes, links, metadata }` | Chronological order plus participant-group parenting |
+| Function                                                         | In                      | Out                                   | Notes                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------- | ----------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loadEmailsFromHandle(fileHandle)`                               | file handle             | `Array<email>` with `_chunkIndex`     | Streams the JSONL and builds a **trimmed** object per line, so the fully parsed record goes out of scope immediately                                                                                                                    |
+| `cleanEmail(email)`                                              | raw email               | normalised email                      | Unifies subject, from, date, bodyText                                                                                                                                                                                                   |
+| `getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail)` | cleaned emails          | `Array<subjectInfo>`                  | Groups by normalised subject and keeps those with at least `minCount` messages. Also computes participants, recipients, date range, `hasAttachments`, `userReplied` / `userInTo` / `userInCcOnly`, and a heuristic `isNewsletter` score |
+| `getEmailsForSubjectOptimized(fileHandle, subjectInfo)`          | file handle, subject    | `Array<email>`                        | Reads the whole file and filters in memory — deliberately one stream, not several                                                                                                                                                       |
+| `createTemporalGroupTree(emails, subject)`                       | cleaned emails, subject | `{ subject, nodes, links, metadata }` | Chronological order plus participant-group parenting                                                                                                                                                                                    |
 
 A node looks like:
 
 ```js
 {
-  id, index,                 // index = chronological position (0 = first mail)
-  messageId, inReplyTo,
-  from, to, cc, date, timestamp, subject,
-  bodyText,                  // truncated to 200 chars for the tree
-  participantsGroup,         // array of addresses (from + to + cc)
-  hasAttachments,
-  children,                  // array of child messageIds
-  isRoot
+  (id,
+    index, // index = chronological position (0 = first mail)
+    messageId,
+    inReplyTo,
+    from,
+    to,
+    cc,
+    date,
+    timestamp,
+    subject,
+    bodyText, // truncated to 200 chars for the tree
+    participantsGroup, // array of addresses (from + to + cc)
+    hasAttachments,
+    children, // array of child messageIds
+    isRoot);
   // yLevel is added later by the renderer's layout pass
 }
 ```
@@ -294,10 +301,10 @@ glow or node type instead.
 
 ### Two coordinate spaces — never mix them
 
-| Space | Where | How |
-|---|---|---|
-| **World** (fixed grid) | inside `dataGroup` | `x = index * NODE_SPACING_X`, `y = yLevel * NODE_SPACING_Y` — independent of the viewport |
-| **Screen** | on the SVG itself | derived from `translate(viewState.x, viewState.y) scale(viewState.scale)` applied to `dataGroup` |
+| Space                  | Where              | How                                                                                              |
+| ---------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
+| **World** (fixed grid) | inside `dataGroup` | `x = index * NODE_SPACING_X`, `y = yLevel * NODE_SPACING_Y` — independent of the viewport        |
+| **Screen**             | on the SVG itself  | derived from `translate(viewState.x, viewState.y) scale(viewState.scale)` applied to `dataGroup` |
 
 Nodes and links live in world space. Timeline lines and labels live in screen
 space, in a separate `linesGroup` with no transform, so they must be recomputed
@@ -313,15 +320,15 @@ jump on first render. The current renderer has a **single** pair,
 ### Layout constants
 
 ```js
-NODE_SPACING_X = 420          // horizontal step (time axis)
-NODE_SPACING_Y = 130          // vertical step (branch lanes)
-CONTAINER_MARGIN = { top: 40, right: 100, bottom: 40, left: 100 }
-DATA_GROUP_OFFSET = 140
-ZOOM_SCALE_EXTENT = [0.1, 3]
-CONTAINER_PADDING = 80        // safety margin in the fit computation
-MAX_FIT_SCALE = 1
-TIMELINE_LINE_OFFSET = -15
-TIMELINE_LABEL_OFFSET = -80
+NODE_SPACING_X = 420; // horizontal step (time axis)
+NODE_SPACING_Y = 130; // vertical step (branch lanes)
+CONTAINER_MARGIN = { top: 40, right: 100, bottom: 40, left: 100 };
+DATA_GROUP_OFFSET = 140;
+ZOOM_SCALE_EXTENT = [0.1, 3];
+CONTAINER_PADDING = 80; // safety margin in the fit computation
+MAX_FIT_SCALE = 1;
+TIMELINE_LINE_OFFSET = -15;
+TIMELINE_LABEL_OFFSET = -80;
 ```
 
 Node dimensions are **not** constants: `nodeWidthFor(d)` returns 360 for the
@@ -346,11 +353,11 @@ ways:
 **Callback injection** — the consumer registers a function, the producer calls
 it:
 
-| Setter | Registered in | Called from |
-|---|---|---|
-| `setNodeClickHandler(showEmailDetail)` | `app.js` | `treeRenderer.js`, on node click |
-| `setSelectSubjectHandler(fn)` | `app.js` | `analysis.js`, when a subject drawer opens |
-| `setOnFiltersSaved(fn)` / `setOnSubjectRestored(fn)` | `app.js` | `filterUI.js` |
+| Setter                                               | Registered in | Called from                                |
+| ---------------------------------------------------- | ------------- | ------------------------------------------ |
+| `setNodeClickHandler(showEmailDetail)`               | `app.js`      | `treeRenderer.js`, on node click           |
+| `setSelectSubjectHandler(fn)`                        | `app.js`      | `analysis.js`, when a subject drawer opens |
+| `setOnFiltersSaved(fn)` / `setOnSubjectRestored(fn)` | `app.js`      | `filterUI.js`                              |
 
 **Pub/sub** — `onSubjectSelected(callback)` in `analysis.js`, notified by
 `notifySubjectSelected()`. The AI panel subscribes to it.
@@ -379,8 +386,8 @@ Other things that are quietly load-bearing:
 - **Client-side ES imports use absolute paths.** The server exposes
   `/services/emailAnalyzer_browser.js` explicitly; a relative path 404s.
   ```js
-  import emailAnalyzer from "/services/emailAnalyzer_browser.js";   // correct
-  import emailAnalyzer from "../services/emailAnalyzer_browser.js"; // 404
+  import emailAnalyzer from '/services/emailAnalyzer_browser.js'; // correct
+  import emailAnalyzer from '../services/emailAnalyzer_browser.js'; // 404
   ```
 
 ---
@@ -471,12 +478,12 @@ pointed at any of them.
 
 ### Rendering, in `analysis.js`
 
-| Function | When |
-|---|---|
-| `renderGroupedSubjectsList` | normal mode, groups exist |
-| `renderFlatSubjectsList` | normal mode, no groups |
-| `renderSearchGroupedSubjectsList` | search active, groups exist |
-| `renderGroupItemHtml` | one group, recursive for sub-groups |
+| Function                          | When                                |
+| --------------------------------- | ----------------------------------- |
+| `renderGroupedSubjectsList`       | normal mode, groups exist           |
+| `renderFlatSubjectsList`          | normal mode, no groups              |
+| `renderSearchGroupedSubjectsList` | search active, groups exist         |
+| `renderGroupItemHtml`             | one group, recursive for sub-groups |
 
 Search behaviour: a group whose **name** matches shows all of its subjects; a
 group with a **matching subject** shows only the matching ones; matching groups
@@ -495,13 +502,13 @@ favourites-only mode.
 
 ## 12. Feature: replying
 
-| File | Role |
-|---|---|
-| `src/routes/gmail.js` / `src/routes/outlook.js` | `POST /<provider>/reply` |
-| `src/services/gmailService.js` | `sendReply` — builds RFC 2822 MIME, base64url, `gmail.users.messages.send({ raw, threadId })` |
-| `src/services/outlookService.js` | `sendReply` — `POST /me/messages/{id}/reply` on Graph |
-| `src/public/js/reply.js` | The form: pre-fill, send, feedback |
-| `src/public/js/email-detail.js` | "Reply" / "Reply all" buttons and `currentEmailData` |
+| File                                            | Role                                                                                          |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `src/routes/gmail.js` / `src/routes/outlook.js` | `POST /<provider>/reply`                                                                      |
+| `src/services/gmailService.js`                  | `sendReply` — builds RFC 2822 MIME, base64url, `gmail.users.messages.send({ raw, threadId })` |
+| `src/services/outlookService.js`                | `sendReply` — `POST /me/messages/{id}/reply` on Graph                                         |
+| `src/public/js/reply.js`                        | The form: pre-fill, send, feedback                                                            |
+| `src/public/js/email-detail.js`                 | "Reply" / "Reply all" buttons and `currentEmailData`                                          |
 
 Recipient logic:
 
@@ -547,12 +554,12 @@ cleaned array exists, and blanks `bodyText` on the cleaned copies — subject
 extraction only needs `subject`, `from`, `date` and `_chunkIndex`, and bodies are
 reloaded on demand when a subject is opened.
 
-| Operation, 5,000 emails | Before | After |
-|---|---|---|
-| `analyzeEmailFile` (sync deduplication) | ~560 MB | ~2 MB |
-| `loadEmailsFromHandle` (peak per email) | ~80 KB | ~15 KB |
-| Two simultaneous arrays during analysis | ~2 × 75 MB | ~37 MB |
-| `bodyText` retained during subject extraction | ~25 MB | 0 |
+| Operation, 5,000 emails                       | Before     | After  |
+| --------------------------------------------- | ---------- | ------ |
+| `analyzeEmailFile` (sync deduplication)       | ~560 MB    | ~2 MB  |
+| `loadEmailsFromHandle` (peak per email)       | ~80 KB     | ~15 KB |
+| Two simultaneous arrays during analysis       | ~2 × 75 MB | ~37 MB |
+| `bodyText` retained during subject extraction | ~25 MB     | 0      |
 
 Splitting `bodyHtml` into its own file (see
 [data-format.md](../guides/data-format.md)) is part of the same campaign.

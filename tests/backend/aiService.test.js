@@ -1,14 +1,16 @@
 const { describe, it, expect } = require('@jest/globals');
-const { buildProviderRequest, validateOllamaApiKey, assertSafeProviderUrl } = require('../../src/services/aiService');
+const {
+  buildProviderRequest,
+  validateOllamaApiKey,
+  assertSafeProviderUrl,
+} = require('../../src/services/aiService');
 
 // ─────────────────────────────────────────────
 //  buildProviderRequest
 // ─────────────────────────────────────────────
 
 describe('buildProviderRequest', () => {
-  const baseMessages = [
-    { role: 'user', content: 'Bonjour' },
-  ];
+  const baseMessages = [{ role: 'user', content: 'Bonjour' }];
 
   const baseArgs = {
     provider: 'openai',
@@ -60,9 +62,7 @@ describe('buildProviderRequest', () => {
     expect(config.headers['x-api-key']).toBe('sk-ant-test');
     expect(config.headers['anthropic-version']).toBe('2023-06-01');
     expect(config.body.system).toBe('Tu es un assistant email.');
-    expect(config.body.messages).toEqual([
-      { role: 'user', content: 'Resume ce fil.' },
-    ]);
+    expect(config.body.messages).toEqual([{ role: 'user', content: 'Resume ce fil.' }]);
     expect(config.body.max_tokens).toBe(4096);
   });
 
@@ -80,23 +80,23 @@ describe('buildProviderRequest', () => {
   });
 
   it('rejects unknown provider', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, provider: 'gemini' }))
-      .toThrow('Provider non supporte');
+    expect(() => buildProviderRequest({ ...baseArgs, provider: 'gemini' })).toThrow(
+      'Provider non supporte'
+    );
   });
 
   it('rejects empty apiKey', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, apiKey: '' }))
-      .toThrow('Cle API requise');
+    expect(() => buildProviderRequest({ ...baseArgs, apiKey: '' })).toThrow('Cle API requise');
   });
 
   it('rejects empty model', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, model: '' }))
-      .toThrow('Modele requis');
+    expect(() => buildProviderRequest({ ...baseArgs, model: '' })).toThrow('Modele requis');
   });
 
   it('rejects empty baseUrl', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, baseUrl: '' }))
-      .toThrow('URL du provider requise');
+    expect(() => buildProviderRequest({ ...baseArgs, baseUrl: '' })).toThrow(
+      'URL du provider requise'
+    );
   });
 
   it('passes stream: true in body', () => {
@@ -105,9 +105,7 @@ describe('buildProviderRequest', () => {
   });
 
   it('handles Anthropic messages without system message', () => {
-    const messages = [
-      { role: 'user', content: 'Salut' },
-    ];
+    const messages = [{ role: 'user', content: 'Salut' }];
     const config = buildProviderRequest({
       ...baseArgs,
       provider: 'anthropic',
@@ -214,7 +212,9 @@ describe('assertSafeProviderUrl (anti-SSRF)', () => {
   it('autorise Ollama local uniquement si ALLOW_LOCAL_AI=true', async () => {
     const prev = process.env.ALLOW_LOCAL_AI;
     process.env.ALLOW_LOCAL_AI = 'true';
-    await expect(assertSafeProviderUrl('ollama', 'http://127.0.0.1:11434/')).resolves.toBeUndefined();
+    await expect(
+      assertSafeProviderUrl('ollama', 'http://127.0.0.1:11434/')
+    ).resolves.toBeUndefined();
     delete process.env.ALLOW_LOCAL_AI;
     await expect(assertSafeProviderUrl('ollama', 'http://127.0.0.1:11434/')).rejects.toThrow();
     if (prev !== undefined) process.env.ALLOW_LOCAL_AI = prev;

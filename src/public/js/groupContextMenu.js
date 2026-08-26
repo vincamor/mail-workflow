@@ -9,11 +9,7 @@
  * même après les re-rendus de la liste.
  */
 
-import {
-  getCurrentGroupsData,
-  saveGroupsData,
-  refreshSubjectsDisplay
-} from './analysis.js';
+import { getCurrentGroupsData, saveGroupsData, refreshSubjectsDisplay } from './analysis.js';
 
 import { getCurrentFilters, updateCurrentFilters } from './filterUI.js';
 import { saveFilters } from './emailFilters.js';
@@ -27,21 +23,21 @@ import {
   addSubjectToGroup,
   removeSubjectFromGroup,
   getChildGroups,
-  getGroupsForSubject
+  getGroupsForSubject,
 } from './groups.js';
 import { toastError, toastSuccess, showConfirmModal } from './toast.js';
 
 const GROUP_COLORS = [
-  { name: 'Rouge',   value: '#ef4444' },
-  { name: 'Orange',  value: '#f97316' },
-  { name: 'Ambre',   value: '#f59e0b' },
-  { name: 'Vert',    value: '#22c55e' },
-  { name: 'Émeraude',value: '#10b981' },
-  { name: 'Cyan',    value: '#06b6d4' },
-  { name: 'Bleu',    value: '#3b82f6' },
-  { name: 'Indigo',  value: '#6366f1' },
-  { name: 'Violet',  value: '#a855f7' },
-  { name: 'Rose',    value: '#ec4899' },
+  { name: 'Rouge', value: '#ef4444' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Ambre', value: '#f59e0b' },
+  { name: 'Vert', value: '#22c55e' },
+  { name: 'Émeraude', value: '#10b981' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Bleu', value: '#3b82f6' },
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Violet', value: '#a855f7' },
+  { name: 'Rose', value: '#ec4899' },
 ];
 
 let menuEl = null;
@@ -54,7 +50,9 @@ export function initGroupContextMenu() {
 
   // Fermeture sur clic extérieur ou Echap
   document.addEventListener('click', closeMenu);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
 
   // Délégation sur #subjectsList (persiste entre les re-rendus)
   const subjectsList = document.getElementById('subjectsList');
@@ -109,9 +107,9 @@ function buildSubjectMenu(subjectKey, data) {
     const memberIds = getGroupsForSubject(data, subjectKey);
     const rootGroups = getChildGroups(data, null);
 
-    rootGroups.forEach(group => {
+    rootGroups.forEach((group) => {
       menuEl.appendChild(makeGroupOption(group, subjectKey, memberIds, data, false));
-      getChildGroups(data, group.id).forEach(child => {
+      getChildGroups(data, group.id).forEach((child) => {
         menuEl.appendChild(makeGroupOption(child, subjectKey, memberIds, data, true));
       });
     });
@@ -130,8 +128,8 @@ function buildSubjectMenu(subjectKey, data) {
     const memberIds = getGroupsForSubject(data, subjectKey);
     if (memberIds.length > 0) {
       menuEl.appendChild(makeSeparator());
-      memberIds.forEach(groupId => {
-        const group = data.groups.find(g => g.id === groupId);
+      memberIds.forEach((groupId) => {
+        const group = data.groups.find((g) => g.id === groupId);
         if (!group) return;
         const removeItem = makeItem(`Retirer de "${group.name}"`, 'context-menu-item--danger');
         removeItem.addEventListener('click', async () => {
@@ -161,7 +159,11 @@ function makeGroupOption(group, subjectKey, memberIds, data, isChild) {
   const checkedClass = alreadyMember ? ' context-menu-item--checked' : '';
   const prefix = isChild ? '↳ ' : '';
 
-  const item = makeItem(`${prefix}${group.name}`, childClass + checkedClass, alreadyMember ? 'icon-check' : '');
+  const item = makeItem(
+    `${prefix}${group.name}`,
+    childClass + checkedClass,
+    alreadyMember ? 'icon-check' : ''
+  );
 
   if (!alreadyMember) {
     item.addEventListener('click', async () => {
@@ -181,7 +183,7 @@ function makeGroupOption(group, subjectKey, memberIds, data, isChild) {
 
 function buildGroupMenu(groupId, data) {
   menuEl.innerHTML = '';
-  const group = data.groups.find(g => g.id === groupId);
+  const group = data.groups.find((g) => g.id === groupId);
   if (!group) return;
 
   // Renommer
@@ -346,7 +348,7 @@ async function excludeSubject(subjectKey) {
         console.log(`🗑️ JSONL nettoyé: ${result.removed} emails supprimés`);
       }
     } catch (e) {
-      console.warn('⚠️ Nettoyage JSONL échoué (le sujet reste exclu de l\'affichage):', e);
+      console.warn("⚠️ Nettoyage JSONL échoué (le sujet reste exclu de l'affichage):", e);
     }
   }
 }

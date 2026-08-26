@@ -38,7 +38,7 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3) {
   const validSubjects = [];
   for (const [subject, emailList] of Object.entries(conversations)) {
     if (emailList.length >= minCount) {
-      const participants = [...new Set(emailList.map(email => extractFrom(email)))];
+      const participants = [...new Set(emailList.map((email) => extractFrom(email)))];
       validSubjects.push({
         subject,
         emailCount: emailList.length,
@@ -99,9 +99,14 @@ describe('getSubjectsWithMinEmails (incremental scenarios)', () => {
 
   it('sorts subjects by email count descending', () => {
     const emails = [
-      makeEmail('A', 'a@t.com', '1'), makeEmail('A', 'b@t.com', '2'), makeEmail('A', 'c@t.com', '3'),
-      makeEmail('B', 'a@t.com', '4'), makeEmail('B', 'b@t.com', '5'), makeEmail('B', 'c@t.com', '6'),
-      makeEmail('B', 'd@t.com', '7'), makeEmail('B', 'e@t.com', '8'),
+      makeEmail('A', 'a@t.com', '1'),
+      makeEmail('A', 'b@t.com', '2'),
+      makeEmail('A', 'c@t.com', '3'),
+      makeEmail('B', 'a@t.com', '4'),
+      makeEmail('B', 'b@t.com', '5'),
+      makeEmail('B', 'c@t.com', '6'),
+      makeEmail('B', 'd@t.com', '7'),
+      makeEmail('B', 'e@t.com', '8'),
     ];
     const subjects = getSubjectsWithMinEmails(emails, 3);
     expect(subjects[0].subject).toBe('B');
@@ -115,10 +120,7 @@ describe('getSubjectsWithMinEmails (incremental scenarios)', () => {
       makeEmail('Bug Report', 'alice@test.com', '1'),
       makeEmail('Re: Bug Report', 'bob@test.com', '2'),
     ];
-    const batch2 = [
-      ...batch1,
-      makeEmail('RE: Bug Report', 'charlie@test.com', '3'),
-    ];
+    const batch2 = [...batch1, makeEmail('RE: Bug Report', 'charlie@test.com', '3')];
     const subjects = getSubjectsWithMinEmails(batch2, 3);
     expect(subjects[0].participants).toEqual(
       expect.arrayContaining(['alice@test.com', 'bob@test.com', 'charlie@test.com'])
@@ -127,15 +129,15 @@ describe('getSubjectsWithMinEmails (incremental scenarios)', () => {
 
   it('new subjects appear as more emails accumulate', () => {
     const batch1 = [
-      makeEmail('Topic A', 'a@t.com', '1'), makeEmail('Topic A', 'b@t.com', '2'), makeEmail('Topic A', 'c@t.com', '3'),
-      makeEmail('Topic B', 'a@t.com', '4'), makeEmail('Topic B', 'b@t.com', '5'),
+      makeEmail('Topic A', 'a@t.com', '1'),
+      makeEmail('Topic A', 'b@t.com', '2'),
+      makeEmail('Topic A', 'c@t.com', '3'),
+      makeEmail('Topic B', 'a@t.com', '4'),
+      makeEmail('Topic B', 'b@t.com', '5'),
     ];
     expect(getSubjectsWithMinEmails(batch1, 3)).toHaveLength(1);
 
-    const batch2 = [
-      ...batch1,
-      makeEmail('Topic B', 'c@t.com', '6'),
-    ];
+    const batch2 = [...batch1, makeEmail('Topic B', 'c@t.com', '6')];
     expect(getSubjectsWithMinEmails(batch2, 3)).toHaveLength(2);
   });
 });
@@ -212,8 +214,8 @@ describe('notification logic for selected subject', () => {
     ];
 
     const selectedSubject = 'Topic A';
-    const prev = prevSubjects.find(s => s.subject === selectedSubject);
-    const next = newSubjects.find(s => s.subject === selectedSubject);
+    const prev = prevSubjects.find((s) => s.subject === selectedSubject);
+    const next = newSubjects.find((s) => s.subject === selectedSubject);
     const diff = (next ? next.emailCount : 0) - (prev ? prev.emailCount : 0);
 
     expect(diff).toBe(3);
@@ -223,8 +225,8 @@ describe('notification logic for selected subject', () => {
     const prevSubjects = [{ subject: 'X', emailCount: 10 }];
     const newSubjects = [{ subject: 'X', emailCount: 10 }];
 
-    const prev = prevSubjects.find(s => s.subject === 'X');
-    const next = newSubjects.find(s => s.subject === 'X');
+    const prev = prevSubjects.find((s) => s.subject === 'X');
+    const next = newSubjects.find((s) => s.subject === 'X');
     expect(next.emailCount - prev.emailCount).toBe(0);
   });
 
@@ -233,8 +235,8 @@ describe('notification logic for selected subject', () => {
     const newSubjects = [{ subject: 'New Topic', emailCount: 5 }];
 
     const selectedSubject = 'New Topic';
-    const prev = prevSubjects.find(s => s.subject === selectedSubject);
-    const next = newSubjects.find(s => s.subject === selectedSubject);
+    const prev = prevSubjects.find((s) => s.subject === selectedSubject);
+    const next = newSubjects.find((s) => s.subject === selectedSubject);
     const diff = (next ? next.emailCount : 0) - (prev ? prev.emailCount : 0);
 
     expect(diff).toBe(5);

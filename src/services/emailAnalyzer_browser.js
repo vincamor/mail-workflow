@@ -17,7 +17,7 @@ function decodeBase64Data(data) {
     if (missingPadding) {
       cleanData += '='.repeat(4 - missingPadding);
     }
-    
+
     const decodedString = atob(cleanData);
     return decodeURIComponent(escape(decodedString));
   } catch (error) {
@@ -41,19 +41,19 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
     let chunkCount = 0;
     const stream = file.stream();
     const textDecoder = new TextDecoder();
-    
+
     // Buffer pour les lignes incomplètes
     let buffer = '';
-    
+
     for await (const chunk of stream) {
       chunkCount++;
       const chunkText = textDecoder.decode(chunk, { stream: true });
       buffer += chunkText;
-      
+
       // Traiter les lignes complètes
       const lines = buffer.split('\n');
       buffer = lines.pop() || ''; // Garder la dernière ligne incomplète
-      
+
       // Traiter les lignes complètes
       for (const line of lines) {
         if (line.trim()) {
@@ -64,57 +64,57 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
             // de portée à la fin de ce bloc et devient éligible au GC sans délai,
             // évitant l'accumulation de 80+ Ko par email dans le heap.
             emails.push({
-              id:           full.id,
-              threadId:     full.threadId,
-              subject:      full.subject,
-              from:         full.from,
-              to:           full.to,
-              cc:           full.cc,
-              date:         full.date,
-              messageId:    full.messageId,
-              inReplyTo:    full.inReplyTo,
-              references:   full.references,
+              id: full.id,
+              threadId: full.threadId,
+              subject: full.subject,
+              from: full.from,
+              to: full.to,
+              cc: full.cc,
+              date: full.date,
+              messageId: full.messageId,
+              inReplyTo: full.inReplyTo,
+              references: full.references,
               internalDate: full.internalDate,
-              bodyText:     full.bodyText,
-              snippet:      full.snippet,
-              labelIds:     full.labelIds,
+              bodyText: full.bodyText,
+              snippet: full.snippet,
+              labelIds: full.labelIds,
               hasAttachments: full.hasAttachments,
-              _chunkIndex:  chunkCount,
+              _chunkIndex: chunkCount,
             });
           } catch (e) {
-            console.warn("Ligne malformée ignorée:", line.substring(0, 50));
+            console.warn('Ligne malformée ignorée:', line.substring(0, 50));
           }
         }
       }
     }
-    
+
     // Traiter la dernière ligne si elle existe
     if (buffer.trim()) {
       try {
         const full = JSON.parse(buffer);
         emails.push({
-          id:           full.id,
-          threadId:     full.threadId,
-          subject:      full.subject,
-          from:         full.from,
-          to:           full.to,
-          cc:           full.cc,
-          date:         full.date,
-          messageId:    full.messageId,
-          inReplyTo:    full.inReplyTo,
-          references:   full.references,
+          id: full.id,
+          threadId: full.threadId,
+          subject: full.subject,
+          from: full.from,
+          to: full.to,
+          cc: full.cc,
+          date: full.date,
+          messageId: full.messageId,
+          inReplyTo: full.inReplyTo,
+          references: full.references,
           internalDate: full.internalDate,
-          bodyText:     full.bodyText,
-          snippet:      full.snippet,
-          labelIds:     full.labelIds,
+          bodyText: full.bodyText,
+          snippet: full.snippet,
+          labelIds: full.labelIds,
           hasAttachments: full.hasAttachments,
-          _chunkIndex:  chunkCount,
+          _chunkIndex: chunkCount,
         });
       } catch (e) {
-        console.warn("Dernière ligne malformée ignorée");
+        console.warn('Dernière ligne malformée ignorée');
       }
     }
-    
+
     console.log(`✅ ${emails.length} emails chargés en ${chunkCount} chunks`);
     return emails;
   } catch (error) {
@@ -130,7 +130,7 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
  */
 function extractSubject(email) {
   let subject = '';
-  
+
   // D'abord chercher directement dans email.subject
   if (email.subject) {
     subject = email.subject;
@@ -147,7 +147,7 @@ function extractSubject(email) {
   } else {
     return 'Sans sujet';
   }
-  
+
   // Nettoyage (supprime Re:, Fwd:, etc.)
   subject = subject.replace(/^(Re:|Fwd:|FW:|RE:|FWD:)\s*/i, '');
   return subject.trim();
@@ -197,7 +197,7 @@ function extractBodyContent(email) {
   if (email.bodyText) {
     return email.bodyText;
   }
-  
+
   // Fallback sur le snippet (bodyText est toujours présent car décodé côté serveur)
   return email.snippet || '';
 }
@@ -211,7 +211,7 @@ function extractBodyContent(email) {
  */
 function groupBySubject(emails) {
   const conversations = {};
-  
+
   for (const email of emails) {
     const subject = extractSubject(email);
     if (!conversations[subject]) {
@@ -219,12 +219,12 @@ function groupBySubject(emails) {
     }
     conversations[subject].push(email);
   }
-  
+
   // Trie chaque conversation par date
   for (const subject in conversations) {
     conversations[subject].sort((a, b) => extractDate(a) - extractDate(b));
   }
-  
+
   return conversations;
 }
 
@@ -237,7 +237,7 @@ function groupBySubject(emails) {
 function createConversationGraph(emails, subject) {
   const nodes = [];
   const links = [];
-  
+
   // Crée les nodes
   for (let i = 0; i < emails.length; i++) {
     const email = emails[i];
@@ -248,26 +248,26 @@ function createConversationGraph(emails, subject) {
       subject: extractSubject(email),
       date: extractDate(email).toISOString().slice(0, 16).replace('T', ' '),
       bodyPreview: extractBodyContent(email).substring(0, 200),
-      snippet: email.snippet || ''
+      snippet: email.snippet || '',
     };
     nodes.push(node);
   }
-  
+
   // Crée les liens chronologiques (email i -> email i+1)
   for (let i = 0; i < emails.length - 1; i++) {
     const link = {
       source: i,
       target: i + 1,
-      type: 'chronological'
+      type: 'chronological',
     };
     links.push(link);
   }
-  
+
   return {
     subject: subject,
     nodes: nodes,
     links: links,
-    emailCount: emails.length
+    emailCount: emails.length,
   };
 }
 
@@ -295,7 +295,7 @@ function cleanEmail(email) {
     bodyText: extractBodyContent(email),
     snippet: email.snippet || '',
     hasAttachments: email.hasAttachments === true,
-    _chunkIndex: email._chunkIndex // Conserver l'index du chunk
+    _chunkIndex: email._chunkIndex, // Conserver l'index du chunk
   };
 }
 
@@ -310,17 +310,17 @@ function cleanEmail(email) {
 function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
   // Grouper par sujet
   const conversations = groupBySubject(emailsClean);
-  
+
   // Filtrer les sujets avec minimum X emails
   const validSubjects = [];
-  
+
   for (const [subject, emailList] of Object.entries(conversations)) {
     if (emailList.length >= minCount) {
-      const participants = [...new Set(emailList.map(email => extractFrom(email)))];
+      const participants = [...new Set(emailList.map((email) => extractFrom(email)))];
 
       // Collect all recipients (to/cc) for search
       const recipientSet = new Set();
-      const allParticipantSet = new Set(participants.map(p => p.toLowerCase()));
+      const allParticipantSet = new Set(participants.map((p) => p.toLowerCase()));
       let snippetBuf = '';
 
       const chunkIndex = new Set();
@@ -330,7 +330,7 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
         }
         // Collect to/cc for search
         if (email.to) {
-          email.to.split(/[,;]/).forEach(addr => {
+          email.to.split(/[,;]/).forEach((addr) => {
             const trimmed = addr.trim().toLowerCase();
             if (trimmed) {
               recipientSet.add(trimmed);
@@ -339,7 +339,7 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
           });
         }
         if (email.cc) {
-          email.cc.split(/[,;]/).forEach(addr => {
+          email.cc.split(/[,;]/).forEach((addr) => {
             const trimmed = addr.trim().toLowerCase();
             if (trimmed) {
               recipientSet.add(trimmed);
@@ -380,16 +380,46 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
       }
 
       // ── Newsletter detection ──
-      const NEWSLETTER_KEYWORDS_SUBJECT = ['newsletter', 'digest', 'weekly update', 'monthly update', 'bulletin'];
-      const NEWSLETTER_KEYWORDS_SNIPPET = ['unsubscribe', 'se désabonner', 'opt-out', 'opt out', 'manage your subscription', 'email preferences', 'view in browser', 'voir dans le navigateur'];
-      const NEWSLETTER_KEYWORDS_FROM = ['newsletter@', 'news@', 'digest@', 'updates@', 'noreply@', 'no-reply@', 'mailer-daemon@', 'bulk@'];
+      const NEWSLETTER_KEYWORDS_SUBJECT = [
+        'newsletter',
+        'digest',
+        'weekly update',
+        'monthly update',
+        'bulletin',
+      ];
+      const NEWSLETTER_KEYWORDS_SNIPPET = [
+        'unsubscribe',
+        'se désabonner',
+        'opt-out',
+        'opt out',
+        'manage your subscription',
+        'email preferences',
+        'view in browser',
+        'voir dans le navigateur',
+      ];
+      const NEWSLETTER_KEYWORDS_FROM = [
+        'newsletter@',
+        'news@',
+        'digest@',
+        'updates@',
+        'noreply@',
+        'no-reply@',
+        'mailer-daemon@',
+        'bulk@',
+      ];
 
       const subjectLower = subject.toLowerCase();
-      const fromAll = participants.map(p => p.toLowerCase());
+      const fromAll = participants.map((p) => p.toLowerCase());
 
-      const hasNewsletterKeywordInSubject = NEWSLETTER_KEYWORDS_SUBJECT.some(kw => subjectLower.includes(kw));
-      const hasNewsletterKeywordInSnippet = NEWSLETTER_KEYWORDS_SNIPPET.some(kw => snippetBuf.toLowerCase().includes(kw));
-      const hasNewsletterFrom = fromAll.some(f => NEWSLETTER_KEYWORDS_FROM.some(kw => f.includes(kw)));
+      const hasNewsletterKeywordInSubject = NEWSLETTER_KEYWORDS_SUBJECT.some((kw) =>
+        subjectLower.includes(kw)
+      );
+      const hasNewsletterKeywordInSnippet = NEWSLETTER_KEYWORDS_SNIPPET.some((kw) =>
+        snippetBuf.toLowerCase().includes(kw)
+      );
+      const hasNewsletterFrom = fromAll.some((f) =>
+        NEWSLETTER_KEYWORDS_FROM.some((kw) => f.includes(kw))
+      );
       const isSingleSender = participants.length === 1;
 
       // Newsletter score: 2+ signals = newsletter
@@ -412,19 +442,22 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
         userReplied,
         userInTo,
         userInCcOnly,
-        hasAttachments: emailList.some(e => e.hasAttachments === true),
+        hasAttachments: emailList.some((e) => e.hasAttachments === true),
         isNewsletter,
         dateRange: {
           start: extractDate(emailList[0]).toISOString().slice(0, 16).replace('T', ' '),
-          end: extractDate(emailList[emailList.length - 1]).toISOString().slice(0, 16).replace('T', ' ')
-        }
+          end: extractDate(emailList[emailList.length - 1])
+            .toISOString()
+            .slice(0, 16)
+            .replace('T', ' '),
+        },
       });
     }
   }
-  
+
   // Trier par nombre d'emails décroissant
   validSubjects.sort((a, b) => b.emailCount - a.emailCount);
-  
+
   return validSubjects;
 }
 
@@ -435,7 +468,7 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
 function displayValidSubjects(validSubjects) {
   console.log(`📧 SUJETS AVEC MINIMUM 3 EMAILS (${validSubjects.length} trouvés)`);
   console.log('='.repeat(70));
-  
+
   for (let i = 0; i < validSubjects.length; i++) {
     const subjectInfo = validSubjects[i];
     console.log(`\n${i + 1}. 📌 ${subjectInfo.subject}`);
@@ -454,13 +487,13 @@ function displayValidSubjects(validSubjects) {
  */
 function getParticipantsGroup(email) {
   const participants = new Set();
-  
+
   // Ajouter l'expéditeur
   if (email.from) {
     const fromEmail = email.from.split('<').pop().replace('>', '');
     participants.add(fromEmail.toLowerCase());
   }
-  
+
   // Ajouter les destinataires
   if (email.to) {
     for (const to of email.to.split(',')) {
@@ -470,7 +503,7 @@ function getParticipantsGroup(email) {
       }
     }
   }
-  
+
   // Ajouter les CC
   if (email.cc) {
     for (const cc of email.cc.split(',')) {
@@ -480,7 +513,7 @@ function getParticipantsGroup(email) {
       }
     }
   }
-  
+
   return participants;
 }
 
@@ -492,21 +525,21 @@ function getParticipantsGroup(email) {
  */
 function createTemporalGroupTree(emails, subject) {
   // Filtrer et trier par date
-  const subjectEmails = emails.filter(e => e.subject === subject);
+  const subjectEmails = emails.filter((e) => e.subject === subject);
   subjectEmails.sort((a, b) => a.date - b.date);
-  
+
   if (subjectEmails.length === 0) {
     return { nodes: [], links: [], metadata: {} };
   }
-  
+
   // Créer les nodes
   const nodes = [];
   const emailToIndex = {};
-  
+
   for (let i = 0; i < subjectEmails.length; i++) {
     const email = subjectEmails[i];
     const participantsGroup = getParticipantsGroup(email);
-    
+
     const node = {
       id: email.id,
       index: i,
@@ -522,19 +555,19 @@ function createTemporalGroupTree(emails, subject) {
       participantsGroup: Array.from(participantsGroup),
       hasAttachments: email.hasAttachments === true,
       children: [],
-      isRoot: (i === 0)
+      isRoot: i === 0,
     };
     nodes.push(node);
     emailToIndex[email.messageId] = i;
   }
-  
+
   // PARCOURIR DU PLUS RÉCENT AU PLUS ANCIEN
   for (let i = subjectEmails.length - 1; i > 0; i--) {
     const currentEmail = subjectEmails[i];
     const currentGroup = new Set(nodes[i].participantsGroup);
-    
+
     let parentIndex = null;
-    
+
     // 1. Chercher le mail juste avant avec le même groupe
     for (let j = i - 1; j >= 0; j--) {
       const previousGroup = new Set(nodes[j].participantsGroup);
@@ -543,7 +576,7 @@ function createTemporalGroupTree(emails, subject) {
         break;
       }
     }
-    
+
     // 2. Sinon utiliser inReplyTo
     if (parentIndex === null) {
       const parentId = currentEmail.inReplyTo;
@@ -551,16 +584,16 @@ function createTemporalGroupTree(emails, subject) {
         parentIndex = emailToIndex[parentId];
       }
     }
-    
+
     // 3. Sinon lier au root
     if (parentIndex === null) {
       parentIndex = 0;
     }
-    
+
     // Ajouter aux children du parent
     nodes[parentIndex].children.push(currentEmail.messageId);
   }
-  
+
   // Créer les links à partir des children
   const links = [];
   for (let i = 0; i < nodes.length; i++) {
@@ -572,19 +605,19 @@ function createTemporalGroupTree(emails, subject) {
         target: childIndex,
         type: 'temporal_group',
         sourceId: node.messageId,
-        targetId: childId
+        targetId: childId,
       });
     }
   }
-  
+
   return {
     subject: subject,
     nodes: nodes,
     links: links,
     metadata: {
       totalEmails: subjectEmails.length,
-      rootId: subjectEmails[0].id
-    }
+      rootId: subjectEmails[0].id,
+    },
   };
 }
 
@@ -613,21 +646,21 @@ function setsAreEqual(set1, set2) {
 async function getEmailsForSubjectOptimized(fileHandle, subjectInfo) {
   try {
     console.log(`🔍 DEBUG: Recherche des emails pour le sujet "${subjectInfo.subject}"`);
-    
+
     // Charger tous les emails et filtrer par sujet
     const allEmails = await loadEmailsFromHandle(fileHandle, 500);
     console.log(`🔍 DEBUG: ${allEmails.length} emails chargés au total`);
-    
+
     // Filtrer par sujet
-    const subjectEmails = allEmails.filter(email => {
+    const subjectEmails = allEmails.filter((email) => {
       const emailSubject = extractSubject(email);
       return emailSubject === subjectInfo.subject;
     });
-    
+
     console.log(`✅ ${subjectEmails.length} emails trouvés pour "${subjectInfo.subject}"`);
     return subjectEmails;
   } catch (error) {
-    console.error("Erreur récupération emails optimisée:", error);
+    console.error('Erreur récupération emails optimisée:', error);
     return [];
   }
 }
@@ -650,6 +683,5 @@ export default {
   cleanEmail,
   displayValidSubjects,
   getParticipantsGroup,
-  setsAreEqual
+  setsAreEqual,
 };
- 

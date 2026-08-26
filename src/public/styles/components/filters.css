@@ -22,7 +22,9 @@
   gap: var(--space-1);
 }
 
-.filter-button .btn-icon { font-size: 12px; }
+.filter-button .btn-icon {
+  font-size: 12px;
+}
 
 .filter-button:hover {
   border-color: var(--primary);
@@ -213,7 +215,7 @@
   background: var(--bg-tertiary);
 }
 
-.filter-checkbox input[type="checkbox"] {
+.filter-checkbox input[type='checkbox'] {
   margin-top: 2px;
   width: 16px;
   height: 16px;
@@ -253,7 +255,7 @@
   color: var(--text-secondary);
 }
 
-.filter-input-group input[type="number"] {
+.filter-input-group input[type='number'] {
   width: 80px;
   padding: var(--space-1-5) var(--space-3);
   border: 1px solid var(--border-light);
@@ -263,7 +265,7 @@
   color: var(--text-primary);
 }
 
-.filter-input-group input[type="number"]:focus {
+.filter-input-group input[type='number']:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-ring);
 }
@@ -399,8 +401,12 @@
   font-family: var(--font-family-mono);
 }
 
-.stat-success .stat-value { color: var(--success); }
-.stat-danger .stat-value { color: var(--error); }
+.stat-success .stat-value {
+  color: var(--success);
+}
+.stat-danger .stat-value {
+  color: var(--error);
+}
 
 .stats-grid .stat-label {
   font-size: var(--text-xs);
@@ -424,9 +430,19 @@
   color: var(--text-primary);
 }
 
-.stats-reasons ul { margin: 0; padding: 0; }
-.stats-reasons li { padding: var(--space-1) 0; font-size: var(--text-sm); color: var(--text-secondary); }
-.stats-reasons strong { color: var(--primary); font-weight: var(--font-semibold); }
+.stats-reasons ul {
+  margin: 0;
+  padding: 0;
+}
+.stats-reasons li {
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.stats-reasons strong {
+  color: var(--primary);
+  font-weight: var(--font-semibold);
+}
 
 /* === FOOTER === */
 .filter-modal-footer {
@@ -476,9 +492,20 @@
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .filter-modal-content { max-width: 100%; border-radius: 0; }
-  .filter-modal-header { border-radius: 0; }
-  .filter-modal-footer { border-radius: 0; }
-  .stats-grid { grid-template-columns: 1fr; }
-  .filter-modal-body { padding: var(--space-4); }
+  .filter-modal-content {
+    max-width: 100%;
+    border-radius: 0;
+  }
+  .filter-modal-header {
+    border-radius: 0;
+  }
+  .filter-modal-footer {
+    border-radius: 0;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .filter-modal-body {
+    padding: var(--space-4);
+  }
 }

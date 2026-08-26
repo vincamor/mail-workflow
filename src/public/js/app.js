@@ -4,14 +4,34 @@
  */
 
 // Import des modules
-import emailAnalyzer from "/services/emailAnalyzer_browser.js";
-import treeVisualization, { setNodeClickHandler } from "./treeRenderer.js";
+import emailAnalyzer from '/services/emailAnalyzer_browser.js';
+import treeVisualization, { setNodeClickHandler } from './treeRenderer.js';
 import { setupFetchInterceptor, initLoginButtons } from './auth.js';
-import { showLoadingOverlay, hideLoadingOverlay, updateLoadingOverlay, showConnectedInterface, showLoginInterface, initUIEvents } from './ui.js';
+import {
+  showLoadingOverlay,
+  hideLoadingOverlay,
+  updateLoadingOverlay,
+  showConnectedInterface,
+  showLoginInterface,
+  initUIEvents,
+} from './ui.js';
 import { initPanelResizers } from './panels.js';
 import { initFolderHandlers, restoreFolder } from './folders.js';
-import { downloadEmails, syncEmails, startEmailPolling, updateNewEmailsBadge, redownloadMissingEmails } from './emails.js';
-import { autoAnalyzeConversations, selectSubject as analysisSelectSubject, setSelectSubjectHandler, incrementalAnalyze, initTreeNotificationBanner, clearTreeNotification } from './analysis.js';
+import {
+  downloadEmails,
+  syncEmails,
+  startEmailPolling,
+  updateNewEmailsBadge,
+  redownloadMissingEmails,
+} from './emails.js';
+import {
+  autoAnalyzeConversations,
+  selectSubject as analysisSelectSubject,
+  setSelectSubjectHandler,
+  incrementalAnalyze,
+  initTreeNotificationBanner,
+  clearTreeNotification,
+} from './analysis.js';
 import { showEmailDetail } from './email-detail.js';
 import { initFilterUI, setOnFiltersSaved, setOnSubjectRestored } from './filterUI.js';
 import { initGroupContextMenu } from './groupContextMenu.js';
@@ -19,14 +39,19 @@ import { restoreTheme, buildThemePicker } from './themeManager.js';
 import { toastSuccess } from './toast.js';
 import { initAIPanel } from './aiPanel.js';
 import { initChatUI } from './aiChatUI.js';
-import { isDemoMode, showDemoBanner, applyDemoReadOnlyUI, DEMO_PROVIDER, DEMO_USER_ID } from './demo.js';
+import {
+  isDemoMode,
+  showDemoBanner,
+  applyDemoReadOnlyUI,
+  DEMO_PROVIDER,
+  DEMO_USER_ID,
+} from './demo.js';
 
 // Connecter showEmailDetail au treeRenderer (remplace window.showEmailDetail)
 setNodeClickHandler(showEmailDetail);
 
 // Restaurer le thème sauvegardé avant le premier paint
 restoreTheme();
-
 
 // Variables globales de l'état de l'application
 let analysisLaunched = false;
@@ -53,16 +78,16 @@ async function initApp() {
   }
 
   console.log("🚀 Initialisation de l'application");
-  
+
   // Configurer l'intercepteur fetch pour la gestion des sessions
   setupFetchInterceptor();
-  
+
   // Initialiser les boutons de connexion
   initLoginButtons();
-  
+
   // Initialiser les resizers de panneaux
   initPanelResizers();
-  
+
   // Initialiser les événements UI (tiroirs, boutons actions, etc.) sans inline onclick
   initUIEvents();
 
@@ -104,7 +129,10 @@ async function initApp() {
       const userId = urlParams.get('email');
       const fileInfo = await getEmailFileHandle(userId, provider);
       if (!fileInfo || !fileInfo.fileHandle) return;
-      const emails = await emailAnalyzer.getEmailsForSubjectOptimized(fileInfo.fileHandle, subjectInfo);
+      const emails = await emailAnalyzer.getEmailsForSubjectOptimized(
+        fileInfo.fileHandle,
+        subjectInfo
+      );
       if (!emails || emails.length === 0) return;
       const lastEmail = [...emails].sort((a, b) => (b.date || 0) - (a.date || 0))[0];
 
@@ -119,14 +147,14 @@ async function initApp() {
       setTimeout(() => {
         showReplyForm(lastEmail, 'reply', { prefilledBody: text });
       }, 150);
-    }
+    },
   });
 
   // Récupérer les paramètres URL
   const urlParams = new URLSearchParams(window.location.search);
-  const provider = urlParams.get("provider");
-  const email = urlParams.get("email");
-  
+  const provider = urlParams.get('provider');
+  const email = urlParams.get('email');
+
   // Gérer l'interface selon l'état de connexion
   if (provider && email) {
     await initConnectedInterface(provider, email);
@@ -137,13 +165,13 @@ async function initApp() {
 
 // Initialiser l'interface non connectée
 function initLoginInterface() {
-  const statusDiv = document.getElementById("status");
-  const downloadEmailsBtn = document.getElementById("downloadEmailsBtn");
-  
-  statusDiv.textContent = "Non connecté.";
+  const statusDiv = document.getElementById('status');
+  const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
+
+  statusDiv.textContent = 'Non connecté.';
   showLoginInterface();
-  
-  if (downloadEmailsBtn) downloadEmailsBtn.style.display = "none";
+
+  if (downloadEmailsBtn) downloadEmailsBtn.style.display = 'none';
 }
 
 /**
@@ -184,33 +212,30 @@ async function initDemoInterface() {
 
 // Initialiser l'interface connectée
 async function initConnectedInterface(provider, email) {
-  const statusDiv = document.getElementById("status");
-  
+  const statusDiv = document.getElementById('status');
+
   statusDiv.textContent = `Connecté à ${provider} en tant que ${email}`;
-  
+
   // Afficher l'interface connectée
   showConnectedInterface(provider, email);
-  
+
   // Afficher l'overlay de chargement dès le début
-  showLoadingOverlay("Lecture des emails en cours...", 0);
-  
+  showLoadingOverlay('Lecture des emails en cours...', 0);
+
   // Afficher la barre de chargement pour la lecture des emails
-  const loadingAnalysis = document.getElementById("loadingAnalysis");
-  loadingAnalysis.style.display = "block";
-  document.getElementById("loadingPercentage").textContent = "0%";
-  document.getElementById("loadingProgress").style.width = "0%";
-  const loadingTextSpan = document.querySelector(
-    "#loadingAnalysis .loading-text"
-  );
+  const loadingAnalysis = document.getElementById('loadingAnalysis');
+  loadingAnalysis.style.display = 'block';
+  document.getElementById('loadingPercentage').textContent = '0%';
+  document.getElementById('loadingProgress').style.width = '0%';
+  const loadingTextSpan = document.querySelector('#loadingAnalysis .loading-text');
   if (loadingTextSpan) {
-    loadingTextSpan.innerHTML =
-      '<span id="loadingPercentage">0%</span> - Lecture des mails...';
+    loadingTextSpan.innerHTML = '<span id="loadingPercentage">0%</span> - Lecture des mails...';
   }
-  
+
   // Récupérer les IDs et les 20 premiers emails pour affichage
   // (l'analyse est déclenchée ci-dessous, après la sync, pas depuis fetchEmails)
   await fetchEmails(provider, email);
-  
+
   // Initialiser les handlers de dossiers
   const userId = email;
   initFolderHandlers(userId, async () => {
@@ -223,13 +248,16 @@ async function initConnectedInterface(provider, email) {
     if (provider && email) {
       analysisLaunched = true;
       console.log("🔄 Nouveau dossier sélectionné - Relancement de l'analyse...");
-      setTimeout(() => autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email), 500);
+      setTimeout(
+        () => autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email),
+        500
+      );
     }
   });
-  
+
   // Initialiser le gestionnaire de téléchargement et de mise à jour
   initDownloadHandler(provider, email);
-  
+
   // Initialiser l'interface des filtres
   await initFilterUI();
 
@@ -263,25 +291,28 @@ async function initConnectedInterface(provider, email) {
   // Lancer l'analyse du JSONL existant
   if (!analysisLaunched) {
     analysisLaunched = true;
-    setTimeout(() => autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email), 500);
+    setTimeout(
+      () => autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email),
+      500
+    );
   }
 }
 
 // Récupérer les emails depuis le serveur
 async function fetchEmails(provider) {
-  const emailsDiv = document.getElementById("emails");
-  const downloadEmailsBtn = document.getElementById("downloadEmailsBtn");
-  
-  let fetchUrl = "";
-  if (provider === "gmail") fetchUrl = "/gmail/emails";
-  else if (provider === "outlook") fetchUrl = "/outlook/emails";
+  const emailsDiv = document.getElementById('emails');
+  const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
+
+  let fetchUrl = '';
+  if (provider === 'gmail') fetchUrl = '/gmail/emails';
+  else if (provider === 'outlook') fetchUrl = '/outlook/emails';
   else return;
-  
+
   try {
     // Récupérer les filtres actuels depuis filterUI
     const { getCurrentFilters } = await import('./filterUI.js');
     const filters = getCurrentFilters();
-    
+
     console.log('📋 Filtres envoyés pour la récupération des emails:', filters);
 
     // Envoyer les filtres en query string (format original)
@@ -295,34 +326,33 @@ async function fetchEmails(provider) {
       fetchUrlWithFilters += `${separator}afterDate=${afterDateMs}`;
       console.log(`📅 Filtre date actif: après ${filters.customAfterDate}`);
     }
-    
+
     const response = await fetch(fetchUrlWithFilters);
     const data = await response.json();
-    
+
     if (data.displayEmails && Array.isArray(data.displayEmails)) {
       // Nouveau format avec séparation affichage/téléchargement
       availableMessageIds = data.messageIds || [];
-      
+
       // Mettre à jour le compteur dans le panneau gauche
       if (data.totalAvailable > 0) {
-        document.getElementById("emailCount").textContent =
-          data.totalAvailable;
-        
+        document.getElementById('emailCount').textContent = data.totalAvailable;
+
         // Mettre à jour le badge du bouton de téléchargement
-        const emailCountBadge = document.getElementById("emailCountBadge");
+        const emailCountBadge = document.getElementById('emailCountBadge');
         if (emailCountBadge) {
           emailCountBadge.textContent = data.totalAvailable;
         }
-        
+
         // Simuler la progression de lecture
         simulateReadProgress();
-        
-        downloadEmailsBtn.style.display = "block";
+
+        downloadEmailsBtn.style.display = 'block';
         // L'analyse sera déclenchée depuis initConnectedInterface, après la sync
       } else {
-        document.getElementById("emailCount").textContent = "0";
+        document.getElementById('emailCount').textContent = '0';
         hideLoadingOverlay();
-        downloadEmailsBtn.style.display = "none";
+        downloadEmailsBtn.style.display = 'none';
       }
     } else if (Array.isArray(data)) {
       // Ancien format (fallback)
@@ -330,31 +360,30 @@ async function fetchEmails(provider) {
         id: e.id,
         type: e.type,
       }));
-      
+
       if (data.length > 0) {
-        document.getElementById("emailCount").textContent = data.length;
+        document.getElementById('emailCount').textContent = data.length;
         simulateReadProgress();
-        downloadEmailsBtn.style.display = "inline-block";
+        downloadEmailsBtn.style.display = 'inline-block';
         // L'analyse sera déclenchée depuis initConnectedInterface, après la sync
       } else {
-        document.getElementById("emailCount").textContent = "0";
+        document.getElementById('emailCount').textContent = '0';
         hideLoadingOverlay();
-        downloadEmailsBtn.style.display = "none";
+        downloadEmailsBtn.style.display = 'none';
       }
     } else {
       hideLoadingOverlay();
-      emailsDiv.textContent =
-        data.error || "Erreur lors de la récupération des emails";
-      downloadEmailsBtn.style.display = "none";
+      emailsDiv.textContent = data.error || 'Erreur lors de la récupération des emails';
+      downloadEmailsBtn.style.display = 'none';
     }
-    
+
     // Masquer le div emails dans le panneau central
-    emailsDiv.innerHTML = "";
+    emailsDiv.innerHTML = '';
   } catch (error) {
     hideLoadingOverlay();
-    emailsDiv.innerHTML = "";
-    document.getElementById("emailCount").textContent = "0";
-    downloadEmailsBtn.style.display = "none";
+    emailsDiv.innerHTML = '';
+    document.getElementById('emailCount').textContent = '0';
+    downloadEmailsBtn.style.display = 'none';
   }
 }
 
@@ -364,37 +393,27 @@ function simulateReadProgress() {
   const readInterval = setInterval(() => {
     readProgress += Math.random() * 20;
     if (readProgress > 100) readProgress = 100;
-    document.getElementById("loadingProgress").style.width =
-      readProgress + "%";
-    document.getElementById("loadingPercentage").textContent =
-      Math.round(readProgress) + "%";
+    document.getElementById('loadingProgress').style.width = readProgress + '%';
+    document.getElementById('loadingPercentage').textContent = Math.round(readProgress) + '%';
     // Mettre à jour l'overlay (phase 1: 0-50%)
-    updateLoadingOverlay(
-      "Lecture des emails en cours...",
-      readProgress * 0.5
-    );
+    updateLoadingOverlay('Lecture des emails en cours...', readProgress * 0.5);
     if (readProgress >= 100) {
       clearInterval(readInterval);
     }
   }, 100);
-  
+
   setTimeout(() => {
     clearInterval(readInterval);
-    document.getElementById("loadingProgress").style.width =
-      "100%";
-    document.getElementById("loadingPercentage").textContent =
-      "100%";
-    updateLoadingOverlay(
-      "Emails chargés, préparation de l'analyse...",
-      50
-    );
+    document.getElementById('loadingProgress').style.width = '100%';
+    document.getElementById('loadingPercentage').textContent = '100%';
+    updateLoadingOverlay("Emails chargés, préparation de l'analyse...", 50);
   }, 1000);
 }
 
 // Initialiser le gestionnaire de téléchargement et de mise à jour
 function initDownloadHandler(provider, email) {
-  const downloadEmailsBtn = document.getElementById("downloadEmailsBtn");
-  const updateEmailsBtn = document.getElementById("updateEmailsBtn");
+  const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
+  const updateEmailsBtn = document.getElementById('updateEmailsBtn');
 
   // Quand les filtres sont sauvegardés, re-récupérer les IDs avec les nouveaux filtres
   setOnFiltersSaved(() => {
@@ -410,11 +429,11 @@ function initDownloadHandler(provider, email) {
       onMilestone: (emails, milestoneOptions) => {
         incrementalAnalyze(emailAnalyzer, emails, milestoneOptions);
       },
-      milestoneInterval: 1000
+      milestoneInterval: 1000,
     });
 
     // Final analysis from JSONL file (canonical source) after download completes
-    console.log("📊 Téléchargement terminé — analyse finale dans 2.5s");
+    console.log('📊 Téléchargement terminé — analyse finale dans 2.5s');
     setTimeout(async () => {
       analysisLaunched = false;
       await autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email);
@@ -424,7 +443,7 @@ function initDownloadHandler(provider, email) {
 
   // Mise à jour incrémentale forcée (bouton manuel)
   if (updateEmailsBtn) {
-    updateEmailsBtn.style.display = "block";
+    updateEmailsBtn.style.display = 'block';
     updateEmailsBtn.onclick = async () => {
       updateEmailsBtn.disabled = true;
       updateEmailsBtn.querySelector('.btn-text').textContent = 'Mise à jour...';
@@ -451,11 +470,10 @@ function initDownloadHandler(provider, email) {
 // Injecter le handler de sélection de sujet dans analysis.js (évite le couplage via window.*)
 setSelectSubjectHandler(async (subject) => {
   const urlParams = new URLSearchParams(window.location.search);
-  const provider = urlParams.get("provider") || "gmail";
-  const email = urlParams.get("email");
+  const provider = urlParams.get('provider') || 'gmail';
+  const email = urlParams.get('email');
 
   await analysisSelectSubject(emailAnalyzer, treeVisualization, subject, provider, email);
 });
 
-console.log("✅ Module app.js chargé");
-
+console.log('✅ Module app.js chargé');

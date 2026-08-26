@@ -58,7 +58,11 @@ function closeEmailDetailModal(modal) {
     modalKeyHandler = null;
   }
   if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-    try { lastFocusedElement.focus(); } catch (_) { /* element retiré du DOM */ }
+    try {
+      lastFocusedElement.focus();
+    } catch (_) {
+      /* element retiré du DOM */
+    }
   }
   lastFocusedElement = null;
 }
@@ -75,9 +79,11 @@ function handleModalKeydown(e, modal) {
   if (e.key !== 'Tab') return;
 
   // Piège à focus : garder le focus à l'intérieur de la modal.
-  const focusables = Array.from(modal.querySelectorAll(
-    'button, [href], input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])'
-  )).filter(el => el.offsetParent !== null || el === document.activeElement);
+  const focusables = Array.from(
+    modal.querySelectorAll(
+      'button, [href], input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => el.offsetParent !== null || el === document.activeElement);
   if (focusables.length === 0) return;
 
   const first = focusables[0];
@@ -114,7 +120,7 @@ function createEmailDetailModal() {
     padding: 20px;
     box-sizing: border-box;
   `;
-  
+
   modal.innerHTML = `
     <div style="
       background: var(--bg-secondary);
@@ -219,7 +225,7 @@ function createEmailDetailModal() {
       </div>
     </div>
   `;
-  
+
   // Ajouter l'événement de fermeture
   const closeBtn = modal.querySelector('#closeEmailDetail');
   closeBtn.addEventListener('click', () => {
@@ -232,7 +238,7 @@ function createEmailDetailModal() {
       closeEmailDetailModal(modal);
     }
   });
-  
+
   // Améliorer le style du bouton close au survol
   closeBtn.addEventListener('mouseenter', () => {
     closeBtn.style.background = 'var(--primary-light)';
@@ -271,7 +277,9 @@ function populateEmailDetail(modal, emailData) {
   const cc = emailData.cc || '';
   const subject = emailData.subject || 'Sans sujet';
   const date = formatDate(emailData.date);
-  const bodyTextContent = cleanEmailBody(emailData.bodyText || emailData.snippet || 'Aucun contenu disponible');
+  const bodyTextContent = cleanEmailBody(
+    emailData.bodyText || emailData.snippet || 'Aucun contenu disponible'
+  );
 
   // Remplir les champs
   modal.querySelector('#emailFrom').textContent = from;
@@ -332,7 +340,8 @@ async function loadRichBody(bodyEl, emailId) {
     // │ rouvrirait une faille XSS complète. À NE PAS FAIRE.                    │
     // └──────────────────────────────────────────────────────────────────────┘
     iframe.sandbox = 'allow-same-origin';
-    iframe.style.cssText = 'width:100%;border:none;min-height:200px;background:white;border-radius:6px;';
+    iframe.style.cssText =
+      'width:100%;border:none;min-height:200px;background:white;border-radius:6px;';
     bodyEl.textContent = '';
     bodyEl.appendChild(iframe);
 
@@ -410,7 +419,7 @@ async function loadRichBody(bodyEl, emailId) {
 // Formater la date de manière lisible
 function formatDate(dateString) {
   if (!dateString) return 'Date inconnue';
-  
+
   try {
     const date = new Date(dateString);
     const options = {
@@ -419,7 +428,7 @@ function formatDate(dateString) {
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     };
     return date.toLocaleDateString('fr-FR', options);
   } catch (e) {
@@ -430,10 +439,10 @@ function formatDate(dateString) {
 // Nettoyer le corps de l'email (enlever HTML, entités, etc.)
 function cleanEmailBody(body) {
   if (!body) return 'Aucun contenu';
-  
+
   // Enlever les balises HTML
   let cleaned = body.replace(/<[^>]*>/g, '');
-  
+
   // Décoder les entités HTML communes
   cleaned = cleaned
     .replace(/&nbsp;/g, ' ')
@@ -443,13 +452,13 @@ function cleanEmailBody(body) {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'");
-  
+
   // Enlever les espaces multiples
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
-  
+
   // Extraire uniquement la partie originale (sans l'historique)
   cleaned = extractOriginalMessage(cleaned);
-  
+
   return cleaned;
 }
 
@@ -460,42 +469,42 @@ function cleanEmailBody(body) {
  */
 function extractOriginalMessage(text) {
   if (!text) return text;
-  
+
   const originalText = text;
-  
+
   // Patterns de détection des citations/historiques
   const quotePatterns = [
     // Gmail anglais: "On Mon, Aug 25, 2025 at 12:30 PM, name@email.com wrote:"
     /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}\s*(AM|PM)?,?\s+.*?wrote:/i,
-    
+
     // Gmail français: "Le lun. 25 août 2025 à 12:30, name@email.com a écrit :"
     /Le\s+\w+\.?\s+\d{1,2}\s+\w+\.?\s+\d{4}\s+à\s+\d{1,2}:\d{2}.*?a écrit\s*:/i,
-    
+
     // Pattern simple date + wrote: "On Mon 25 Aug 2025 at 00:38, ... wrote:"
     /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}.*?wrote:/i,
-    
+
     // Pattern sans virgule: "On Mon 25 Aug 2025 at 00:38"
     /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}/i,
-    
+
     // Pattern court: "On Sat, 22 Mar 2025 at 18:26"
     /On\s+\w+,\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}/i,
-    
+
     // Outlook: "From: ... Sent: ... To: ..."
     /From:\s*.+?Sent:\s*.+?To:/is,
-    
+
     // Original Message delimiter
     /[-_]{3,}\s*Original Message\s*[-_]{3,}/i,
-    
+
     // Email standard: "--- On ... wrote:"
     /---+\s*On\s+.*?wrote:/i,
-    
+
     // Format avec date ISO: "2025-08-25 12:30"
-    /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}.*?wrote:/i
+    /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}.*?wrote:/i,
   ];
-  
+
   let earliestIndex = text.length;
   let foundPattern = false;
-  
+
   // Chercher le premier pattern de citation
   for (const pattern of quotePatterns) {
     const match = text.match(pattern);
@@ -504,7 +513,7 @@ function extractOriginalMessage(text) {
       foundPattern = true;
     }
   }
-  
+
   // Si on a trouvé un pattern, couper le texte avant celui-ci
   if (foundPattern && earliestIndex > 0) {
     text = text.substring(0, earliestIndex).trim();
@@ -512,12 +521,12 @@ function extractOriginalMessage(text) {
     // Le mail commence directement par une citation (pas de contenu original)
     return '[Message vide - Contenu non textuel (image ou pièce jointe uniquement)]';
   }
-  
+
   // Nettoyer les lignes commençant par ">" (citations)
   const lines = text.split('\n');
   const cleanedLines = [];
   let foundQuoteLine = false;
-  
+
   for (const line of lines) {
     const trimmedLine = line.trim();
     // Détecter les lignes de citation (commencent par > ou >>)
@@ -527,11 +536,11 @@ function extractOriginalMessage(text) {
     }
     cleanedLines.push(line);
   }
-  
+
   if (foundQuoteLine) {
     text = cleanedLines.join('\n').trim();
   }
-  
+
   // Vérifier si le texte final est vide ou très court (< 5 caractères)
   if (!text || text.length < 5) {
     // Vérifier si le texte original contenait des citations
@@ -539,8 +548,6 @@ function extractOriginalMessage(text) {
       return '[Message vide - Contenu non textuel (image ou pièce jointe uniquement)]';
     }
   }
-  
+
   return text || '[Aucun contenu textuel]';
 }
-
-

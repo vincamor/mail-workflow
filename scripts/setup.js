@@ -152,9 +152,7 @@ async function askChoice(rl, question, options, defaultIndex = 0) {
   say(question);
   options.forEach((label, index) => say(`    ${index + 1}) ${label}`));
   for (;;) {
-    const answer = (
-      await rl.question(`  Choice ${color.dim(`[${defaultIndex + 1}]`)} > `)
-    ).trim();
+    const answer = (await rl.question(`  Choice ${color.dim(`[${defaultIndex + 1}]`)} > `)).trim();
     if (answer === '') return defaultIndex;
     const picked = Number.parseInt(answer, 10);
     if (Number.isInteger(picked) && picked >= 1 && picked <= options.length) {
@@ -258,11 +256,7 @@ function buildEnvContent(values) {
   try {
     template = fs.readFileSync(ENV_EXAMPLE_PATH, 'utf8');
   } catch {
-    say(
-      color.yellow(
-        '  Note: .env.example could not be read — using the built-in template.'
-      )
-    );
+    say(color.yellow('  Note: .env.example could not be read — using the built-in template.'));
   }
   return renderEnvFromTemplate(template, values);
 }
@@ -273,10 +267,7 @@ function buildEnvContent(values) {
  * @param {string} content
  */
 function writeEnvAtomically(content) {
-  const tmpPath = path.join(
-    PROJECT_ROOT,
-    `.env.tmp-${crypto.randomBytes(6).toString('hex')}`
-  );
+  const tmpPath = path.join(PROJECT_ROOT, `.env.tmp-${crypto.randomBytes(6).toString('hex')}`);
   try {
     // 0o600 is a no-op on Windows but protects the file on macOS/Linux.
     fs.writeFileSync(tmpPath, content, { encoding: 'utf8', mode: 0o600 });
@@ -361,11 +352,7 @@ async function runWizard(rl, flags) {
 
     try {
       fs.copyFileSync(ENV_PATH, ENV_BACKUP_PATH);
-      say(
-        color.yellow(
-          `  Your previous .env was copied to ${path.basename(ENV_BACKUP_PATH)}`
-        )
-      );
+      say(color.yellow(`  Your previous .env was copied to ${path.basename(ENV_BACKUP_PATH)}`));
     } catch (err) {
       say(color.red(`  Could not back up .env (${err.code || err.message}).`));
       say('  Fix: close any program holding the file, or copy it yourself first.');
@@ -408,11 +395,7 @@ async function runWizard(rl, flags) {
           '    Warning: a Google client ID normally ends with ".apps.googleusercontent.com".'
         )
       );
-      say(
-        color.yellow(
-          '    Double-check you copied the Client ID and not the project number.'
-        )
-      );
+      say(color.yellow('    Double-check you copied the Client ID and not the project number.'));
     }
     values.GMAIL_CLIENT_SECRET = await ask(rl, '  Gmail client secret', {
       required: true,
@@ -460,8 +443,10 @@ async function runWizard(rl, flags) {
     say(color.yellow('  Port changed — your redirect URIs changed too.'));
     say('  The URI registered in the provider console MUST match exactly.');
     say('  Go back and register these instead:');
-    if (useGmail) say(`    Google Cloud > Credentials > your OAuth client:  ${color.bold(uris.gmail)}`);
-    if (useOutlook) say(`    Azure > App registration > Authentication:      ${color.bold(uris.outlook)}`);
+    if (useGmail)
+      say(`    Google Cloud > Credentials > your OAuth client:  ${color.bold(uris.gmail)}`);
+    if (useOutlook)
+      say(`    Azure > App registration > Authentication:      ${color.bold(uris.outlook)}`);
     say();
     await rl.question('  Press Enter once that is done > ');
   }

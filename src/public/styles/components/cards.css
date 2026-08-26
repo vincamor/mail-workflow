@@ -16,7 +16,8 @@
   position: relative;
 }
 
-.card:hover, .email:hover {
+.card:hover,
+.email:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--glass-border-hover);
 }
@@ -51,9 +52,15 @@
   margin: var(--space-1) 0 0;
 }
 
-.card-body { padding: var(--space-5); }
-.card-body > *:first-child { margin-top: 0; }
-.card-body > *:last-child { margin-bottom: 0; }
+.card-body {
+  padding: var(--space-5);
+}
+.card-body > *:first-child {
+  margin-top: 0;
+}
+.card-body > *:last-child {
+  margin-bottom: 0;
+}
 
 .card-footer {
   padding: var(--space-3) var(--space-5);
@@ -141,7 +148,9 @@
 
 #subjectSearch:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-ring), var(--shadow-glow);
+  box-shadow:
+    0 0 0 3px var(--primary-ring),
+    var(--shadow-glow);
 }
 
 #subjectSearch::placeholder {
@@ -153,15 +162,36 @@
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--glass-border);
 }
-.card-outlined { border: 2px solid var(--border-medium); box-shadow: none; }
-.card-filled { background: var(--primary-light); border-color: rgba(242, 160, 123, 0.15); }
-.card-compact .card-body { padding: var(--space-3); }
-.card-spacious .card-body { padding: var(--space-8); }
+.card-outlined {
+  border: 2px solid var(--border-medium);
+  box-shadow: none;
+}
+.card-filled {
+  background: var(--primary-light);
+  border-color: rgba(242, 160, 123, 0.15);
+}
+.card-compact .card-body {
+  padding: var(--space-3);
+}
+.card-spacious .card-body {
+  padding: var(--space-8);
+}
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .card-body, .download-section { padding: var(--space-4); }
-  .card-header { padding: var(--space-3); }
-  .card-footer { padding: var(--space-2) var(--space-3); flex-direction: column; }
-  .user-connected { flex-direction: column; text-align: center; }
+  .card-body,
+  .download-section {
+    padding: var(--space-4);
+  }
+  .card-header {
+    padding: var(--space-3);
+  }
+  .card-footer {
+    padding: var(--space-2) var(--space-3);
+    flex-direction: column;
+  }
+  .user-connected {
+    flex-direction: column;
+    text-align: center;
+  }
 }

@@ -36,17 +36,17 @@ by side in one directory; they never share a file.
 
 ### Tolerant folder resolution
 
-Historically the picker required the *exact* root, and picking one level too
+Historically the picker required the _exact_ root, and picking one level too
 deep silently produced an empty app. `src/public/js/folderResolver.js` now
 accepts any of the three plausible levels and always returns the **same** data
 directory, so reads, downloads, syncs and cleanups agree:
 
-| You pick | Resolved data folder |
-|---|---|
-| the root that contains `EmailWorkflow/` | `<root>/EmailWorkflow/<userId>` |
-| the `EmailWorkflow/` folder itself | `<root>/<userId>` |
-| the account folder directly | `<root>` itself — recognised when its name equals `<userId>`, **or** when it directly contains any `*_emails.jsonl` |
-| none of the above, first download | creates `<root>/EmailWorkflow/<userId>` |
+| You pick                                | Resolved data folder                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| the root that contains `EmailWorkflow/` | `<root>/EmailWorkflow/<userId>`                                                                                     |
+| the `EmailWorkflow/` folder itself      | `<root>/<userId>`                                                                                                   |
+| the account folder directly             | `<root>` itself — recognised when its name equals `<userId>`, **or** when it directly contains any `*_emails.jsonl` |
+| none of the above, first download       | creates `<root>/EmailWorkflow/<userId>`                                                                             |
 
 The last row only happens with `{ create: true }`, which only the download path
 passes. Readers use `{ create: false }` and fail loudly rather than silently
@@ -109,14 +109,14 @@ Pretty-printed JSON, rewritten on every download and sync.
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `lastSyncDate` | ISO 8601 timestamp of the last successful write. Informational |
-| `lastInternalDate` | The highest `internalDate` seen, as a **string of milliseconds**. This is the incremental-sync watermark: the next sync asks the provider only for messages after it |
-| `totalEmails` | Running count of lines in the main JSONL |
-| `filtersUsed` | The exact filter set the file was downloaded with. If the current filters differ, the sync forces a full re-download rather than mixing two filter regimes in one file |
-| `provider` | `"gmail"` or `"outlook"` |
-| `bootstrapped` | Present and `true` only when the metadata was reconstructed from an existing JSONL by `bootstrapSyncMetadata()`, without re-downloading anything |
+| Field              | Meaning                                                                                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lastSyncDate`     | ISO 8601 timestamp of the last successful write. Informational                                                                                                         |
+| `lastInternalDate` | The highest `internalDate` seen, as a **string of milliseconds**. This is the incremental-sync watermark: the next sync asks the provider only for messages after it   |
+| `totalEmails`      | Running count of lines in the main JSONL                                                                                                                               |
+| `filtersUsed`      | The exact filter set the file was downloaded with. If the current filters differ, the sync forces a full re-download rather than mixing two filter regimes in one file |
+| `provider`         | `"gmail"` or `"outlook"`                                                                                                                                               |
+| `bootstrapped`     | Present and `true` only when the metadata was reconstructed from an existing JSONL by `bootstrapSyncMetadata()`, without re-downloading anything                       |
 
 Deleting this file is safe: the next sync rebuilds it from the JSONL.
 
@@ -128,7 +128,13 @@ Your organisation of the subject list. No mail content, only keys.
 {
   "version": 1,
   "groups": [
-    { "id": "grp_1740218400000", "name": "Migration", "parentId": null, "order": 0, "color": "#ef4444" }
+    {
+      "id": "grp_1740218400000",
+      "name": "Migration",
+      "parentId": null,
+      "order": 0,
+      "color": "#ef4444"
+    }
   ],
   "subjectMemberships": [
     { "subjectKey": "q3 platform migration", "groupIds": ["grp_1740218400000"] }
@@ -165,22 +171,22 @@ or `formatOutlookEmail()` (`src/services/outlookService.js`) — deliberately th
 provider-agnostic — and then written by `downloadEmails()`
 (`src/public/js/emails.js`) with `bodyHtml` removed.
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | string | The provider's internal message id. Gmail: `17abc…`. Outlook: `AAMkADAwATM0…`. This is the id used for every API call back to the provider, and the join key for the HTML companion file |
-| `threadId` | string | Provider-side conversation id. Gmail `threadId`; Outlook `conversationId` |
-| `snippet` | string | Short preview supplied by the provider (Gmail `snippet`, Outlook `bodyPreview`) |
-| `subject` | string | Raw subject line, `Re:`/`Fwd:` prefixes **not** stripped |
-| `from` | string | `"Display Name <address@example.com>"` |
-| `to` | string | Recipients joined with `", "` — a single string, not an array |
-| `cc` | string | Same encoding as `to`; empty string when there are none |
-| `date` | string | The header date as the provider gives it. Gmail: RFC 2822 (`Mon, 3 Mar 2025 08:00:00 +0000`). Outlook: ISO 8601 (`sentDateTime`, falling back to `receivedDateTime`). Human-facing only — sorting uses `internalDate` |
-| `messageId` | string | The RFC 5322 `Message-ID`, angle brackets included: `<abc@mail.example.com>`. **Not** the same thing as `id` |
-| `inReplyTo` | string | The RFC `In-Reply-To` header — the `messageId` of the parent message. Empty string when absent |
-| `references` | string | The RFC `References` header: the ancestor `messageId`s, space-separated, oldest first |
-| `internalDate` | string | Milliseconds since the Unix epoch, **as a string**. Gmail supplies it directly; Outlook derives it from `sentDateTime`. Always `parseInt()` before comparing, and never mistake it for seconds |
-| `hasAttachments` | boolean | True when the message carries at least one attachment. Attachments themselves are **not** downloaded — only this flag. See [ROADMAP.md](../../ROADMAP.md) |
-| `bodyText` | string | Plain-text body, **quote-stripped**: `stripQuotedText()` (`src/services/quoteStripper.js`) removes the quoted history before writing. For an HTML-only message the text is derived from the HTML |
+| Field            | Type    | Description                                                                                                                                                                                                           |
+| ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | string  | The provider's internal message id. Gmail: `17abc…`. Outlook: `AAMkADAwATM0…`. This is the id used for every API call back to the provider, and the join key for the HTML companion file                              |
+| `threadId`       | string  | Provider-side conversation id. Gmail `threadId`; Outlook `conversationId`                                                                                                                                             |
+| `snippet`        | string  | Short preview supplied by the provider (Gmail `snippet`, Outlook `bodyPreview`)                                                                                                                                       |
+| `subject`        | string  | Raw subject line, `Re:`/`Fwd:` prefixes **not** stripped                                                                                                                                                              |
+| `from`           | string  | `"Display Name <address@example.com>"`                                                                                                                                                                                |
+| `to`             | string  | Recipients joined with `", "` — a single string, not an array                                                                                                                                                         |
+| `cc`             | string  | Same encoding as `to`; empty string when there are none                                                                                                                                                               |
+| `date`           | string  | The header date as the provider gives it. Gmail: RFC 2822 (`Mon, 3 Mar 2025 08:00:00 +0000`). Outlook: ISO 8601 (`sentDateTime`, falling back to `receivedDateTime`). Human-facing only — sorting uses `internalDate` |
+| `messageId`      | string  | The RFC 5322 `Message-ID`, angle brackets included: `<abc@mail.example.com>`. **Not** the same thing as `id`                                                                                                          |
+| `inReplyTo`      | string  | The RFC `In-Reply-To` header — the `messageId` of the parent message. Empty string when absent                                                                                                                        |
+| `references`     | string  | The RFC `References` header: the ancestor `messageId`s, space-separated, oldest first                                                                                                                                 |
+| `internalDate`   | string  | Milliseconds since the Unix epoch, **as a string**. Gmail supplies it directly; Outlook derives it from `sentDateTime`. Always `parseInt()` before comparing, and never mistake it for seconds                        |
+| `hasAttachments` | boolean | True when the message carries at least one attachment. Attachments themselves are **not** downloaded — only this flag. See [ROADMAP.md](../../ROADMAP.md)                                                             |
+| `bodyText`       | string  | Plain-text body, **quote-stripped**: `stripQuotedText()` (`src/services/quoteStripper.js`) removes the quoted history before writing. For an HTML-only message the text is derived from the HTML                      |
 
 **Not in this file:** `bodyHtml` (in the companion), and `labelIds`,
 `sizeEstimate`, `historyId` — Gmail fields the app fetches but does not use, and
@@ -226,7 +232,7 @@ this:
    in the list at all.
 2. **`internalDate`** orders them. It is parsed to a `Date` and the messages are
    sorted ascending; the earliest becomes the root, and a node's index is its
-   position in that chronology. The horizontal axis of the tree *is* this
+   position in that chronology. The horizontal axis of the tree _is_ this
    ordering.
 3. **`from` + `to` + `cc`** form each message's participant set. The parent of a
    message is, first choice, the most recent earlier message with an **identical**

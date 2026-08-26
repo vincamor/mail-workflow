@@ -15,9 +15,9 @@ inert — it prints a GitHub warning and deploys nothing — until the
 
 Two places that are easy to confuse:
 
-- **GitHub Actions secrets/variables** — used by the *deployment* (authenticating
+- **GitHub Actions secrets/variables** — used by the _deployment_ (authenticating
   to Railway).
-- **Railway variables** — used by the *running app* (`SESSION_SECRET`, OAuth
+- **Railway variables** — used by the _running app_ (`SESSION_SECRET`, OAuth
   credentials, `REDIS_URL`, `APP_ORIGIN`, `ALLOW_LOCAL_AI`, …). These go on the
   Railway side, never in GitHub.
 
@@ -26,7 +26,7 @@ Two places that are easy to confuse:
 ## 1. Get a Railway token
 
 1. Go to https://railway.app and open **your project**.
-2. **Settings → Tokens** — a *project* token is recommended, since it is scoped
+2. **Settings → Tokens** — a _project_ token is recommended, since it is scoped
    to that project alone.
    - Alternative: an account token from https://railway.app/account/tokens.
 3. Click **Create Token**, name it (e.g. `github-actions`), and **copy the
@@ -37,7 +37,7 @@ Two places that are easy to confuse:
 1. In the GitHub repository: **Settings → Secrets and variables → Actions**.
 2. **Secrets** tab → **New repository secret**.
 3. Name: `RAILWAY_TOKEN`
-4. Secret: *(paste the token from step 1)*
+4. Secret: _(paste the token from step 1)_
 5. **Add secret**.
 
 ## 3. (Optional) Target a specific service
@@ -57,16 +57,16 @@ the project's default service.
 In **Railway → your service → Variables**, add the variables the app needs at
 runtime (these do **not** go in GitHub):
 
-| Variable | Role |
-|---|---|
-| `SESSION_SECRET` | Required outside development — the app refuses to start without it when `NODE_ENV=production` |
-| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REDIRECT_URI` | Gmail OAuth |
-| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` / `OUTLOOK_REDIRECT_URI` | Outlook OAuth |
-| `OUTLOOK_TENANT_ID` | `common` for personal + multi-tenant accounts, or your tenant GUID for a single-tenant Entra registration |
-| `APP_ORIGIN` | Public origin of the app (e.g. `https://<project>.up.railway.app`), used for CORS |
-| `REDIS_URL` | Provided automatically if you add the Railway Redis plugin. Without it, sessions are in-memory and are lost on every restart |
-| `ALLOW_LOCAL_AI` | `true` only if you point the AI proxy at a local Ollama — pointless in production, and it relaxes the anti-SSRF guard |
-| `PORT` | Managed by Railway automatically — do not set it |
+| Variable                                                               | Role                                                                                                                         |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `SESSION_SECRET`                                                       | Required outside development — the app refuses to start without it when `NODE_ENV=production`                                |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REDIRECT_URI`       | Gmail OAuth                                                                                                                  |
+| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` / `OUTLOOK_REDIRECT_URI` | Outlook OAuth                                                                                                                |
+| `OUTLOOK_TENANT_ID`                                                    | `common` for personal + multi-tenant accounts, or your tenant GUID for a single-tenant Entra registration                    |
+| `APP_ORIGIN`                                                           | Public origin of the app (e.g. `https://<project>.up.railway.app`), used for CORS                                            |
+| `REDIS_URL`                                                            | Provided automatically if you add the Railway Redis plugin. Without it, sessions are in-memory and are lost on every restart |
+| `ALLOW_LOCAL_AI`                                                       | `true` only if you point the AI proxy at a local Ollama — pointless in production, and it relaxes the anti-SSRF guard        |
+| `PORT`                                                                 | Managed by Railway automatically — do not set it                                                                             |
 
 See `.env.example` for the full list and the inline notes on each variable.
 

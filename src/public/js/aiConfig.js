@@ -6,10 +6,22 @@
 const STORAGE_KEY = 'mailproject-ai-config';
 
 const PROVIDER_DEFAULTS = {
-  ollama: { baseUrl: 'http://localhost:11434', model: 'gemma3:4b', placeholder: 'gemma3:4b, llama3.2, mistral...' },
-  openai: { baseUrl: 'https://api.openai.com', model: 'gpt-4o-mini', placeholder: 'gpt-4o-mini, gpt-4o, o3-mini...' },
-  anthropic: { baseUrl: 'https://api.anthropic.com', model: 'claude-sonnet-4-20250514', placeholder: 'claude-sonnet-4-20250514, claude-haiku-4-5-20251001...' },
-  custom: { baseUrl: '', model: '', placeholder: 'nom du modele' }
+  ollama: {
+    baseUrl: 'http://localhost:11434',
+    model: 'gemma3:4b',
+    placeholder: 'gemma3:4b, llama3.2, mistral...',
+  },
+  openai: {
+    baseUrl: 'https://api.openai.com',
+    model: 'gpt-4o-mini',
+    placeholder: 'gpt-4o-mini, gpt-4o, o3-mini...',
+  },
+  anthropic: {
+    baseUrl: 'https://api.anthropic.com',
+    model: 'claude-sonnet-4-20250514',
+    placeholder: 'claude-sonnet-4-20250514, claude-haiku-4-5-20251001...',
+  },
+  custom: { baseUrl: '', model: '', placeholder: 'nom du modele' },
 };
 
 export function getAIConfig() {
@@ -39,7 +51,7 @@ export async function testAIConnection(config) {
     const response = await fetch('/api/ai/health', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config)
+      body: JSON.stringify(config),
     });
     const data = await response.json();
     if (response.ok) {

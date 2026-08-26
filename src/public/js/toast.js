@@ -114,10 +114,14 @@ export function showGuideModal({ title, body, icon = '', type = 'info', buttonTe
 
     const close = () => {
       overlay.classList.add('guide-modal-exit');
-      overlay.addEventListener('animationend', () => {
-        overlay.remove();
-        resolve();
-      }, { once: true });
+      overlay.addEventListener(
+        'animationend',
+        () => {
+          overlay.remove();
+          resolve();
+        },
+        { once: true }
+      );
     };
 
     // Fermer sur bouton
@@ -190,10 +194,14 @@ export function showConfirmModal({
       if (resolved) return;
       resolved = true;
       overlay.classList.add('guide-modal-exit');
-      overlay.addEventListener('animationend', () => {
-        overlay.remove();
-        resolve(result);
-      }, { once: true });
+      overlay.addEventListener(
+        'animationend',
+        () => {
+          overlay.remove();
+          resolve(result);
+        },
+        { once: true }
+      );
     };
 
     overlay.querySelector('.confirm-modal-ok').onclick = () => close(true);

@@ -47,30 +47,34 @@ async function start() {
     app.set('trust proxy', 1);
   }
 
-  app.use(session({
-    store: store || undefined,
-    secret: process.env.SESSION_SECRET || 'dev_secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 2 // 2h
-    }
-  }));
+  app.use(
+    session({
+      store: store || undefined,
+      secret: process.env.SESSION_SECRET || 'dev_secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 2, // 2h
+      },
+    })
+  );
 
   // Helmet avec CSP par défaut, sauf img-src élargi à https: et data:
   // pour que les emails HTML (iframe sandbox srcdoc) affichent leurs images distantes.
   // script-src et les autres directives restent celles par défaut de Helmet.
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'img-src': ["'self'", 'data:', 'https:'],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          'img-src': ["'self'", 'data:', 'https:'],
+        },
       },
-    },
-  }));
+    })
+  );
 
   // CORS restreint à l'origine de l'app (frontend servi par le même serveur)
   const APP_ORIGIN = process.env.APP_ORIGIN || 'http://localhost:3000';
@@ -79,8 +83,10 @@ async function start() {
   // Limites de body : 10mb uniquement pour les routes qui reçoivent de grandes
   // listes d'IDs (download-chunks — les IDs Outlook font ~150 chars × milliers)
   // ou un contexte IA volumineux ; 1mb partout ailleurs.
-  app.use(['/gmail/download-chunks', '/outlook/download-chunks', '/api/ai'],
-    express.json({ limit: '10mb' }));
+  app.use(
+    ['/gmail/download-chunks', '/outlook/download-chunks', '/api/ai'],
+    express.json({ limit: '10mb' })
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
@@ -126,4 +132,4 @@ async function start() {
 start().catch((err) => {
   console.error('Erreur démarrage:', err);
   process.exit(1);
-}); 
+});

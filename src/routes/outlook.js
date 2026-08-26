@@ -10,21 +10,21 @@ const oauthLimiter = rateLimit({
   max: 5,
   message: { error: 'Trop de requêtes OAuth. Réessayez dans une minute.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 const downloadLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 3,
   message: { error: 'Trop de téléchargements. Réessayez dans une minute.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 const pollingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   message: { error: 'Trop de requêtes de polling.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // OAuth Outlook
@@ -42,7 +42,12 @@ router.get('/email/:messageId', requireAuth, outlookService.getEmailDetail);
 router.get('/count', pollingLimiter, requireAuth, outlookService.getEmailCount);
 
 // Télécharge les emails par tranches via SSE (même format que /gmail/download-chunks)
-router.post('/download-chunks', downloadLimiter, requireAuth, outlookService.downloadEmailsInChunks);
+router.post(
+  '/download-chunks',
+  downloadLimiter,
+  requireAuth,
+  outlookService.downloadEmailsInChunks
+);
 
 // Envoie une réponse à un email Outlook via Microsoft Graph
 router.post('/reply', requireAuth, outlookService.sendReply);

@@ -34,8 +34,8 @@ const commonRules = {
       varsIgnorePattern: '^_',
       // Codebase has many `catch (e) {}` blocks that never touch `e`.
       // Flagging those would be hundreds of no-benefit errors.
-      caughtErrors: 'none'
-    }
+      caughtErrors: 'none',
+    },
   ],
   // This project logs deliberately to the console, both in the Express
   // backend (startup/diagnostic logs) and in the browser (debug traces
@@ -52,7 +52,7 @@ const commonRules = {
   // no-build, no-typecheck project: references to variables that don't
   // exist (typos, missing imports, globals not declared for this file's
   // environment).
-  'no-undef': 'error'
+  'no-undef': 'error',
 };
 
 module.exports = [
@@ -63,8 +63,8 @@ module.exports = [
       'package-lock.json',
       '**/*.jsonl',
       'src/public/demo/**',
-      'coverage/**'
-    ]
+      'coverage/**',
+    ],
   },
 
   // ─── 1. Backend: src/**/*.js, CommonJS, Node globals ───
@@ -78,10 +78,10 @@ module.exports = [
       sourceType: 'commonjs',
       ecmaVersion: 2023,
       globals: {
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── 2. Front-end: src/public/**/*.js, ES modules, browser globals ───
@@ -93,10 +93,10 @@ module.exports = [
       sourceType: 'module',
       ecmaVersion: 2023,
       globals: {
-        ...globals.browser
-      }
+        ...globals.browser,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── 3. src/services/emailAnalyzer_browser.js — dual-nature file ───
@@ -120,10 +120,10 @@ module.exports = [
       sourceType: 'module',
       ecmaVersion: 2023,
       globals: {
-        ...globals.browser
-      }
+        ...globals.browser,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── 4. tests/backend/** — CommonJS, Node + Jest globals ───
@@ -134,10 +134,10 @@ module.exports = [
       ecmaVersion: 2023,
       globals: {
         ...globals.node,
-        ...globals.jest
-      }
+        ...globals.jest,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── 5. tests/frontend/** — ES modules, Node + browser (jsdom) + Jest globals ───
@@ -155,10 +155,10 @@ module.exports = [
       globals: {
         ...globals.node,
         ...globals.browser,
-        ...globals.jest
-      }
+        ...globals.jest,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── 6. scripts/**/*.js — CommonJS, Node globals ───
@@ -168,13 +168,13 @@ module.exports = [
       sourceType: 'commonjs',
       ecmaVersion: 2023,
       globals: {
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
-    rules: commonRules
+    rules: commonRules,
   },
 
   // ─── Prettier last: turn off any formatting-related rules so they never
   // conflict with `prettier --write` / `prettier --check`. ───
-  prettierConfig
+  prettierConfig,
 ];

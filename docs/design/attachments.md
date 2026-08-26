@@ -43,16 +43,16 @@ marked `[U#n]` and refer to the numbered items there.
 
 ### 1.1 What "attachment support" means here
 
-| # | In scope | Phase |
-|---|----------|-------|
-| S1 | Enumerate every attachment of every downloaded message: original filename, MIME type, byte size, inline-or-not, and the provider-side identifier needed to fetch it later | 1 |
-| S2 | Make `hasAttachments` — and therefore the tree paperclip badge — mean "has a real attachment", not "has any MIME part with a filename" | 1 |
-| S3 | Show the attachment list in the email detail view, with per-item state (indexed / on disk / skipped / failed) | 1 |
-| S4 | Download attachment bytes on demand into the user's local folder | 2 |
-| S5 | A self-built disk budget: per-file cutoff, total ceiling, visible usage | 2 |
-| S6 | Render locally stored inline images in the HTML body, replacing today's broken `cid:` references | 3 |
-| S7 | Let the user save any stored attachment to a location of their choosing | 2 |
-| S8 | Opt-in bulk fetch (per subject, or during download) and backfill of pre-existing datasets | 4 |
+| #   | In scope                                                                                                                                                                  | Phase |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| S1  | Enumerate every attachment of every downloaded message: original filename, MIME type, byte size, inline-or-not, and the provider-side identifier needed to fetch it later | 1     |
+| S2  | Make `hasAttachments` — and therefore the tree paperclip badge — mean "has a real attachment", not "has any MIME part with a filename"                                    | 1     |
+| S3  | Show the attachment list in the email detail view, with per-item state (indexed / on disk / skipped / failed)                                                             | 1     |
+| S4  | Download attachment bytes on demand into the user's local folder                                                                                                          | 2     |
+| S5  | A self-built disk budget: per-file cutoff, total ceiling, visible usage                                                                                                   | 2     |
+| S6  | Render locally stored inline images in the HTML body, replacing today's broken `cid:` references                                                                          | 3     |
+| S7  | Let the user save any stored attachment to a location of their choosing                                                                                                   | 2     |
+| S8  | Opt-in bulk fetch (per subject, or during download) and backfill of pre-existing datasets                                                                                 | 4     |
 
 ### 1.2 Explicit non-goals
 
@@ -128,11 +128,11 @@ Three properties matter and each is load-bearing:
 - **One directory per message.** Deleting a message's attachments is one
   `removeEntry(key, { recursive: true })` instead of a prefix scan over a flat
   directory of 50 000 files. It also means a per-message name collision is the
-  *only* collision that can happen, and §2.3 makes that one impossible by
+  _only_ collision that can happen, and §2.3 makes that one impossible by
   construction.
 - **A two-hex-character bucket above it.** 256 buckets. Neither NTFS nor ext4
   cares about 50 000 sibling directories, but Explorer, Finder, `ls`, backup
-  tools and antivirus scanners all degrade badly — and the user is *expected* to
+  tools and antivirus scanners all degrade badly — and the user is _expected_ to
   open this folder, because it is their folder. Bucketing keeps any single
   directory browsable.
 - **A provider segment.** The two providers use disjoint id spaces and a user
@@ -155,8 +155,8 @@ async function messageKey(providerId) {
   const bytes = new TextEncoder().encode(providerId);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest).slice(0, 8)]
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');                                  // 16 hex chars
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join(''); // 16 hex chars
 }
 ```
 
@@ -204,28 +204,28 @@ case and it should cost nothing.
 
 ```jsonc
 {
-  "v": 1,                          // schema version, per line, so migration can be incremental
-  "id": "18f2c9a01b2c3d4e",        // the SAME id as in <provider>_emails.jsonl — the join key
-  "key": "a3f0c1d2e4b57890",       // messageKey; directory under attachments/<provider>/<bucket>/
+  "v": 1, // schema version, per line, so migration can be incremental
+  "id": "18f2c9a01b2c3d4e", // the SAME id as in <provider>_emails.jsonl — the join key
+  "key": "a3f0c1d2e4b57890", // messageKey; directory under attachments/<provider>/<bucket>/
   "indexedAt": "2026-08-26T09:12:44.120Z",
   "items": [
     {
       "seq": 0,
-      "name": "Facture 2026-03.pdf",         // ORIGINAL, verbatim, never used as a path
-      "file": "000-Facture 2026-03.pdf",     // on-disk name, relative to the message directory
-      "mime": "application/pdf",             // as reported by the provider — advisory only
-      "size": 128374,                        // as reported by the provider — advisory only
+      "name": "Facture 2026-03.pdf", // ORIGINAL, verbatim, never used as a path
+      "file": "000-Facture 2026-03.pdf", // on-disk name, relative to the message directory
+      "mime": "application/pdf", // as reported by the provider — advisory only
+      "size": 128374, // as reported by the provider — advisory only
       "inline": false,
-      "cid": null,                           // Content-ID with <> stripped, for inline items
-      "remoteId": "ANGjdJ8x...",             // Gmail attachmentId | Graph attachment id
-      "kind": "file",                        // file | item | reference  (Graph @odata.type)
-      "state": "indexed",                    // indexed|stored|skipped|failed|unsupported|unavailable
-      "reason": null,                        // "too-large" | "budget" | "http-404" | "write-failed"
-      "bytes": null,                         // ACTUAL size on disk once stored — authoritative
+      "cid": null, // Content-ID with <> stripped, for inline items
+      "remoteId": "ANGjdJ8x...", // Gmail attachmentId | Graph attachment id
+      "kind": "file", // file | item | reference  (Graph @odata.type)
+      "state": "indexed", // indexed|stored|skipped|failed|unsupported|unavailable
+      "reason": null, // "too-large" | "budget" | "http-404" | "write-failed"
+      "bytes": null, // ACTUAL size on disk once stored — authoritative
       "storedAt": null,
-      "attempts": 0
-    }
-  ]
+      "attempts": 0,
+    },
+  ],
 }
 ```
 
@@ -305,7 +305,7 @@ after it:
 ```
 
 **Step order is the design decision, and it is deliberate.** Rewriting the index
-*before* deleting the directories means a crash between the two leaves **orphan
+_before_ deleting the directories means a crash between the two leaves **orphan
 files**: bytes on disk that nothing references. The opposite order would leave
 **dangling index entries**: the UI says "on disk", the file is gone, every open
 fails. Orphans waste space silently; dangling entries break visibly and
@@ -324,7 +324,7 @@ is left. Three rules:
 
 A second, pre-existing hazard is worth recording even though it is out of scope:
 the swap in `cleanupExcludedSubjectFromJSONL` does `removeEntry(original)` and
-*then* copies temp→final. A crash between those two loses the file. This design
+_then_ copies temp→final. A crash between those two loses the file. This design
 does not fix it, but it must not make it worse — hence the index uses the same
 pattern and the directories are only touched once all three files are
 consistent.
@@ -362,10 +362,10 @@ Users already have data on disk with no `attachments/` directory and no index.
 
 C1's finding #1 is the pivot of this whole design:
 
-| Operation | Gmail | Outlook |
-|---|---|---|
+| Operation                     | Gmail                                                                                                                                       | Outlook                                                                                                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Index** (name/type/size/id) | **Free.** Already inside the `messages.get(format:'full')` response the app fetches today and discards. Zero extra calls, zero extra quota. | **Not free.** `OUTLOOK_SELECT_FIELDS` carries only `hasAttachments`. Names/sizes/ids need either `$expand` on the existing GET (unproven, `[U#7]`) or a second GET. |
-| **Bytes** | 20 quota units per attachment — **identical to fetching an entire message**. A 3-attachment message costs 80 units instead of 20. | One request per attachment, against a mailbox limited to ~4 concurrent requests `[U#6]`. |
+| **Bytes**                     | 20 quota units per attachment — **identical to fetching an entire message**. A 3-attachment message costs 80 units instead of 20.           | One request per attachment, against a mailbox limited to ~4 concurrent requests `[U#6]`.                                                                            |
 
 Everything below follows from that asymmetry.
 
@@ -379,7 +379,7 @@ new — the `headers[]` array for `Content-ID` and `Content-Disposition`. A part
 an attachment candidate when it has a non-empty `filename` **or** a
 `Content-ID`; it is `inline: true` when `Content-Disposition` starts with
 `inline` **or** a `Content-ID` is present and referenced by the HTML body. It is
-skipped when `body.attachmentId` is absent *and* `body.data` is present — that
+skipped when `body.attachmentId` is absent _and_ `body.data` is present — that
 is a small part Gmail inlined, with no separate id to fetch `[U#1]`; its bytes
 are already in hand, so it is either written out directly or recorded as
 `state:"skipped", reason:"inlined-part"`. This edge is under-documented and needs
@@ -480,7 +480,7 @@ On the browser side the response streams to disk without buffering:
 ```js
 const res = await fetch(url);
 const writable = await fileHandle.createWritable();
-await res.body.pipeTo(writable);       // pipeTo closes the writable on success
+await res.body.pipeTo(writable); // pipeTo closes the writable on success
 ```
 
 **Reuse from the existing code, honestly stated.** `isRateLimitError()`, the
@@ -580,10 +580,10 @@ not the browser.
 start the fetch. The check is free because the index has the size.
 
 **After every write:** read back `(await fileHandle.getFile()).size` and store it
-as `item.bytes`, then add *that* to the running total. Declared sizes are
+as `item.bytes`, then add _that_ to the running total. Declared sizes are
 advisory and can be wrong — Gmail's `size` is the decoded part size "encoding
 notwithstanding", and Graph explicitly documents `referenceAttachment.size` as
-the size of the *metadata*, not the file. The authoritative number is what the
+the size of the _metadata_, not the file. The authoritative number is what the
 filesystem reports.
 
 **When the ceiling is hit: stop. Never evict.** The app does not delete a user's
@@ -591,7 +591,7 @@ files to make room for other files. A bulk run halts and reports "Stopped: 38 of
 412 attachments downloaded, storage limit reached (2.0 GB of 2.0 GB)". An
 on-demand fetch shows a dialog with two honest options: raise the ceiling, or
 open "Manage attachment storage" — a list sorted by size, with per-item delete,
-where the *user* chooses what goes.
+where the _user_ chooses what goes.
 
 **Write failures still happen.** The browser will not raise `QuotaExceededError`
 for a picked folder, but the OS write can fail for disk-full, revoked
@@ -634,7 +634,7 @@ user already looks before downloading.
 ### 5.2 Option A — `data:` URIs
 
 Read the file, base64 it, rewrite `src="cid:x"` into
-`src="data:image/png;base64,…"` in the HTML string *before* `document.write`.
+`src="data:image/png;base64,…"` in the HTML string _before_ `document.write`.
 
 - **CSP change required: none.** `data:` is already in `img-src` today.
 - **Unverified platform behaviour relied upon: none.** `data:` URIs in `<img>`
@@ -645,7 +645,7 @@ Read the file, base64 it, rewrite `src="cid:x"` into
   exists because a sender embedded something meant to render in a mail client —
   signature logos, inline screenshots, chart images. Typical size 5–200 KB.
   Eight of them at 200 KB is ~2.1 MB of base64 in one `document.write`, which is
-  unremarkable. The 25 MB video is an *attachment*, and an attachment needs no
+  unremarkable. The 25 MB video is an _attachment_, and an attachment needs no
   URL in the iframe at all: it goes to disk through the save flow.
 
 ### 5.3 Option B — `blob:` URLs
@@ -658,19 +658,19 @@ Read the file, base64 it, rewrite `src="cid:x"` into
   security-reviewed change.
 - **Security cost of that widening, analysed honestly:** it is small, and
   smaller than intuition suggests. The iframe cannot run script, so
-  attacker-authored HTML cannot *create* a blob URL — `createObjectURL` is a
+  attacker-authored HTML cannot _create_ a blob URL — `createObjectURL` is a
   script API. The only blob URLs that can appear in that document are ones the
   app itself put there. A malicious mail could hard-code a `blob:` string, but
   blob URLs carry a random UUID and are origin-scoped, so guessing one is
   infeasible, and a hit would only load the victim's own image into a frame where
   the attacker has no script to observe it. The real residual is that `img-src`
-  applies to the *parent* page too, which does run script: a hypothetical XSS in
+  applies to the _parent_ page too, which does run script: a hypothetical XSS in
   the parent gains one more image scheme. That attacker already has `https:` —
   the actual exfiltration channel — so the marginal gain is close to zero.
   Notably, on pure CSP hygiene, **`blob:` is a narrower grant than the `data:`
   already in the policy.**
 - **But:** C1 `[U#9]` could not confirm that a same-origin blob URL created in
-  the parent reliably loads as `<img>` inside *this exact* construction —
+  the parent reliably loads as `<img>` inside _this exact_ construction —
   `allow-same-origin` without `allow-scripts`, no `src`/`srcdoc`, populated by
   `document.write` — across Chrome, Firefox and Safari, and noted that Safari has
   historically imposed extra restrictions on blob URLs in frames. The app is
@@ -683,10 +683,10 @@ Read the file, base64 it, rewrite `src="cid:x"` into
 Serve the image from `'self'` so no CSP change is needed and no inflation
 occurs. Two sub-variants, both rejected:
 
-- *Express serves it* — impossible without sending the bytes to the server. The
+- _Express serves it_ — impossible without sending the bytes to the server. The
   folder handle is browser-only. This would invert the architecture for a
   signature logo.
-- *A service worker synthesises `'self'` responses from the local files* —
+- _A service worker synthesises `'self'` responses from the local files_ —
   technically the cleanest result, and it needs no CSP change at all. Rejected as
   disproportionate: it introduces a service worker with its own lifecycle, scope,
   update and offline semantics into an application that has **no build step** and
@@ -717,7 +717,7 @@ Guardrails on A, since it is not free:
 - MIME allowlist (§6.3) — the `data:` media type is taken from the allowlist
   entry, **never** echoed from the provider's `contentType` string.
 - Blob URLs used elsewhere in the app (the "Save a copy…" fallback in the
-  *parent* page) are unaffected: `a[download]` is not governed by `img-src`.
+  _parent_ page) are unaffected: `a[download]` is not governed by `img-src`.
 
 **If a later feature does need `blob:`** — larger inline media, or an in-frame
 preview — the change is one line in `src/app.js` plus the security review, and
@@ -800,11 +800,15 @@ function toDiskName(rawName, seq) {
   // 7. Split base / extension. An "extension" is <= 10 chars, alphanumeric only.
   //    Anything else stays part of the base — "archive.tar.gz" keeps ".gz",
   //    "report.2026 final" gets no extension.
-  let base = s, ext = '';
+  let base = s,
+    ext = '';
   const dot = s.lastIndexOf('.');
   if (dot > 0 && dot < s.length - 1) {
     const cand = s.slice(dot + 1);
-    if (/^[A-Za-z0-9]{1,10}$/.test(cand)) { base = s.slice(0, dot); ext = cand; }
+    if (/^[A-Za-z0-9]{1,10}$/.test(cand)) {
+      base = s.slice(0, dot);
+      ext = cand;
+    }
   }
 
   // 8. Windows reserved device names — case-insensitive, with or without an
@@ -862,7 +866,7 @@ Rendering rules that make the sanitized string actually protective:
 
 1. **`textContent` only. Never `innerHTML`.** Non-negotiable.
 2. **The extension is rendered as its own element**, derived from the
-   *sanitized* name, and it is never truncated by ellipsis:
+   _sanitized_ name, and it is never truncated by ellipsis:
    `[ invoice-march ] [ .exe ] [ 2.1 MB ]`. The U+202E attack works because the
    eye reads the tail of a single string; splitting the tail out and computing it
    after sanitization defeats it even if a hidden character survives.
@@ -875,7 +879,7 @@ Rendering rules that make the sanitized string actually protective:
    disguise.
 5. **Executable-extension warning**, on a static list of dangerous extensions
    (`exe com scr bat cmd ps1 msi vbs js jse wsf hta jar lnk reg dll sh app pkg
-   dmg`, plus macro-enabled Office `docm xlsm pptm`, plus `iso img vhd` which
+dmg`, plus macro-enabled Office `docm xlsm pptm`, plus `iso img vhd` which
    mount and bypass mark-of-the-web). The wording is factual: "This file type can
    run code on your computer." Never "unsafe", never a verdict.
 
@@ -982,7 +986,7 @@ before that the badge never rendered, because the field never reached the node.
 Two changes:
 
 **(a) Accuracy — a behaviour change that must be announced.**
-`checkForAttachments()` returns `true` for *any* MIME part with a non-empty
+`checkForAttachments()` returns `true` for _any_ MIME part with a non-empty
 `filename`. Gmail gives inline signature logos a filename (`image001.png`), so —
 inferred from the code, not yet measured — every reply in a thread whose
 participants have an image in their signature currently shows a paperclip. With
@@ -1007,10 +1011,17 @@ reserves 18 px of horizontal advance per badge; a count uses width only.
 A new block in the modal, **after `#emailBody` and before `#replyActionsBar`**:
 
 ```html
-<div id="emailAttachmentsSection" style="display:none; margin-top:20px; padding-top:16px;
-     border-top:1px solid var(--border-light);">
-  <div style="font-weight:600; color:var(--text-tertiary); margin-bottom:12px; font-size:12px;
-              text-transform:uppercase; letter-spacing:0.5px;">Attachments</div>
+<div
+  id="emailAttachmentsSection"
+  style="display:none; margin-top:20px; padding-top:16px;
+     border-top:1px solid var(--border-light);"
+>
+  <div
+    style="font-weight:600; color:var(--text-tertiary); margin-bottom:12px; font-size:12px;
+              text-transform:uppercase; letter-spacing:0.5px;"
+  >
+    Attachments
+  </div>
   <ul id="emailAttachmentsList" style="list-style:none; margin:0; padding:0;"></ul>
 </div>
 ```
@@ -1085,14 +1096,14 @@ is all of it. There is nothing to reconstruct from.
 
 ### 8.3 What backfill costs, and why it is acceptable
 
-Backfill re-fetches the message *envelope* — not the bytes — for the messages
+Backfill re-fetches the message _envelope_ — not the bytes — for the messages
 that need it, and `hasAttachments` on disk makes the targeting exact:
 
-| Step | Gmail | Outlook |
-|---|---|---|
-| Select | scan `gmail_emails.jsonl`, keep `hasAttachments === true` | same on `outlook_emails.jsonl` |
-| Fetch | `messages.get(id, format:'full')` — 20 units each | `/messages/{id}/attachments?$select=…` or `$expand` |
-| Write | append a line to `gmail_attachments.jsonl` | same |
+| Step   | Gmail                                                     | Outlook                                             |
+| ------ | --------------------------------------------------------- | --------------------------------------------------- |
+| Select | scan `gmail_emails.jsonl`, keep `hasAttachments === true` | same on `outlook_emails.jsonl`                      |
+| Fetch  | `messages.get(id, format:'full')` — 20 units each         | `/messages/{id}/attachments?$select=…` or `$expand` |
+| Write  | append a line to `gmail_attachments.jsonl`                | same                                                |
 
 Worked example: a 20 000-message mailbox with a 15% attachment rate is 3 000
 Gmail calls = 60 000 quota units. Against the 6 000 units/minute per-user ceiling
@@ -1126,7 +1137,7 @@ side effect.
    `messages.get`. A 404 on fetch triggers exactly that re-derivation and updates
    the index. The index is self-healing, and the stability question is removed
    from the critical path — but it still deserves the experiment in §11 **E3**,
-   because a *systematically* expiring id would double the cost of every
+   because a _systematically_ expiring id would double the cost of every
    deferred fetch.
 
 ---
@@ -1139,16 +1150,16 @@ CommonJS and front-end ES modules loaded through dynamic `import()` or the
 
 ### 9.1 Testable without a browser — and these are the ones that matter
 
-| Target | Where | Why it is worth the test |
-|---|---|---|
-| `toDiskName` / `toDisplayName` | `tests/backend/attachmentNames.test.js` (pure shared module, like `quoteStripper.js`) | Pure functions guarding a security property. Table-driven, cheap, exhaustive. |
-| `extractAttachmentIndex(payload)` (Gmail) | extends `tests/backend/gmailService.test.js` — the module already exports `formatGmailEmail` for tests | Fixture payloads are the only way to pin down the inline/attachment split |
-| Outlook attachment mapping | extends `tests/backend/outlookService.test.js` | `itemAttachment` / `referenceAttachment` must index, not crash |
-| `inlineCidImages(html, map)` | `tests/frontend/inlineCid.test.js` | Pure string function; the whole §5 mechanism minus the browser |
-| Index read / append / filter-by-id / byte accounting | `tests/frontend/attachmentIndex.test.js`, against an in-memory handle fake | **The single highest-value suite.** The deletion path is where this design could silently destroy user data |
-| Budget arithmetic | same suite | Ceiling hit mid-run, declared-vs-actual size mismatch, decrement on delete |
-| Proxy routes | `tests/backend/attachmentRoutes.test.js` | `requireAuth`, `application/octet-stream`, `nosniff`, clean 404, **and that no filename is logged** |
-| `folderResolver` non-regression | extends `tests/frontend/folderResolver.test.js` | Assert `gmail_attachments.jsonl` does **not** satisfy `/_emails\.jsonl$/i` |
+| Target                                               | Where                                                                                                  | Why it is worth the test                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `toDiskName` / `toDisplayName`                       | `tests/backend/attachmentNames.test.js` (pure shared module, like `quoteStripper.js`)                  | Pure functions guarding a security property. Table-driven, cheap, exhaustive.                               |
+| `extractAttachmentIndex(payload)` (Gmail)            | extends `tests/backend/gmailService.test.js` — the module already exports `formatGmailEmail` for tests | Fixture payloads are the only way to pin down the inline/attachment split                                   |
+| Outlook attachment mapping                           | extends `tests/backend/outlookService.test.js`                                                         | `itemAttachment` / `referenceAttachment` must index, not crash                                              |
+| `inlineCidImages(html, map)`                         | `tests/frontend/inlineCid.test.js`                                                                     | Pure string function; the whole §5 mechanism minus the browser                                              |
+| Index read / append / filter-by-id / byte accounting | `tests/frontend/attachmentIndex.test.js`, against an in-memory handle fake                             | **The single highest-value suite.** The deletion path is where this design could silently destroy user data |
+| Budget arithmetic                                    | same suite                                                                                             | Ceiling hit mid-run, declared-vs-actual size mismatch, decrement on delete                                  |
+| Proxy routes                                         | `tests/backend/attachmentRoutes.test.js`                                                               | `requireAuth`, `application/octet-stream`, `nosniff`, clean 404, **and that no filename is logged**         |
+| `folderResolver` non-regression                      | extends `tests/frontend/folderResolver.test.js`                                                        | Assert `gmail_attachments.jsonl` does **not** satisfy `/_emails\.jsonl$/i`                                  |
 
 Sanitizer cases that must be in the table, not sampled: `..`,
 `../../etc/passwd`, `a/b`, `C:\Windows\x`, `NUL`, `nul.txt`, `CON`, `com9.pdf`,
@@ -1212,7 +1223,7 @@ Gmail and Outlook attachment indexing, `<provider>_attachments.jsonl`, the
 corrected `hasAttachments`, the attachment list in the detail modal showing
 name/type/size with "not downloaded", and deletion-path consistency.
 
-**Usable alone:** the user finally sees *what* is attached to every message
+**Usable alone:** the user finally sees _what_ is attached to every message
 without downloading a byte, and the tree badge stops lying. Best value per day in
 the whole plan.
 
@@ -1258,7 +1269,7 @@ concurrency and pacing, resumability.
 retroactive for existing users.
 
 **Risk:** quota. A user with a large attachment-heavy mailbox can exhaust the
-Gmail per-user limit and find the *whole app* rate-limited, not just this
+Gmail per-user limit and find the _whole app_ rate-limited, not just this
 feature. Pacing must be conservative and visible, and the run must be pausable.
 
 ### Total
@@ -1331,7 +1342,7 @@ Mail Workflow as an archival tool would reasonably want the opposite default.
 
 **Q2 — Is the "server transit" framing acceptable, and does the README change?
 → Enzo.** §6.5. Attachment bytes must pass through Express. The wording should
-become "never *stored* on the server". This is positioning as much as
+become "never _stored_ on the server". This is positioning as much as
 engineering, and getting it wrong in either direction — overclaiming, or
 frightening users about a hop that already exists for every email body — is
 costly.
@@ -1348,7 +1359,7 @@ produces paperclips on most nodes, the change will be very visible.
 **Q5 — Should inline images be fetched automatically when a message is opened?**
 This spec says yes (default on, revocable): they are part of reading the
 message, they cost one small fetch, and unlike the remote images the app
-*already* loads they leak nothing (§5.7). But it does spend quota on what the
+_already_ loads they leak nothing (§5.7). But it does spend quota on what the
 user experiences as a passive action.
 
 **Q6 — What happens to attachments when the user changes their download

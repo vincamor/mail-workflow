@@ -73,30 +73,66 @@
 }
 
 /* === TEXT UTILITIES === */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+.text-center {
+  text-align: center;
+}
+.text-left {
+  text-align: left;
+}
+.text-right {
+  text-align: right;
+}
 
-.font-bold { font-weight: var(--font-bold); }
-.font-semibold { font-weight: var(--font-semibold); }
-.font-medium { font-weight: var(--font-medium); }
+.font-bold {
+  font-weight: var(--font-bold);
+}
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+.font-medium {
+  font-weight: var(--font-medium);
+}
 
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-muted {
+  color: var(--text-muted);
+}
 
-.bg-primary { background-color: var(--bg-primary); }
-.bg-secondary { background-color: var(--bg-secondary); }
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
 
-.border { border: 1px solid var(--border-light); }
-.border-none { border: none; }
+.border {
+  border: 1px solid var(--border-light);
+}
+.border-none {
+  border: none;
+}
 
-.rounded { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-.rounded-full { border-radius: var(--radius-full); }
+.rounded {
+  border-radius: var(--radius-md);
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+.rounded-full {
+  border-radius: var(--radius-full);
+}
 
-.shadow { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow {
+  box-shadow: var(--shadow-md);
+}
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
 
 /* === GLASS SURFACE SUPPORT === */
 @supports (backdrop-filter: blur(10px)) {

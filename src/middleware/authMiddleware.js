@@ -8,15 +8,14 @@
  */
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.tokens) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: 'Non authentifié',
-      requiresLogout: true 
+      requiresLogout: true,
     });
   }
   next();
 }
 
 module.exports = {
-  requireAuth
+  requireAuth,
 };
-

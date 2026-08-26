@@ -91,7 +91,10 @@ describe('resolveUserFolderHandle — tolérance de niveau de dossier', () => {
     // on doit privilégier <root>/EmailWorkflow/<user>.
     const userDir = makeDir(USER, { files: ['gmail_emails.jsonl'] });
     const ew = makeDir('EmailWorkflow', { dirs: { [USER]: userDir } });
-    const root = makeDir('Stockage', { files: ['gmail_emails.jsonl'], dirs: { EmailWorkflow: ew } });
+    const root = makeDir('Stockage', {
+      files: ['gmail_emails.jsonl'],
+      dirs: { EmailWorkflow: ew },
+    });
     expect(await resolveUserFolderHandle(root, USER)).toBe(userDir);
   });
 });

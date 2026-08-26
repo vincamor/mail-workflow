@@ -40,7 +40,9 @@
   flex-shrink: 0;
   width: 16px;
   text-align: center;
-  transition: transform 300ms var(--ease-out), color var(--transition-fast);
+  transition:
+    transform 300ms var(--ease-out),
+    color var(--transition-fast);
 }
 
 /* Open state chevron rotation */

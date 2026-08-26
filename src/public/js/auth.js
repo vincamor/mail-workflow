@@ -5,7 +5,7 @@ import { showConfirmModal } from './toast.js';
 
 // Fonction de déconnexion automatique
 export function handleAutoLogout() {
-  console.log("❌ Session expirée - Déconnexion automatique");
+  console.log('❌ Session expirée - Déconnexion automatique');
   // Nettoyer la session
   sessionStorage.clear();
   // Retourner à la page de connexion
@@ -54,10 +54,10 @@ export async function handleDisconnect() {
       console.warn('Logout serveur echoue (nettoyage local malgre tout) :', e);
     }
     // Masquer la section utilisateur
-    document.getElementById("userSection").style.display = "none";
+    document.getElementById('userSection').style.display = 'none';
     // Retourner à l'interface de connexion
-    document.getElementById("appInterface").style.display = "none";
-    document.getElementById("loginInterface").style.display = "block";
+    document.getElementById('appInterface').style.display = 'none';
+    document.getElementById('loginInterface').style.display = 'block';
     // Rediriger pour nettoyer l'URL
     setTimeout(() => {
       window.location = window.location.pathname;
@@ -67,12 +67,10 @@ export async function handleDisconnect() {
 
 // Initialiser les boutons de connexion
 export function initLoginButtons() {
-  document.getElementById("gmailBtn").onclick = () => {
-    window.location = "/gmail/";
+  document.getElementById('gmailBtn').onclick = () => {
+    window.location = '/gmail/';
   };
-  document.getElementById("outlookBtn").onclick = () => {
-    window.location = "/outlook/";
+  document.getElementById('outlookBtn').onclick = () => {
+    window.location = '/outlook/';
   };
 }
-
-

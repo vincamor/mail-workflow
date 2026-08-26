@@ -6,7 +6,7 @@
 // Ouvrir/créer la base de données IndexedDB
 export async function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("EmailWorkflowDB", 1);
+    const request = indexedDB.open('EmailWorkflowDB', 1);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -15,9 +15,9 @@ export async function openDB() {
       const db = event.target.result;
 
       // Créer l'object store pour les handles de dossiers
-      if (!db.objectStoreNames.contains("folderHandles")) {
-        db.createObjectStore("folderHandles", {
-          keyPath: "userId",
+      if (!db.objectStoreNames.contains('folderHandles')) {
+        db.createObjectStore('folderHandles', {
+          keyPath: 'userId',
         });
         console.log('✅ ObjectStore "folderHandles" créé');
       }
@@ -30,8 +30,8 @@ export async function storeFolderHandle(userId, handle) {
   try {
     console.log(`🔍 DEBUG: Tentative de stockage pour userId: ${userId}`);
     const db = await openDB();
-    const transaction = db.transaction(["folderHandles"], "readwrite");
-    const store = transaction.objectStore("folderHandles");
+    const transaction = db.transaction(['folderHandles'], 'readwrite');
+    const store = transaction.objectStore('folderHandles');
 
     return new Promise((resolve, reject) => {
       const request = store.put({ userId, handle });
@@ -42,28 +42,22 @@ export async function storeFolderHandle(userId, handle) {
         // Vérifier que le stockage a fonctionné
         const verifyRequest = store.get(userId);
         verifyRequest.onsuccess = () => {
-          console.log(
-            `🔍 DEBUG: Vérification stockage - trouvé:`,
-            !!verifyRequest.result
-          );
+          console.log(`🔍 DEBUG: Vérification stockage - trouvé:`, !!verifyRequest.result);
           resolve(true);
         };
         verifyRequest.onerror = () => {
-          console.error(
-            "❌ Erreur vérification stockage:",
-            verifyRequest.error
-          );
+          console.error('❌ Erreur vérification stockage:', verifyRequest.error);
           resolve(false);
         };
       };
 
       request.onerror = () => {
-        console.error("❌ Erreur stockage handle:", request.error);
+        console.error('❌ Erreur stockage handle:', request.error);
         reject(request.error);
       };
     });
   } catch (error) {
-    console.error("❌ Erreur stockage handle:", error);
+    console.error('❌ Erreur stockage handle:', error);
     return false;
   }
 }
@@ -71,12 +65,10 @@ export async function storeFolderHandle(userId, handle) {
 // Restaurer un handle de dossier depuis IndexedDB
 export async function restoreFolderHandle(userId) {
   try {
-    console.log(
-      `🔍 DEBUG: Tentative de restauration pour userId: ${userId}`
-    );
+    console.log(`🔍 DEBUG: Tentative de restauration pour userId: ${userId}`);
     const db = await openDB();
-    const transaction = db.transaction(["folderHandles"], "readonly");
-    const store = transaction.objectStore("folderHandles");
+    const transaction = db.transaction(['folderHandles'], 'readonly');
+    const store = transaction.objectStore('folderHandles');
 
     return new Promise((resolve, reject) => {
       const request = store.get(userId);
@@ -86,31 +78,25 @@ export async function restoreFolderHandle(userId) {
         console.log(`🔍 DEBUG: Résultat de la recherche:`, result);
 
         if (!result || !result.handle) {
-          console.log(
-            `❌ Aucun handle trouvé pour l'utilisateur: ${userId}`
-          );
+          console.log(`❌ Aucun handle trouvé pour l'utilisateur: ${userId}`);
           resolve(null);
           return;
         }
 
         const handle = result.handle;
-        console.log(
-          `🔍 DEBUG: Handle trouvé, vérification des permissions...`
-        );
+        console.log(`🔍 DEBUG: Handle trouvé, vérification des permissions...`);
 
         // Vérifier les permissions
         const permission = await handle.queryPermission({
-          mode: "readwrite",
+          mode: 'readwrite',
         });
 
         console.log(`🔍 DEBUG: Permission actuelle:`, permission);
 
-        if (permission === "granted") {
-          console.log(
-            `✅ Handle restauré avec permissions pour: ${userId}`
-          );
+        if (permission === 'granted') {
+          console.log(`✅ Handle restauré avec permissions pour: ${userId}`);
           resolve({ handle, granted: true });
-        } else if (permission === "prompt") {
+        } else if (permission === 'prompt') {
           // Ne pas auto-appeler requestPermission() : Chrome/Edge/Opera exigent
           // une activation utilisateur recente, ce qui ne fonctionne pas au
           // chargement de la page. Le caller doit declencher la demande sur
@@ -124,12 +110,12 @@ export async function restoreFolderHandle(userId) {
       };
 
       request.onerror = () => {
-        console.error("❌ Erreur requête IndexedDB:", request.error);
+        console.error('❌ Erreur requête IndexedDB:', request.error);
         reject(request.error);
       };
     });
   } catch (error) {
-    console.error("❌ Erreur restauration handle:", error);
+    console.error('❌ Erreur restauration handle:', error);
     return null;
   }
 }
@@ -138,8 +124,8 @@ export async function restoreFolderHandle(userId) {
 export async function deleteFolderHandle(userId) {
   try {
     const db = await openDB();
-    const transaction = db.transaction(["folderHandles"], "readwrite");
-    const store = transaction.objectStore("folderHandles");
+    const transaction = db.transaction(['folderHandles'], 'readwrite');
+    const store = transaction.objectStore('folderHandles');
 
     // store.delete() renvoie un IDBRequest, pas une Promise : `await` dessus
     // n'attend pas la fin de la transaction. On enveloppe pour attendre la
@@ -155,8 +141,7 @@ export async function deleteFolderHandle(userId) {
     console.log(`🗑️ Handle supprimé pour: ${userId}`);
     return true;
   } catch (error) {
-    console.error("❌ Erreur suppression handle:", error);
+    console.error('❌ Erreur suppression handle:', error);
     return false;
   }
 }
-

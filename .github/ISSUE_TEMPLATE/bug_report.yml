@@ -1,6 +1,6 @@
 name: Bug report
 description: Report a problem with Mail Workflow
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: markdown
     attributes:
@@ -75,7 +75,7 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: "`npm run doctor` output"
+      label: '`npm run doctor` output'
       description: Run `npm run doctor` in the project root and paste the full output here.
       render: text
     validations:

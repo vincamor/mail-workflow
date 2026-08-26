@@ -1,7 +1,13 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { buildProviderRequest, sendToProvider, validateOllamaApiKey, assertSafeProviderUrl, fetchWithTimeout } = require('../services/aiService');
+const {
+  buildProviderRequest,
+  sendToProvider,
+  validateOllamaApiKey,
+  assertSafeProviderUrl,
+  fetchWithTimeout,
+} = require('../services/aiService');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // Rate-limit sur tout /api/ai/* (même pattern que routes/gmail.js).
@@ -11,7 +17,7 @@ const aiLimiter = rateLimit({
   max: 60,
   message: { error: 'Trop de requêtes IA. Réessayez dans une minute.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 router.use(aiLimiter);
 
@@ -56,7 +62,7 @@ router.post('/model-info', async (req, res) => {
       const response = await fetchWithTimeout(`${cleanBaseUrl}/api/show`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: model })
+        body: JSON.stringify({ name: model }),
       });
       if (!response.ok) {
         return res.json({ contextLength: 8192, source: 'default' });
@@ -149,7 +155,9 @@ router.post('/chat', async (req, res) => {
   const { provider, apiKey, model, baseUrl, messages, stream = true } = req.body;
 
   if (!provider || !apiKey || !model || !baseUrl || !messages) {
-    return res.status(400).json({ error: 'Champs requis : provider, apiKey, model, baseUrl, messages' });
+    return res
+      .status(400)
+      .json({ error: 'Champs requis : provider, apiKey, model, baseUrl, messages' });
   }
 
   if (!(await ensureSafeBaseUrl(res, provider, baseUrl))) return;

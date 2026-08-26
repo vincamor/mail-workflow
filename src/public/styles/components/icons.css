@@ -28,9 +28,18 @@
   vertical-align: middle;
 }
 
-.icon-sm { width: 14px; height: 14px; }
-.icon-lg { width: 22px; height: 22px; }
-.icon-xl { width: 28px; height: 28px; }
+.icon-sm {
+  width: 14px;
+  height: 14px;
+}
+.icon-lg {
+  width: 22px;
+  height: 22px;
+}
+.icon-xl {
+  width: 28px;
+  height: 28px;
+}
 
 /* Icon sitting inline inside a run of text (headings, hint paragraphs) */
 .icon-inline {
@@ -260,10 +269,18 @@
 }
 
 /* === COLOR VARIANTS (recolor via currentColor) === */
-.icon-primary { color: var(--primary); }
-.icon-success { color: var(--success); }
-.icon-warning { color: var(--warning); }
-.icon-error   { color: var(--error); }
+.icon-primary {
+  color: var(--primary);
+}
+.icon-success {
+  color: var(--success);
+}
+.icon-warning {
+  color: var(--warning);
+}
+.icon-error {
+  color: var(--error);
+}
 
 /* === SKIP LINK (a11y) ===
  * Placed here (not in layout/reset CSS) because icons.css is the only
@@ -275,8 +292,8 @@
   left: 8px;
   z-index: var(--z-tooltip, 1070);
   padding: var(--space-2, 8px) var(--space-4, 16px);
-  background: var(--bg-elevated, #341F4D);
-  color: var(--text-primary, #EDE7F3);
+  background: var(--bg-elevated, #341f4d);
+  color: var(--text-primary, #ede7f3);
   border: 1px solid var(--border-focus, var(--primary));
   border-radius: var(--radius-md, 6px);
   font-size: var(--text-sm, 0.8125rem);

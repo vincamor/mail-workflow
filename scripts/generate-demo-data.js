@@ -34,7 +34,11 @@ const HTML_FILE = path.join(OUT_DIR, 'gmail_emails_html.jsonl');
 const PEOPLE = {
   demo: { name: 'Demo User', email: 'demo@example.com', title: 'Engineering' },
   maya: { name: 'Maya Oberon', email: 'maya.oberon@example.com', title: 'Head of Platform' },
-  theo: { name: 'Theo Reyes', email: 'theo.reyes@example.org', title: 'Staff Engineer - Ingestion' },
+  theo: {
+    name: 'Theo Reyes',
+    email: 'theo.reyes@example.org',
+    title: 'Staff Engineer - Ingestion',
+  },
   ines: { name: 'Ines Calder', email: 'ines.calder@example.com', title: 'Data & Reporting' },
   rafael: { name: 'Rafael Kim', email: 'rafael.kim@example.org', title: 'Infrastructure' },
   nadia: { name: 'Nadia Brennt', email: 'nadia.brennt@example.com', title: 'Product Design' },
@@ -87,16 +91,11 @@ const MINUTE = 60 * 1000;
 // ─── HTML helpers ───────────────────────────────────────────────────────────
 
 function escapeHtml(s) {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function paragraphsToHtml(paragraphs) {
-  return paragraphs
-    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
-    .join('\n');
+  return paragraphs.map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('\n');
 }
 
 /**
@@ -106,9 +105,7 @@ function paragraphsToHtml(paragraphs) {
 function quoteBlock(parent) {
   if (!parent) return '';
   const intro = `On ${parent.date}, ${escapeHtml(parent.from)} wrote:`;
-  const quoted = parent.bodyParagraphs
-    .map((p) => `<div>${escapeHtml(p)}</div>`)
-    .join('\n');
+  const quoted = parent.bodyParagraphs.map((p) => `<div>${escapeHtml(p)}</div>`).join('\n');
   return [
     '<div class="gmail_quote">',
     `  <div dir="ltr" class="gmail_attr">${intro}</div>`,
@@ -167,7 +164,9 @@ function buildThread(spec) {
 
     const parent = typeof m.parent === 'number' ? built[m.parent] : null;
     if (typeof m.parent === 'number' && !parent) {
-      throw new Error(`Thread "${spec.subject}": message ${i} references unknown parent ${m.parent}`);
+      throw new Error(
+        `Thread "${spec.subject}": message ${i} references unknown parent ${m.parent}`
+      );
     }
 
     const messageId = `<${id}.${String(i).padStart(2, '0')}.${threadIdHolder.id}@mail.example.com>`;
@@ -267,7 +266,7 @@ buildThread({
       hasAttachments: true,
       body: [
         'Adding the tenant inventory I promised (attached). 412 tenants, of which term 38 are on the old billing plan and will need a manual data fix before they can move.',
-        'On Theo\'s point 2: I can write the comparison harness. The rounding difference is real but it is deterministic, so a tolerance-based diff should get us to a usable signal in a day or two.',
+        "On Theo's point 2: I can write the comparison harness. The rounding difference is real but it is deterministic, so a tolerance-based diff should get us to a usable signal in a day or two.",
         'What I cannot do alone is the billing-plan migration. That needs someone who understands the historical pricing rules, and honestly that is only Rafael.',
       ],
     },
@@ -278,7 +277,7 @@ buildThread({
       parent: 1,
       body: [
         'Maya, quick side question before I answer on the thread.',
-        'Are we actually committed to the end-of-September date, or is that the date we would like? I ask because Theo\'s point about the rollback owner is the kind of thing that takes three weeks of arguing, not three days, and I would rather we build the schedule around that than pretend it is free.',
+        "Are we actually committed to the end-of-September date, or is that the date we would like? I ask because Theo's point about the rollback owner is the kind of thing that takes three weeks of arguing, not three days, and I would rather we build the schedule around that than pretend it is free.",
         'If the date is firm I will plan for it, I just do not want to discover in August that it was always aspirational.',
       ],
     },
@@ -290,7 +289,7 @@ buildThread({
       body: [
         'Fair question, and thank you for asking it here rather than on the thread.',
         'The date is firm for the ingestion pipeline because the legacy cluster contract ends on 30 September and finance already declined to renew for a month. The reporting service is softer - we could run it on the old cluster through October at a painful but survivable cost.',
-        'So: hard deadline for Theo\'s half, negotiable for Ines\'s half. I would rather that stayed between us until I have the cost number in writing.',
+        "So: hard deadline for Theo's half, negotiable for Ines's half. I would rather that stayed between us until I have the cost number in writing.",
       ],
     },
     {
@@ -320,7 +319,7 @@ buildThread({
       gapMin: 31,
       parent: 6,
       body: [
-        'Rafael, Demo - pulling the infra permissions piece off the main thread so we do not derail Maya\'s kickoff.',
+        "Rafael, Demo - pulling the infra permissions piece off the main thread so we do not derail Maya's kickoff.",
         'Today the cutover toggle is guarded by the platform-admin role, which is exactly two humans, both in the same timezone. For a per-tenant cutover running over six weeks that is not viable.',
         'Proposal: a narrow role that can only flip the tenant routing flag, granted to the migration on-call rota for the duration and revoked automatically at the end. Thoughts?',
       ],
@@ -352,7 +351,7 @@ buildThread({
       gapMin: 88,
       parent: 6,
       body: [
-        'Comparison harness is up. First run over yesterday\'s traffic: 1.2 million rows compared, 340 mismatches, all of them in the same two report types and all within the rounding tolerance once I widened it to one cent.',
+        "Comparison harness is up. First run over yesterday's traffic: 1.2 million rows compared, 340 mismatches, all of them in the same two report types and all within the rounding tolerance once I widened it to one cent.",
         'That means shadow reads are usable now rather than in three weeks. I would like to start the two-week shadow window on Monday instead of waiting for the dual-write work to finish, since they are independent.',
         'Maya, that would pull the whole schedule forward by about ten days if it holds.',
       ],
@@ -376,7 +375,7 @@ buildThread({
         'Summarising where we are, so Thursday can be about decisions rather than status.',
         'Agreed: Ines starts the shadow window Monday. Rafael codifies the pricing rules before migrating the 38 legacy-plan tenants. Theo and Rafael ship the narrow cutover role with automatic revocation.',
         'Still open: who owns rollback for the ingestion pipeline, and whether the on-call primary can roll back without approval. I have argued for yes - we should settle it Thursday and write it down.',
-        'Not yet discussed at all: what we tell customers, and when. Ines\'s inventory says 38 tenants need a manual fix, and those people will notice.',
+        "Not yet discussed at all: what we tell customers, and when. Ines's inventory says 38 tenants need a manual fix, and those people will notice.",
       ],
     },
     {
@@ -531,7 +530,7 @@ buildThread({
       gapMin: 0,
       body: [
         'The Helios renewal lands on 30 April and the quote came in 22 percent above last year. I need a decision by the 15th to keep the current rate locked.',
-        'Attached the quote and last year\'s usage. Short version: we are paying for a tier we outgrew in November, so part of the increase is real and part of it is us not having renegotiated when we should have.',
+        "Attached the quote and last year's usage. Short version: we are paying for a tier we outgrew in November, so part of the increase is real and part of it is us not having renegotiated when we should have.",
       ],
       hasAttachments: true,
     },
@@ -591,7 +590,7 @@ buildThread({
       gapMin: 60 * 22,
       parent: 5,
       body: [
-        'Call done. They will do the smaller tier with burst pricing, twelve-month term, at 4 percent above last year\'s total.',
+        "Call done. They will do the smaller tier with burst pricing, twelve-month term, at 4 percent above last year's total.",
         'They pushed for twenty-four months at 2 percent and I declined, on the grounds that we do not know our own burst profile yet. Landing inside the authority you gave me.',
       ],
     },

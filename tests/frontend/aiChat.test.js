@@ -19,7 +19,7 @@ describe('aiChat — buildInitialContext', () => {
   test('formats header with subject and counts', () => {
     const emails = [
       { date: 1712000000000, from: 'a@x.com', bodyText: 'hello' },
-      { date: 1712100000000, from: 'b@x.com', bodyText: 'world' }
+      { date: 1712100000000, from: 'b@x.com', bodyText: 'world' },
     ];
     const ctx = buildInitialContext('Projet Alpha', emails, 2);
     expect(ctx).toContain('# Thread : Projet Alpha');
@@ -29,7 +29,7 @@ describe('aiChat — buildInitialContext', () => {
   test('sorts emails descending by date', () => {
     const emails = [
       { date: 1000, from: 'old@x.com', bodyText: 'OLD' },
-      { date: 9000, from: 'new@x.com', bodyText: 'NEW' }
+      { date: 9000, from: 'new@x.com', bodyText: 'NEW' },
     ];
     const ctx = buildInitialContext('Subject', emails, 2);
     const oldIdx = ctx.indexOf('OLD');
@@ -39,7 +39,9 @@ describe('aiChat — buildInitialContext', () => {
 
   test('caps at 20 emails', () => {
     const emails = Array.from({ length: 30 }, (_, i) => ({
-      date: i * 1000, from: `user${i}@x.com`, bodyText: `body${i}`
+      date: i * 1000,
+      from: `user${i}@x.com`,
+      bodyText: `body${i}`,
     }));
     const ctx = buildInitialContext('S', emails, 30);
     const count = (ctx.match(/## Mail /g) || []).length;

@@ -54,21 +54,45 @@
 }
 
 /* ── Variantes de couleur ── */
-.toast-success { border-color: var(--success-border); }
-.toast-success::before { background: var(--success); }
-.toast-success .toast-icon { color: var(--success); }
+.toast-success {
+  border-color: var(--success-border);
+}
+.toast-success::before {
+  background: var(--success);
+}
+.toast-success .toast-icon {
+  color: var(--success);
+}
 
-.toast-error { border-color: var(--error-border); }
-.toast-error::before { background: var(--error); }
-.toast-error .toast-icon { color: var(--error); }
+.toast-error {
+  border-color: var(--error-border);
+}
+.toast-error::before {
+  background: var(--error);
+}
+.toast-error .toast-icon {
+  color: var(--error);
+}
 
-.toast-warning { border-color: var(--warning-border); }
-.toast-warning::before { background: var(--warning); }
-.toast-warning .toast-icon { color: var(--warning); }
+.toast-warning {
+  border-color: var(--warning-border);
+}
+.toast-warning::before {
+  background: var(--warning);
+}
+.toast-warning .toast-icon {
+  color: var(--warning);
+}
 
-.toast-info { border-color: var(--info-border); }
-.toast-info::before { background: var(--info); }
-.toast-info .toast-icon { color: var(--info); }
+.toast-info {
+  border-color: var(--info-border);
+}
+.toast-info::before {
+  background: var(--info);
+}
+.toast-info .toast-icon {
+  color: var(--info);
+}
 
 /* ── Elements internes ── */
 .toast-icon {
@@ -177,9 +201,15 @@
 }
 
 /* Variantes — accent bar couleur semantique */
-.guide-modal-warning .guide-modal-accent { background: var(--warning); }
-.guide-modal-error .guide-modal-accent { background: var(--error); }
-.guide-modal-success .guide-modal-accent { background: var(--success); }
+.guide-modal-warning .guide-modal-accent {
+  background: var(--warning);
+}
+.guide-modal-error .guide-modal-accent {
+  background: var(--error);
+}
+.guide-modal-success .guide-modal-accent {
+  background: var(--success);
+}
 
 /* ── Icon ── */
 .guide-modal-icon {
@@ -348,23 +378,43 @@
 
 /* Reuse keyframes from modals.css — fallback if not loaded */
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: scale(0.95) translateY(-12px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes modalFadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes modalSlideOut {
-  from { opacity: 1; transform: scale(1) translateY(0); }
-  to { opacity: 0; transform: scale(0.96) translateY(8px); }
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
 }
 
 /* ================================================================

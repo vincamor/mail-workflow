@@ -29,7 +29,9 @@
   box-shadow: 0 2px 8px rgba(242, 160, 123, 0.2);
 }
 
-.step-content { flex: 1; }
+.step-content {
+  flex: 1;
+}
 
 .step-content h4 {
   margin: 0;
@@ -70,8 +72,14 @@
 }
 
 @keyframes statusSlideIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .folder-status-icon {
@@ -92,8 +100,12 @@
   margin-bottom: 1px;
 }
 
-.folder-status-empty .folder-status-title { color: var(--warning); }
-.folder-status-selected .folder-status-title { color: var(--success); }
+.folder-status-empty .folder-status-title {
+  color: var(--warning);
+}
+.folder-status-selected .folder-status-title {
+  color: var(--success);
+}
 
 .folder-status-path {
   font-size: var(--text-2xs);
@@ -139,7 +151,9 @@
   transition-duration: 80ms;
 }
 
-.btn-folder-select .btn-icon { font-size: 12px; }
+.btn-folder-select .btn-icon {
+  font-size: 12px;
+}
 
 /* === DOWNLOAD BUTTON === */
 .btn-download {
@@ -173,7 +187,9 @@
   transition: left 0.5s;
 }
 
-.btn-download:hover::before { left: 100%; }
+.btn-download:hover::before {
+  left: 100%;
+}
 
 .btn-download:hover {
   box-shadow: var(--success-glow);
@@ -187,8 +203,12 @@
   box-shadow: none;
 }
 
-.btn-download:disabled::before { display: none; }
-.btn-download .btn-icon { font-size: 12px; }
+.btn-download:disabled::before {
+  display: none;
+}
+.btn-download .btn-icon {
+  font-size: 12px;
+}
 
 .btn-download .btn-badge {
   background: rgba(255, 255, 255, 0.2);
@@ -212,7 +232,10 @@
   animation: slideUp 0.3s var(--ease-out);
 }
 
-.download-info .info-icon { font-size: 12px; line-height: 1; }
+.download-info .info-icon {
+  font-size: 12px;
+  line-height: 1;
+}
 
 .download-info .info-text {
   flex: 1;
@@ -228,8 +251,20 @@
 
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
-  .step-number { width: 24px; height: 24px; font-size: 12px; }
-  .step-content h4 { font-size: var(--text-sm); }
-  .step-content p { font-size: var(--text-xs); }
-  .btn-folder-select, .btn-download { padding: var(--space-3) var(--space-4); font-size: var(--text-sm); }
+  .step-number {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+  .step-content h4 {
+    font-size: var(--text-sm);
+  }
+  .step-content p {
+    font-size: var(--text-xs);
+  }
+  .btn-folder-select,
+  .btn-download {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+  }
 }

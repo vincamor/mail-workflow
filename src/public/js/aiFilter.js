@@ -28,7 +28,7 @@ const EXCLUDE_SUBJECT_PATTERNS = [
   /alerte\s*(sécurité|connexion|prix)/i,
   /\bdigest\b/i,
   /\bweekly\s*report\b/i,
-  /^\(\d+\)\s/,  // starts with (1), (2)... — notification count
+  /^\(\d+\)\s/, // starts with (1), (2)... — notification count
 ];
 
 const EXCLUDE_SENDER_PATTERNS = [
@@ -36,7 +36,7 @@ const EXCLUDE_SENDER_PATTERNS = [
   /notification[s]?@/i,
   /newsletter@/i,
   /marketing@/i,
-  /info@.*\.(com|fr|net|org)$/i,  // generic info@ addresses
+  /info@.*\.(com|fr|net|org)$/i, // generic info@ addresses
   /support@/i,
   /alert[es]?@/i,
 ];
@@ -63,7 +63,8 @@ export function preFilterSubjects(subjects, userEmail) {
 
   for (const s of subjects) {
     const name = s.subject || '';
-    const firstParticipant = (s.participants && s.participants[0]) ? s.participants[0].toLowerCase() : '';
+    const firstParticipant =
+      s.participants && s.participants[0] ? s.participants[0].toLowerCase() : '';
     const snippets = s.snippets || '';
 
     // --- Auto-KEEP rules (checked first, takes priority) ---
@@ -91,21 +92,30 @@ export function preFilterSubjects(subjects, userEmail) {
     // Subject patterns
     if (!excluded) {
       for (const pattern of EXCLUDE_SUBJECT_PATTERNS) {
-        if (pattern.test(name)) { excluded = true; break; }
+        if (pattern.test(name)) {
+          excluded = true;
+          break;
+        }
       }
     }
 
     // Sender patterns
     if (!excluded && firstParticipant) {
       for (const pattern of EXCLUDE_SENDER_PATTERNS) {
-        if (pattern.test(firstParticipant)) { excluded = true; break; }
+        if (pattern.test(firstParticipant)) {
+          excluded = true;
+          break;
+        }
       }
     }
 
     // Body/snippet patterns
     if (!excluded && snippets) {
       for (const pattern of EXCLUDE_BODY_PATTERNS) {
-        if (pattern.test(snippets)) { excluded = true; break; }
+        if (pattern.test(snippets)) {
+          excluded = true;
+          break;
+        }
       }
     }
 
@@ -127,16 +137,18 @@ export function preFilterSubjects(subjects, userEmail) {
 // Les petits modeles locaux perdent en qualite bien avant d'atteindre leur limite theorique
 // Les gros modeles cloud maintiennent la qualite sur une plus grande partie de leur fenetre
 const USABLE_CONTEXT_RATIO = {
-  ollama: 0.03,     // ~3% — modeles locaux legers, qualite se degrade vite
-  openai: 0.25,     // ~25% — gros modeles, bonne gestion du contexte long
-  anthropic: 0.15,  // ~15% — tres grand contexte (200k), 15% = ~30k utilisable
-  custom: 0.05,     // ~5% — conservatif, on ne connait pas le modele
+  ollama: 0.03, // ~3% — modeles locaux legers, qualite se degrade vite
+  openai: 0.25, // ~25% — gros modeles, bonne gestion du contexte long
+  anthropic: 0.15, // ~15% — tres grand contexte (200k), 15% = ~30k utilisable
+  custom: 0.05, // ~5% — conservatif, on ne connait pas le modele
 };
 
 // Compteur de stats pour le rapport
 let filterStats = { totalRequests: 0, totalTokensEstimated: 0 };
 
-export function getFilterStats() { return { ...filterStats }; }
+export function getFilterStats() {
+  return { ...filterStats };
+}
 
 async function getModelContextSize() {
   const config = getAIConfig();
@@ -146,7 +158,7 @@ async function getModelContextSize() {
     const response = await fetch('/api/ai/model-info', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config)
+      body: JSON.stringify(config),
     });
     if (!response.ok) {
       const fallback = Math.floor(8192 * ratio);
@@ -155,11 +167,15 @@ async function getModelContextSize() {
     const data = await response.json();
     const theoreticalContext = data.contextLength || 8192;
     const effective = Math.max(Math.floor(theoreticalContext * ratio), 1024);
-    console.log(`🧹 [AI Config] Modele: ${data.model}, contexte theorique: ${theoreticalContext}, ratio: ${(ratio * 100).toFixed(0)}%, effectif: ${effective} tokens`);
+    console.log(
+      `🧹 [AI Config] Modele: ${data.model}, contexte theorique: ${theoreticalContext}, ratio: ${(ratio * 100).toFixed(0)}%, effectif: ${effective} tokens`
+    );
     return effective;
   } catch (e) {
     const fallback = Math.max(Math.floor(8192 * ratio), 1024);
-    console.warn(`🧹 [AI Config] Impossible de recuperer la taille du contexte, defaut ${fallback} tokens (${(ratio * 100).toFixed(0)}% de 8192)`);
+    console.warn(
+      `🧹 [AI Config] Impossible de recuperer la taille du contexte, defaut ${fallback} tokens (${(ratio * 100).toFixed(0)}% de 8192)`
+    );
     return fallback;
   }
 }
@@ -194,16 +210,22 @@ export function parseAIFilterResponse(text) {
   const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (!objectMatch) {
     // Tenter d'extraire des sujets entre guillemets meme sans JSON valide
-    const quotedItems = [...text.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+    const quotedItems = [...text.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
     if (quotedItems.length > 0) {
-      console.warn('🧹 [Parse] JSON invalide, extraction par guillemets:', quotedItems.length, 'items');
+      console.warn(
+        '🧹 [Parse] JSON invalide, extraction par guillemets:',
+        quotedItems.length,
+        'items'
+      );
       return { exclure: quotedItems, garder: [], incertain: [] };
     }
     throw new Error('Aucun JSON trouve dans la reponse IA');
   }
   // Nettoyer les caracteres de controle qui cassent JSON.parse
   // eslint-disable-next-line no-control-regex -- match intentionnel des caracteres de controle a nettoyer
-  let cleanJson = objectMatch[0].replace(/[\x00-\x1F\x7F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '');
+  let cleanJson = objectMatch[0].replace(/[\x00-\x1F\x7F]/g, (c) =>
+    c === '\n' || c === '\r' || c === '\t' ? c : ''
+  );
 
   // Tenter de reparer un JSON tronque (array non ferme)
   try {
@@ -228,7 +250,7 @@ export function parseAIFilterResponse(text) {
       return normalizeResult(parsed);
     } catch (e2) {
       // Dernier recours: extraire les sujets entre guillemets
-      const quotedItems = [...text.matchAll(/"([^"]{3,})"/g)].map(m => m[1]);
+      const quotedItems = [...text.matchAll(/"([^"]{3,})"/g)].map((m) => m[1]);
       if (quotedItems.length > 0) {
         console.warn('🧹 [Parse] Extraction par guillemets:', quotedItems.length, 'items');
         return { exclure: quotedItems, garder: [], incertain: [] };
@@ -249,9 +271,9 @@ function normalizeResult(parsed) {
 export function validateFilterResults(aiResult, originalSubjects) {
   const originalSet = new Set(originalSubjects);
   return {
-    exclure: aiResult.exclure.filter(s => originalSet.has(s)),
-    garder: aiResult.garder.filter(s => originalSet.has(s)),
-    incertain: aiResult.incertain.filter(s => originalSet.has(s)),
+    exclure: aiResult.exclure.filter((s) => originalSet.has(s)),
+    garder: aiResult.garder.filter((s) => originalSet.has(s)),
+    incertain: aiResult.incertain.filter((s) => originalSet.has(s)),
   };
 }
 
@@ -262,12 +284,15 @@ function estimateTokens(text) {
 // --- Prompt builders ---
 
 export function buildPass1UserMessage(subjects) {
-  return subjects.map((s, i) => {
-    const name = typeof s === 'string' ? s : s.subject;
-    const from = (typeof s === 'object' && s.participants && s.participants[0]) ? s.participants[0] : '';
-    const participation = (typeof s === 'object' && s.userReplied) ? 'oui' : 'non';
-    return `${i + 1}. "${name}" | De: ${from || '?'} | Participation: ${participation}`;
-  }).join('\n');
+  return subjects
+    .map((s, i) => {
+      const name = typeof s === 'string' ? s : s.subject;
+      const from =
+        typeof s === 'object' && s.participants && s.participants[0] ? s.participants[0] : '';
+      const participation = typeof s === 'object' && s.userReplied ? 'oui' : 'non';
+      return `${i + 1}. "${name}" | De: ${from || '?'} | Participation: ${participation}`;
+    })
+    .join('\n');
 }
 
 /**
@@ -337,13 +362,15 @@ async function callAI(systemPrompt, userMessage, retries = 2) {
     ...config,
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage }
+      { role: 'user', content: userMessage },
     ],
-    stream: false
+    stream: false,
   };
 
   const inputTokens = estimateTokens(systemPrompt + userMessage);
-  console.log(`🧹 [AI Call] Envoi requete (${userMessage.length} chars, ~${inputTokens} tokens, retries: ${retries})`);
+  console.log(
+    `🧹 [AI Call] Envoi requete (${userMessage.length} chars, ~${inputTokens} tokens, retries: ${retries})`
+  );
   filterStats.totalRequests++;
   filterStats.totalTokensEstimated += inputTokens;
 
@@ -351,7 +378,7 @@ async function callAI(systemPrompt, userMessage, retries = 2) {
     const response = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -375,15 +402,22 @@ async function callAI(systemPrompt, userMessage, retries = 2) {
 
     if (!text) throw new Error('Reponse IA vide');
 
-    console.log(`🧹 [AI Call] Reponse recue (${text.length} chars) — tentative ${attempt + 1}/${retries + 1}`);
+    console.log(
+      `🧹 [AI Call] Reponse recue (${text.length} chars) — tentative ${attempt + 1}/${retries + 1}`
+    );
 
     try {
       const parsed = parseAIFilterResponse(text);
-      console.log(`🧹 [AI Call] Parse OK — exclure: ${parsed.exclure.length}, garder: ${parsed.garder.length}, incertain: ${parsed.incertain.length}`);
+      console.log(
+        `🧹 [AI Call] Parse OK — exclure: ${parsed.exclure.length}, garder: ${parsed.garder.length}, incertain: ${parsed.incertain.length}`
+      );
       return parsed;
     } catch (parseError) {
       if (attempt === retries) throw parseError;
-      console.warn(`🧹 [AI Call] Tentative ${attempt + 1}/${retries + 1} echouee:`, parseError.message);
+      console.warn(
+        `🧹 [AI Call] Tentative ${attempt + 1}/${retries + 1} echouee:`,
+        parseError.message
+      );
       console.warn(`🧹 [AI Call] Texte brut recu:`, text.substring(0, 500));
     }
   }
@@ -398,7 +432,13 @@ async function callAI(systemPrompt, userMessage, retries = 2) {
  * @param {number} maxDepth - profondeur max de split recursif
  * @returns {Promise<{exclure: string[], garder: string[], incertain: string[]}>}
  */
-async function callAIWithAutoSplit(systemPrompt, subjectBatch, buildMessage, subjectNames, maxDepth = 3) {
+async function callAIWithAutoSplit(
+  systemPrompt,
+  subjectBatch,
+  buildMessage,
+  subjectNames,
+  maxDepth = 3
+) {
   const userMessage = buildMessage(subjectBatch);
 
   try {
@@ -407,7 +447,10 @@ async function callAIWithAutoSplit(systemPrompt, subjectBatch, buildMessage, sub
   } catch (e) {
     // Si le batch est deja de taille 1 ou profondeur max atteinte, abandonner ce batch
     if (subjectBatch.length <= 1 || maxDepth <= 0) {
-      console.warn(`🧹 [AI Split] Impossible de traiter le batch (${subjectBatch.length} sujets), skip:`, e.message);
+      console.warn(
+        `🧹 [AI Split] Impossible de traiter le batch (${subjectBatch.length} sujets), skip:`,
+        e.message
+      );
       return { exclure: [], garder: [], incertain: subjectNames };
     }
 
@@ -418,11 +461,13 @@ async function callAIWithAutoSplit(systemPrompt, subjectBatch, buildMessage, sub
     const firstNames = subjectNames.slice(0, mid);
     const secondNames = subjectNames.slice(mid);
 
-    console.log(`🧹 [AI Split] JSON echoue, split en 2 (${firstHalf.length} + ${secondHalf.length}) — profondeur ${maxDepth - 1}`);
+    console.log(
+      `🧹 [AI Split] JSON echoue, split en 2 (${firstHalf.length} + ${secondHalf.length}) — profondeur ${maxDepth - 1}`
+    );
 
     const [r1, r2] = await Promise.all([
       callAIWithAutoSplit(systemPrompt, firstHalf, buildMessage, firstNames, maxDepth - 1),
-      callAIWithAutoSplit(systemPrompt, secondHalf, buildMessage, secondNames, maxDepth - 1)
+      callAIWithAutoSplit(systemPrompt, secondHalf, buildMessage, secondNames, maxDepth - 1),
     ]);
 
     return {
@@ -444,8 +489,8 @@ async function callAIWithAutoSplit(systemPrompt, subjectBatch, buildMessage, sub
  */
 export async function startAIFiltering(subjects, getEmailsForSubject, onProgress = () => {}) {
   // subjects peut etre un array d'objets {subject, participants, userReplied, ...} ou de strings
-  const subjectObjects = subjects.map(s => typeof s === 'string' ? { subject: s } : s);
-  const subjectMap = new Map(subjectObjects.map(s => [s.subject, s]));
+  const subjectObjects = subjects.map((s) => (typeof s === 'string' ? { subject: s } : s));
+  const subjectMap = new Map(subjectObjects.map((s) => [s.subject, s]));
 
   // Reset stats
   filterStats = { totalRequests: 0, totalTokensEstimated: 0 };
@@ -454,16 +499,26 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
   const userEmail = new URLSearchParams(window.location.search).get('email') || '';
   const preFiltered = preFilterSubjects(subjectObjects, userEmail);
 
-  console.log(`🧹 [Pre-filter] Auto-exclure: ${preFiltered.autoExclude.length}, Auto-garder: ${preFiltered.autoKeep.length}, A analyser par IA: ${preFiltered.needsAI.length}`);
-  onProgress({ phase: 'prefilter', progress: 5, message: `Pre-filtrage : ${preFiltered.autoExclude.length} exclus, ${preFiltered.autoKeep.length} gardes automatiquement` });
+  console.log(
+    `🧹 [Pre-filter] Auto-exclure: ${preFiltered.autoExclude.length}, Auto-garder: ${preFiltered.autoKeep.length}, A analyser par IA: ${preFiltered.needsAI.length}`
+  );
+  onProgress({
+    phase: 'prefilter',
+    progress: 5,
+    message: `Pre-filtrage : ${preFiltered.autoExclude.length} exclus, ${preFiltered.autoKeep.length} gardes automatiquement`,
+  });
 
   // Filtrer les sujets pour ne garder que ceux qui necessitent l'IA
   const needsAISet = new Set(preFiltered.needsAI);
-  const aiSubjectObjects = subjectObjects.filter(s => needsAISet.has(s.subject));
+  const aiSubjectObjects = subjectObjects.filter((s) => needsAISet.has(s.subject));
 
   if (aiSubjectObjects.length === 0) {
     console.log(`🧹 [AI Filter] Pre-filtrage a tout classe, pas besoin d'IA`);
-    onProgress({ phase: 'done', progress: 100, message: 'Analyse terminee (pre-filtrage uniquement) !' });
+    onProgress({
+      phase: 'done',
+      progress: 100,
+      message: 'Analyse terminee (pre-filtrage uniquement) !',
+    });
     return {
       exclure: [...preFiltered.autoExclude],
       garder: [...preFiltered.autoKeep],
@@ -477,24 +532,37 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
   const inputBudgetTokens = Math.floor(contextSize * 0.6);
   const inputBudgetChars = inputBudgetTokens * 4; // ~4 chars per token
 
-  console.log(`🧹 [AI Filter] Demarrage IA — ${aiSubjectObjects.length} sujets (sur ${subjectObjects.length}), contexte effectif: ${contextSize} tokens, budget input: ${inputBudgetChars} chars`);
+  console.log(
+    `🧹 [AI Filter] Demarrage IA — ${aiSubjectObjects.length} sujets (sur ${subjectObjects.length}), contexte effectif: ${contextSize} tokens, budget input: ${inputBudgetChars} chars`
+  );
 
   // --- Pass 1: tri par nom de sujet (en batches) ---
   const pass1Batches = buildPass1Batches(aiSubjectObjects, inputBudgetChars);
-  console.log(`🧹 [AI Filter] Passe 1 — ${aiSubjectObjects.length} sujets en ${pass1Batches.length} batches`);
+  console.log(
+    `🧹 [AI Filter] Passe 1 — ${aiSubjectObjects.length} sujets en ${pass1Batches.length} batches`
+  );
 
   const pass1 = { exclure: [], garder: [], incertain: [] };
 
   for (let i = 0; i < pass1Batches.length; i++) {
     const batch = pass1Batches[i];
-    const batchNames = batch.map(s => typeof s === 'string' ? s : s.subject);
+    const batchNames = batch.map((s) => (typeof s === 'string' ? s : s.subject));
     const percent = 5 + ((i + 1) / pass1Batches.length) * 25;
-    onProgress({ phase: 'pass1', progress: percent, message: `Passe 1 : Batch ${i + 1}/${pass1Batches.length} (${batchNames.length} sujets)...` });
+    onProgress({
+      phase: 'pass1',
+      progress: percent,
+      message: `Passe 1 : Batch ${i + 1}/${pass1Batches.length} (${batchNames.length} sujets)...`,
+    });
 
-    console.log(`🧹 [AI Filter] Passe 1 batch ${i + 1}/${pass1Batches.length} — ${batchNames.length} sujets`);
+    console.log(
+      `🧹 [AI Filter] Passe 1 batch ${i + 1}/${pass1Batches.length} — ${batchNames.length} sujets`
+    );
 
     const batchValidated = await callAIWithAutoSplit(
-      SYSTEM_PROMPT_PASS1, batch, buildPass1UserMessage, batchNames
+      SYSTEM_PROMPT_PASS1,
+      batch,
+      buildPass1UserMessage,
+      batchNames
     );
     console.log(`🧹 [AI Filter] Passe 1 batch ${i + 1} reponse:`, batchValidated);
 
@@ -512,11 +580,19 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
       }
     }
 
-    console.log(`🧹 [AI Filter] Passe 1 batch ${i + 1} — exclure: ${batchValidated.exclure.length}, reste: ${batchNames.length - batchValidated.exclure.length}`);
+    console.log(
+      `🧹 [AI Filter] Passe 1 batch ${i + 1} — exclure: ${batchValidated.exclure.length}, reste: ${batchNames.length - batchValidated.exclure.length}`
+    );
   }
 
-  console.log(`🧹 [AI Filter] Passe 1 terminee — exclure: ${pass1.exclure.length}, garder: ${pass1.garder.length}, incertain: ${pass1.incertain.length}`);
-  onProgress({ phase: 'pass1', progress: 30, message: `Passe 1 terminee : ${pass1.exclure.length} exclus, ${pass1.garder.length} gardes, ${pass1.incertain.length} incertains` });
+  console.log(
+    `🧹 [AI Filter] Passe 1 terminee — exclure: ${pass1.exclure.length}, garder: ${pass1.garder.length}, incertain: ${pass1.incertain.length}`
+  );
+  onProgress({
+    phase: 'pass1',
+    progress: 30,
+    message: `Passe 1 terminee : ${pass1.exclure.length} exclus, ${pass1.garder.length} gardes, ${pass1.incertain.length} incertains`,
+  });
 
   if (pass1.incertain.length === 0) {
     console.log(`🧹 [AI Filter] Pas d'incertains, fin de l'analyse`);
@@ -528,14 +604,22 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
   }
 
   // --- Pass 2: analyse approfondie des incertains ---
-  onProgress({ phase: 'pass2', progress: 35, message: `Passe 2 : Chargement des mails pour ${pass1.incertain.length} sujets...` });
+  onProgress({
+    phase: 'pass2',
+    progress: 35,
+    message: `Passe 2 : Chargement des mails pour ${pass1.incertain.length} sujets...`,
+  });
 
   const pass2Subjects = [];
   for (let idx = 0; idx < pass1.incertain.length; idx++) {
     const subjectName = pass1.incertain[idx];
     if (idx % 10 === 0) {
       const loadPercent = 35 + (idx / pass1.incertain.length) * 15;
-      onProgress({ phase: 'pass2', progress: loadPercent, message: `Passe 2 : Chargement des mails (${idx}/${pass1.incertain.length})...` });
+      onProgress({
+        phase: 'pass2',
+        progress: loadPercent,
+        message: `Passe 2 : Chargement des mails (${idx}/${pass1.incertain.length})...`,
+      });
     }
     const subjectInfo = subjectMap.get(subjectName);
     if (!subjectInfo) {
@@ -544,7 +628,9 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
     }
     try {
       const emails = await getEmailsForSubject(subjectInfo);
-      console.log(`🧹 [AI Filter] Passe 2 — "${subjectName}": ${(emails || []).length} mails charges`);
+      console.log(
+        `🧹 [AI Filter] Passe 2 — "${subjectName}": ${(emails || []).length} mails charges`
+      );
       const promptBlock = buildPass2PromptBlock(subjectName, emails || []);
       pass2Subjects.push({ subject: subjectName, promptBlock });
     } catch (e) {
@@ -556,23 +642,31 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
 
   const pass2TokenBudget = Math.floor(contextSize * 0.7); // more room for pass 2 output
   const batches = buildPass2Batches(pass2Subjects, pass2TokenBudget);
-  console.log(`🧹 [AI Filter] Passe 2 — ${pass2Subjects.length} sujets en ${batches.length} batches`);
+  console.log(
+    `🧹 [AI Filter] Passe 2 — ${pass2Subjects.length} sujets en ${batches.length} batches`
+  );
 
   const pass2Result = { exclure: [], garder: [], incertain: [] };
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
-    const userMessage = batch.map(s => s.promptBlock).join('\n\n');
-    const batchSubjectNames = batch.map(s => s.subject);
+    const userMessage = batch.map((s) => s.promptBlock).join('\n\n');
+    const batchSubjectNames = batch.map((s) => s.subject);
     const percent = 35 + ((i + 1) / batches.length) * 60;
 
-    console.log(`🧹 [AI Filter] Passe 2 — batch ${i + 1}/${batches.length} (${batchSubjectNames.length} sujets, ${userMessage.length} chars)`);
-    onProgress({ phase: 'pass2', progress: percent, message: `Passe 2 : Analyse batch ${i + 1}/${batches.length}...` });
+    console.log(
+      `🧹 [AI Filter] Passe 2 — batch ${i + 1}/${batches.length} (${batchSubjectNames.length} sujets, ${userMessage.length} chars)`
+    );
+    onProgress({
+      phase: 'pass2',
+      progress: percent,
+      message: `Passe 2 : Analyse batch ${i + 1}/${batches.length}...`,
+    });
 
     const batchResult = await callAIWithAutoSplit(
       SYSTEM_PROMPT_PASS2,
       batch,
-      (b) => b.map(s => s.promptBlock).join('\n\n'),
+      (b) => b.map((s) => s.promptBlock).join('\n\n'),
       batchSubjectNames
     );
     console.log(`🧹 [AI Filter] Passe 2 batch ${i + 1} reponse:`, batchResult);
@@ -582,10 +676,16 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
     pass2Result.incertain.push(...batchResult.incertain);
 
     // Sujets non mentionnes dans ce batch → incertain
-    const mentionedBatch = new Set([...batchResult.exclure, ...batchResult.garder, ...batchResult.incertain]);
-    const unmBatch = batchSubjectNames.filter(s => !mentionedBatch.has(s));
+    const mentionedBatch = new Set([
+      ...batchResult.exclure,
+      ...batchResult.garder,
+      ...batchResult.incertain,
+    ]);
+    const unmBatch = batchSubjectNames.filter((s) => !mentionedBatch.has(s));
     if (unmBatch.length > 0) {
-      console.log(`🧹 [AI Filter] Passe 2 batch ${i + 1} — ${unmBatch.length} sujets non mentionnes → incertain`);
+      console.log(
+        `🧹 [AI Filter] Passe 2 batch ${i + 1} — ${unmBatch.length} sujets non mentionnes → incertain`
+      );
       pass2Result.incertain.push(...unmBatch);
     }
   }
@@ -597,7 +697,9 @@ export async function startAIFiltering(subjects, getEmailsForSubject, onProgress
     incertain: [...pass2Result.incertain],
   };
 
-  console.log(`🧹 [AI Filter] TERMINE — exclure: ${finalResults.exclure.length}, garder: ${finalResults.garder.length}, incertain: ${finalResults.incertain.length}`);
+  console.log(
+    `🧹 [AI Filter] TERMINE — exclure: ${finalResults.exclure.length}, garder: ${finalResults.garder.length}, incertain: ${finalResults.incertain.length}`
+  );
   onProgress({ phase: 'done', progress: 100, message: 'Analyse terminee !' });
 
   return finalResults;

@@ -8,7 +8,8 @@ function parseAIFilterResponse(text) {
   const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (!objectMatch) throw new Error('Aucun JSON trouve dans la reponse IA');
   const parsed = JSON.parse(objectMatch[0]);
-  if (!parsed.exclure || !parsed.garder) throw new Error('Format invalide: champs "exclure" et "garder" requis');
+  if (!parsed.exclure || !parsed.garder)
+    throw new Error('Format invalide: champs "exclure" et "garder" requis');
   return {
     exclure: Array.isArray(parsed.exclure) ? parsed.exclure : [],
     garder: Array.isArray(parsed.garder) ? parsed.garder : [],
@@ -19,9 +20,9 @@ function parseAIFilterResponse(text) {
 function validateFilterResults(aiResult, originalSubjects) {
   const originalSet = new Set(originalSubjects);
   return {
-    exclure: aiResult.exclure.filter(s => originalSet.has(s)),
-    garder: aiResult.garder.filter(s => originalSet.has(s)),
-    incertain: aiResult.incertain.filter(s => originalSet.has(s)),
+    exclure: aiResult.exclure.filter((s) => originalSet.has(s)),
+    garder: aiResult.garder.filter((s) => originalSet.has(s)),
+    incertain: aiResult.incertain.filter((s) => originalSet.has(s)),
   };
 }
 
@@ -66,7 +67,8 @@ describe('parseAIFilterResponse', () => {
   });
 
   it('parse un JSON avec du texte autour', () => {
-    const text = 'Voici mon analyse:\n{"exclure": ["A"], "garder": ["B"], "incertain": []}\nBonne journee!';
+    const text =
+      'Voici mon analyse:\n{"exclure": ["A"], "garder": ["B"], "incertain": []}\nBonne journee!';
     const result = parseAIFilterResponse(text);
     expect(result.exclure).toEqual(['A']);
   });
@@ -96,7 +98,10 @@ describe('validateFilterResults', () => {
   });
 
   it('retourne des arrays vides si tout est hallucine', () => {
-    const result = validateFilterResults({ exclure: ['X'], garder: ['Y'], incertain: ['Z'] }, ['A', 'B']);
+    const result = validateFilterResults({ exclure: ['X'], garder: ['Y'], incertain: ['Z'] }, [
+      'A',
+      'B',
+    ]);
     expect(result.exclure).toEqual([]);
     expect(result.garder).toEqual([]);
     expect(result.incertain).toEqual([]);

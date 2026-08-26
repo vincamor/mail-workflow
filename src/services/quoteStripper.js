@@ -15,15 +15,15 @@ function stripQuotedText(body) {
 
   // Patterns detectes n'importe ou dans le texte — on coupe a la premiere occurrence.
   const QUOTE_MARKERS = [
-    /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i,  // Gmail FR
-    /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i,       // Gmail EN date "On Thu, Sep 19, 2024 at..."
-    /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i,               // Gmail EN variant
-    /[-_]{3,}\s*(Original|Forwarded|Begin\s+forwarded)\s+message/i,                     // Outlook dividers
-    /_{5,}/,                                                                             // Underscore separator
-    /From:\s*.+?Sent:\s*.+?To:/is,                                                       // Outlook header block
-    /^De\s*:\s*.+<.+@/im,                                                                // Outlook FR "De : ..."
-    /^Envoy[ée]\s*:\s*/im,                                                               // Outlook FR "Envoye : ..."
-    /^Sent\s*:\s*/im,                                                                    // Outlook EN "Sent: ..."
+    /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i, // Gmail FR
+    /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN date "On Thu, Sep 19, 2024 at..."
+    /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN variant
+    /[-_]{3,}\s*(Original|Forwarded|Begin\s+forwarded)\s+message/i, // Outlook dividers
+    /_{5,}/, // Underscore separator
+    /From:\s*.+?Sent:\s*.+?To:/is, // Outlook header block
+    /^De\s*:\s*.+<.+@/im, // Outlook FR "De : ..."
+    /^Envoy[ée]\s*:\s*/im, // Outlook FR "Envoye : ..."
+    /^Sent\s*:\s*/im, // Outlook EN "Sent: ..."
   ];
 
   // Cherche la plus ancienne occurrence de citation

@@ -20,10 +20,10 @@ describe('formatGmailEmail', () => {
           { name: 'Date', value: 'Wed, 12 Mar 2025 10:00:00 +0000' },
           { name: 'Message-ID', value: '<msg-1@example.com>' },
           { name: 'In-Reply-To', value: '<prev@example.com>' },
-          { name: 'References', value: '<root@example.com> <prev@example.com>' }
+          { name: 'References', value: '<root@example.com> <prev@example.com>' },
         ],
-        body: { data: '' }
-      }
+        body: { data: '' },
+      },
     };
 
     const formatted = formatGmailEmail(raw);
@@ -52,4 +52,3 @@ describe('buildGmailQuery', () => {
     expect(query).toMatch(/^after:2025\/03\/12$/);
   });
 });
-

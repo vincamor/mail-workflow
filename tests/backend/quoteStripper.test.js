@@ -120,7 +120,7 @@ describe('stripQuotedText — Outlook dividers', () => {
 });
 
 describe('stripQuotedText — Underscore separator', () => {
-  it('coupe sur une ligne d\'au moins 5 underscores', () => {
+  it("coupe sur une ligne d'au moins 5 underscores", () => {
     const body = [
       'Voici les conclusions de la reunion.',
       '',

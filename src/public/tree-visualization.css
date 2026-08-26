@@ -7,7 +7,9 @@
 /* === NODES — base === */
 .node {
   cursor: pointer;
-  transition: opacity 200ms ease-out, transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 200ms ease-out,
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .node rect:not(.expand-button):not(.badge-bg) {
@@ -16,7 +18,10 @@
   filter: drop-shadow(0 4px 14px var(--shadow-color, rgba(20, 8, 31, 0.5)));
   rx: 12;
   ry: 12;
-  transition: fill 220ms ease-out, stroke 220ms ease-out, filter 220ms ease-out;
+  transition:
+    fill 220ms ease-out,
+    stroke 220ms ease-out,
+    filter 220ms ease-out;
 }
 
 /* Hover : glow doux peach + leger scale */
@@ -159,7 +164,10 @@
   opacity: 0;
   cursor: pointer;
   filter: drop-shadow(0 2px 8px var(--primary-ring));
-  transition: opacity 200ms ease-out, fill 200ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 200ms ease-out,
+    fill 200ms ease-out,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .expand-button:hover {
@@ -209,7 +217,10 @@
   stroke: var(--text-secondary);
   stroke-width: 1.5;
   opacity: 0.42;
-  transition: stroke 220ms ease-out, opacity 220ms ease-out, stroke-width 220ms ease-out;
+  transition:
+    stroke 220ms ease-out,
+    opacity 220ms ease-out,
+    stroke-width 220ms ease-out;
 }
 
 .link:hover,
@@ -224,10 +235,18 @@
 }
 
 /* === ARROW MARKERS === */
-#arrow path { fill: var(--text-secondary); }
-#arrow-gradient stop:first-child { stop-color: var(--text-secondary); }
-#arrow-gradient stop:last-child { stop-color: var(--text-secondary); }
-marker { overflow: visible; }
+#arrow path {
+  fill: var(--text-secondary);
+}
+#arrow-gradient stop:first-child {
+  stop-color: var(--text-secondary);
+}
+#arrow-gradient stop:last-child {
+  stop-color: var(--text-secondary);
+}
+marker {
+  overflow: visible;
+}
 
 /* === TIMELINES === */
 .timeline {
@@ -317,8 +336,12 @@ marker { overflow: visible; }
 }
 
 @keyframes tree-skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* === CUSTOM TOOLTIP (Phase 7) === */
@@ -338,7 +361,9 @@ marker { overflow: visible; }
   font-family: var(--font-family);
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 160ms ease-out, transform 160ms ease-out;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out;
 }
 
 .tree-tooltip.visible {
@@ -372,13 +397,19 @@ marker { overflow: visible; }
   max-height: 120px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
-          mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
 }
 
 /* === STAGGERED ENTRY (Phase 7) === */
 @keyframes treeNodeEntry {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .node.entering {
@@ -386,8 +417,12 @@ marker { overflow: visible; }
 }
 
 @keyframes treeLinkEntry {
-  from { opacity: 0; }
-  to   { opacity: 0.42; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.42;
+  }
 }
 
 .link.entering {
@@ -395,7 +430,10 @@ marker { overflow: visible; }
 }
 
 /* === GLOBAL ANIMATIONS === */
-.node, .link, .expand-button, .expand-text {
+.node,
+.link,
+.expand-button,
+.expand-text {
   transition-property: opacity, fill, stroke, stroke-width, filter, transform;
   transition-duration: 220ms;
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -432,11 +470,19 @@ marker { overflow: visible; }
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 120ms ease-out, color 120ms ease-out, transform 120ms ease-out;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    transform 120ms ease-out;
 }
 .tree-tool-btn:hover {
   background: var(--bg-hover);
   color: var(--primary);
 }
-.tree-tool-btn:active { transform: scale(0.94); }
-.tree-tool-btn .icon { width: 18px; height: 18px; }
+.tree-tool-btn:active {
+  transform: scale(0.94);
+}
+.tree-tool-btn .icon {
+  width: 18px;
+  height: 18px;
+}

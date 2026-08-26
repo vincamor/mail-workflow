@@ -27,7 +27,7 @@ Code was read from this repo's current `main` working tree on 2026-08-25:
    message that has attachments.
 3. **Outlook attachments over 3 MB cannot use the simple `contentBytes` /
    single-GET path** — they require Microsoft Graph's chunked upload-session
-   mechanism for *uploading*, and for *downloading* large attachments Microsoft's
+   mechanism for _uploading_, and for _downloading_ large attachments Microsoft's
    own guidance is to avoid base64 `contentBytes` (which "affects API
    performance") and use the raw `/$value` endpoint instead.
 4. **Files written via `showDirectoryPicker()` to a real user-selected folder are
@@ -61,8 +61,8 @@ Code was read from this repo's current `main` working tree on 2026-08-25:
   repo's existing `decodeBase64Data()` in `gmailService.js` which already does
   `.replace(/-/g,'+').replace(/_/g,'/')` before `Buffer.from(..., 'base64')`. That
   same decode helper is directly reusable for attachment bytes.
-- **Where `attachmentId` comes from**: it is a field on `MessagePartBody` *within the
-  message payload itself* — `part.body.attachmentId`. Per the Gmail API docs: "When
+- **Where `attachmentId` comes from**: it is a field on `MessagePartBody` _within the
+  message payload itself_ — `part.body.attachmentId`. Per the Gmail API docs: "When
   present, contains the ID of an external attachment that can be retrieved in a
   separate `messages.attachments.get` request. When not present, the entire content
   of the message part body is contained in the `data` field."
@@ -77,7 +77,7 @@ Code was read from this repo's current `main` working tree on 2026-08-25:
   standard accounts (up to 50 MB for Workspace Enterprise Plus as of a 2026 rollout),
   with the total MIME-encoded message capped around **35 MB** to account for base64
   inflation (~33% overhead). These are Gmail product limits, not something the
-  `messages.attachments.get` API documents as *its own* ceiling.
+  `messages.attachments.get` API documents as _its own_ ceiling.
   Source: [Google Workspace Update — 50MB attachments for Enterprise Plus](https://workspaceupdates.googleblog.com/2026/02/ending-larger-attachments-in-gmail-new-50MB-limit-for-Enterprise-Plus.html) (secondary/product-blog source, not the API reference — treat as directional, see Unverified).
 - The API reference itself documents no separate response-size ceiling for
   `messages.attachments.get` beyond "the response is a `MessagePartBody`" — no
@@ -91,13 +91,13 @@ Code was read from this repo's current `main` working tree on 2026-08-25:
 
 Per the [Gmail API usage limits](https://developers.google.com/workspace/gmail/api/reference/quota):
 
-| Method | Quota units |
-|---|---|
-| `users.messages.list` | 5 |
-| `users.messages.get` | 20 |
-| `users.messages.attachments.get` | 20 |
-| `users.messages.import` | 25 |
-| `users.messages.send` | 100 |
+| Method                           | Quota units |
+| -------------------------------- | ----------- |
+| `users.messages.list`            | 5           |
+| `users.messages.get`             | 20          |
+| `users.messages.attachments.get` | 20          |
+| `users.messages.import`          | 25          |
+| `users.messages.send`            | 100         |
 
 Project-wide limit: 1,200,000 units/minute. Per-user limit: 6,000 units/minute.
 
@@ -146,12 +146,12 @@ const msgData = await gmail.users.messages.get({ userId: 'me', id: msgId, format
 
 The Gmail `format` enum (per [the Format reference](https://developers.google.com/gmail/api/reference/rest/v1/Format)):
 
-| Value | Returns |
-|---|---|
-| `minimal` | ID and labels only — no headers, body, or payload |
-| `metadata` | ID, labels, and headers only |
-| `full` | Full payload, parsed into `payload` (what this repo uses) |
-| `raw` | Full raw RFC 2822 message as one base64url blob in `raw`, `payload` unused |
+| Value      | Returns                                                                    |
+| ---------- | -------------------------------------------------------------------------- |
+| `minimal`  | ID and labels only — no headers, body, or payload                          |
+| `metadata` | ID, labels, and headers only                                               |
+| `full`     | Full payload, parsed into `payload` (what this repo uses)                  |
+| `raw`      | Full raw RFC 2822 message as one base64url blob in `raw`, `payload` unused |
 
 With `format: 'full'` (this repo's choice), the `payload.parts[]` tree is fully
 present, and each part's `MessagePart` object already includes `filename`,
@@ -164,7 +164,7 @@ read, via `checkForAttachments`, to set the `hasAttachments` boolean — `mimeTy
 `body.size`, and `body.attachmentId` are read for nothing and thrown away).
 Building an attachment index (name/type/size/attachmentId per email) is a
 **pure code change on data already being fetched — free of any additional Gmail
-API cost.** Only fetching the *bytes* requires the extra `messages.attachments.get`
+API cost.** Only fetching the _bytes_ requires the extra `messages.attachments.get`
 call per file (see §2/§3 above).
 
 ---
@@ -193,14 +193,14 @@ call per file (see §2/§3 above).
   property as it isn't supported"**).
   Source: [fileAttachment resource type](https://learn.microsoft.com/en-us/graph/api/resources/fileattachment?view=graph-rest-1.0)
 
-- **`itemAttachment`** — an attached Outlook *item* (a contact, event, or another
+- **`itemAttachment`** — an attached Outlook _item_ (a contact, event, or another
   email message), not a file. A downloader must special-case this: there are no
   bytes to save to disk in the normal sense; the "content" is itself a Graph
   resource (e.g. another `message`). This repo's design needs to explicitly
   decide whether to support this type at all (out of scope for research; noted
   as a decision point).
 
-- **`referenceAttachment`** — a *link* to a file on OneDrive/SharePoint/other
+- **`referenceAttachment`** — a _link_ to a file on OneDrive/SharePoint/other
   cloud storage, not embedded bytes. Its `size` property is explicitly documented
   as **not** the size of the actual file: "The size of the metadata that is
   stored on the message for the attachment in bytes. This value doesn't indicate
@@ -216,7 +216,7 @@ call per file (see §2/§3 above).
 
 ### 2. `contentBytes` vs. `/$value`, and size thresholds
 
-- **Uploading** (attaching a *new* file, not relevant to a downloader but useful
+- **Uploading** (attaching a _new_ file, not relevant to a downloader but useful
   context): files **under 3 MB** can be attached in a single POST with
   `contentBytes`; files **between 3 MB and 150 MB** require the chunked
   `createUploadSession` / iterative `PUT` mechanism. 150 MB is the documented max
@@ -286,8 +286,8 @@ call per file (see §2/§3 above).
   `streamEmailChunks` (`emailUtils.js`) — no explicit concurrency cap is visible
   in the reviewed code (requests happen one at a time per `fetchMessage` call
   inside the chunk loop, so today's Gmail/Outlook code is already serial, not
-  parallel — this reduces throttling risk for the *existing* code, but any
-  *added* attachment-download step that runs additional per-message HTTP calls
+  parallel — this reduces throttling risk for the _existing_ code, but any
+  _added_ attachment-download step that runs additional per-message HTTP calls
   will roughly double request volume against the same mailbox).
 
 ---
@@ -380,9 +380,10 @@ browser-specific point in the material found), but see the Unverified section
 for the caveat on sourcing depth.
 
 **Consequences for `blob:` and `data:` URIs specifically:**
+
 - **`data:` URIs**: already allowed by the current CSP (`img-src` includes
   `data:`), and `data:` URIs need no origin/permission checks to load as `<img
-  src>` — they would work today, inside this sandbox, with no CSP change. The
+src>` — they would work today, inside this sandbox, with no CSP change. The
   cost is base64 inflation (~33%) and holding the whole image as a JS string.
 - **`blob:` URIs**: **NOT currently allowed** — the CSP's `img-src` list is
   `'self' data: https:`, which does not include the `blob:` scheme. A `blob:`
@@ -391,7 +392,7 @@ for the caveat on sourcing depth.
   the inherited CSP** unless the `img-src` directive is widened to include
   `blob:`. Separately from CSP: because the iframe has `allow-same-origin` (so
   its origin equals the parent's, rather than being opaque/`null`), a
-  same-origin `blob:` URL *should* be loadable by that document once CSP
+  same-origin `blob:` URL _should_ be loadable by that document once CSP
   permits it — blob URLs are origin-scoped and this iframe's effective origin
   matches the origin that created the blob. This origin-matching claim is
   **inferred from how blob URL origin-scoping is generally documented**, not
@@ -442,7 +443,7 @@ and independent security write-ups:
   System Access API itself operates on directory-relative names one path
   segment at a time — `getFileHandle`/`getDirectoryHandle` do not accept
   multi-segment paths with separators as a single call in the way a raw
-  filesystem `open()` would, which incidentally limits *some* traversal vectors
+  filesystem `open()` would, which incidentally limits _some_ traversal vectors
   by construction, but a filename value itself containing `/`/`\` should still
   be sanitized before use, since browser behavior here is not something this
   session found formally specified as "traversal-safe" in an authoritative doc.)
@@ -481,7 +482,7 @@ spec treats them as load-bearing facts:
 
 1. **Gmail's exact byte threshold for when a message part's `attachmentId` is
    populated vs. `data` being inlined directly.** The Gmail API docs describe
-   the *mechanism* (attachmentId present → separate call needed; absent → data
+   the _mechanism_ (attachmentId present → separate call needed; absent → data
    is inline) but do not publish a specific byte-size cutoff that determines
    which path Gmail's backend chooses for a given part. Real-world behavior
    (widely reported in developer community sources, not confirmed here against
@@ -584,7 +585,7 @@ spec, written separately):
    the File System Access API to protect the user's disk — any overrun
    protection has to be built by the app itself.
 7. **Rendering inline images inside the existing sandboxed iframe is constrained
-   by the *existing* CSP `img-src` value**, which currently allows `'self'`,
+   by the _existing_ CSP `img-src` value**, which currently allows `'self'`,
    `data:`, and `https:` but **not** `blob:`. Whatever mechanism the design
    chooses for showing locally-stored inline images must either use a scheme
    already covered by the current CSP (`data:` works today, no CSP change) or

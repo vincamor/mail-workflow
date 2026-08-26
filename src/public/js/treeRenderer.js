@@ -110,7 +110,10 @@ function extractDisplayName(from) {
 
 function truncateText(text, max) {
   if (!text) return '';
-  const clean = String(text).replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim();
+  const clean = String(text)
+    .replace(/<[^>]*>/g, '')
+    .replace(/&[^;]+;/g, ' ')
+    .trim();
   return clean.length <= max ? clean : clean.substring(0, max) + '…';
 }
 
@@ -132,14 +135,14 @@ function isSelfSent(node, userEmail) {
 // (plus de marron/vert aléatoires issus d'un hue plein spectre). Chaque
 // expéditeur garde une couleur stable, choisie par hash dans cette palette.
 const AVATAR_PALETTE = [
-  'hsl(18, 68%, 56%)',    // pêche / corail
-  'hsl(342, 58%, 58%)',   // rose
-  'hsl(286, 52%, 60%)',   // orchidée
-  'hsl(252, 46%, 62%)',   // lavande / violet
-  'hsl(210, 55%, 58%)',   // bleu périclès
-  'hsl(168, 40%, 50%)',   // teal doux
-  'hsl(36, 58%, 54%)',    // ambre chaud (pas marron)
-  'hsl(320, 48%, 60%)',   // magenta doux
+  'hsl(18, 68%, 56%)', // pêche / corail
+  'hsl(342, 58%, 58%)', // rose
+  'hsl(286, 52%, 60%)', // orchidée
+  'hsl(252, 46%, 62%)', // lavande / violet
+  'hsl(210, 55%, 58%)', // bleu périclès
+  'hsl(168, 40%, 50%)', // teal doux
+  'hsl(36, 58%, 54%)', // ambre chaud (pas marron)
+  'hsl(320, 48%, 60%)', // magenta doux
 ];
 
 // Hash → couleur d'avatar deterministe, dans la palette on-thème
@@ -163,10 +166,10 @@ function formatRelativeDate(dateStr) {
   const diffD = Math.floor(diffMs / 86400000);
 
   if (diffMs < 0) return d.toLocaleDateString('fr-FR');
-  if (diffMin < 1) return 'a l\'instant';
+  if (diffMin < 1) return "a l'instant";
   if (diffMin < 60) return `il y a ${diffMin}min`;
   if (diffH < 24) return `il y a ${diffH}h`;
-  if (diffD === 0) return 'aujourd\'hui';
+  if (diffD === 0) return "aujourd'hui";
   if (diffD === 1) return 'hier';
   if (diffD < 7) return `il y a ${diffD}j`;
   if (diffD < 30) return `il y a ${Math.floor(diffD / 7)}sem`;
@@ -178,8 +181,12 @@ function formatFullDate(dateStr) {
   const d = new Date(String(dateStr).replace(' ', 'T'));
   if (isNaN(d.getTime())) return String(dateStr);
   return d.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -246,16 +253,16 @@ function calculateYLevels(nodes, links) {
   const trunkSet = new Set(root && root.messageId ? longestPath(root.messageId) : []);
 
   // === ETAPE 2 — Lane 0 pour tout le tronc ===
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     if (trunkSet.has(n.messageId)) n.yLevel = 0;
   });
 
   // === ETAPE 3 — Branches : grouper par participants, alterner ±1, ±2 ===
-  const nonTrunk = nodes.filter(n => !trunkSet.has(n.messageId));
+  const nonTrunk = nodes.filter((n) => !trunkSet.has(n.messageId));
   if (nonTrunk.length === 0) return;
 
   const groups = new Map();
-  nonTrunk.forEach(node => {
+  nonTrunk.forEach((node) => {
     const key = [...(node.participantsGroup || [])].sort().join(',');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(node);
@@ -265,7 +272,9 @@ function calculateYLevels(nodes, links) {
   sortedGroups.forEach((groupNodes, i) => {
     const offset = Math.floor(i / 2) + 1;
     const yLevel = i % 2 === 0 ? offset : -offset;
-    groupNodes.forEach(n => { n.yLevel = yLevel; });
+    groupNodes.forEach((n) => {
+      n.yLevel = yLevel;
+    });
   });
 }
 
@@ -314,21 +323,32 @@ function buildSVGDefs(svg) {
   const defs = createEl('defs');
 
   // Arrow marker
-  const arrowGradient = createEl('linearGradient', { id: 'arrow-gradient', gradientUnits: 'userSpaceOnUse' });
+  const arrowGradient = createEl('linearGradient', {
+    id: 'arrow-gradient',
+    gradientUnits: 'userSpaceOnUse',
+  });
   arrowGradient.append(
     createEl('stop', { offset: '0%', class: 'arrow-gradient-start' }),
     createEl('stop', { offset: '100%', class: 'arrow-gradient-end' })
   );
   const marker = createEl('marker', {
-    id: 'arrow', viewBox: '0 -5 10 10', refX: '0', refY: '0',
-    markerWidth: '6', markerHeight: '6', orient: 'auto',
+    id: 'arrow',
+    viewBox: '0 -5 10 10',
+    refX: '0',
+    refY: '0',
+    markerWidth: '6',
+    markerHeight: '6',
+    orient: 'auto',
   });
   marker.appendChild(createEl('path', { d: 'M0,-5L10,0L0,5' }));
 
   // Aurora stroke gradient (peach → orchidee) — reserve aux mails self-sent
   const auroraGrad = createEl('linearGradient', {
     id: 'aurora-stroke-gradient',
-    x1: '0%', y1: '0%', x2: '100%', y2: '100%',
+    x1: '0%',
+    y1: '0%',
+    x2: '100%',
+    y2: '100%',
   });
   const auroraStop1 = createEl('stop', { offset: '0%' });
   auroraStop1.style.stopColor = 'var(--primary)';
@@ -362,8 +382,8 @@ function linkAnchor(node, side) {
 //   4. vertical (descend/monte vers cible)
 //   5. horizontal short (entree cible)
 const ROUTE_CLEARANCE = 24;
-const ROUTE_SIDE_PAD = 28;     // distance horizontale source/cible avant le coude
-const ROUTE_CORNER_R = 10;     // rayon des coins arrondis
+const ROUTE_SIDE_PAD = 28; // distance horizontale source/cible avant le coude
+const ROUTE_CORNER_R = 10; // rayon des coins arrondis
 
 function findIntermediates(source, target, a, b) {
   if (!Array.isArray(positionedNodes)) return [];
@@ -404,8 +424,8 @@ function createFluidCurve(source, target) {
   }
 
   // Avec obstacle : on contourne par le haut OU par le bas selon ou sont les endpoints
-  const interTop = Math.min(...intermediates.map(n => n.y));
-  const interBottom = Math.max(...intermediates.map(n => n.y + nodeHeightFor(n)));
+  const interTop = Math.min(...intermediates.map((n) => n.y));
+  const interBottom = Math.max(...intermediates.map((n) => n.y + nodeHeightFor(n)));
   const interCenter = (interTop + interBottom) / 2;
   const endpointAvgY = (a.y + b.y) / 2;
   const routeAbove = endpointAvgY < interCenter;
@@ -466,8 +486,8 @@ function createFluidCurve(source, target) {
 
 function buildLinks(parent, links, nodes) {
   links.forEach((link, idx) => {
-    const src = nodes.find(n => n.messageId === link.sourceId);
-    const tgt = nodes.find(n => n.messageId === link.targetId);
+    const src = nodes.find((n) => n.messageId === link.sourceId);
+    const tgt = nodes.find((n) => n.messageId === link.targetId);
     if (!src || !tgt) return;
     const path = createEl('path', {
       class: 'link entering',
@@ -495,14 +515,17 @@ function buildAvatar(g, d, h) {
 
   const circle = createEl('circle', {
     class: 'node-avatar-circle',
-    cx: cx, cy: cy, r: 11,
+    cx: cx,
+    cy: cy,
+    r: 11,
   });
   circle.style.fill = colorFromEmail(email || name);
   avatarG.appendChild(circle);
 
   const letter = createEl('text', {
     class: 'node-avatar-letter',
-    x: cx, y: cy,
+    x: cx,
+    y: cy,
   });
   letter.textContent = initial;
   avatarG.appendChild(letter);
@@ -535,22 +558,31 @@ function buildBadge(kind, x, y) {
 }
 
 function buildExpandButton(g, d, w, h) {
-  const btn = createEl('g', { style: 'cursor:pointer', 'pointer-events': 'all', class: 'expand-button-group' });
-  btn.addEventListener('click', e => {
+  const btn = createEl('g', {
+    style: 'cursor:pointer',
+    'pointer-events': 'all',
+    class: 'expand-button-group',
+  });
+  btn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (nodeClickHandler) nodeClickHandler(d);
   });
-  btn.addEventListener('pointerdown', e => e.stopPropagation());
+  btn.addEventListener('pointerdown', (e) => e.stopPropagation());
 
   const x = w - EXPAND_BUTTON_MARGIN_RIGHT - EXPAND_BUTTON_SIZE;
   const y = (h - EXPAND_BUTTON_SIZE) / 2;
 
-  btn.appendChild(createEl('rect', {
-    class: 'expand-button',
-    width: EXPAND_BUTTON_SIZE, height: EXPAND_BUTTON_SIZE,
-    x: x, y: y,
-    rx: EXPAND_BUTTON_RADIUS, ry: EXPAND_BUTTON_RADIUS,
-  }));
+  btn.appendChild(
+    createEl('rect', {
+      class: 'expand-button',
+      width: EXPAND_BUTTON_SIZE,
+      height: EXPAND_BUTTON_SIZE,
+      x: x,
+      y: y,
+      rx: EXPAND_BUTTON_RADIUS,
+      ry: EXPAND_BUTTON_RADIUS,
+    })
+  );
 
   const txt = createEl('text', {
     class: 'expand-text',
@@ -586,14 +618,22 @@ function buildNodes(parent, nodes, userEmail) {
     g.addEventListener('pointerleave', () => g.classList.remove('pressing'));
     g.addEventListener('pointercancel', () => g.classList.remove('pressing'));
 
-    g.appendChild(createEl('rect', {
-      width: w, height: h, rx: '12', ry: '12',
-    }));
+    g.appendChild(
+      createEl('rect', {
+        width: w,
+        height: h,
+        rx: '12',
+        ry: '12',
+      })
+    );
 
     // === Ligne 1 — Sujet ===
-    const subj = (d.subject && String(d.subject).trim())
-      ? d.subject
-      : (d.bodyText ? String(d.bodyText).split('\n')[0] : '(sans sujet)');
+    const subj =
+      d.subject && String(d.subject).trim()
+        ? d.subject
+        : d.bodyText
+          ? String(d.bodyText).split('\n')[0]
+          : '(sans sujet)';
     const subjectText = createEl('text', {
       class: 'node-text-primary',
       x: 14,
@@ -657,20 +697,28 @@ function buildTimeline(linesGroup, nodes, height) {
     }
   }
 
-  uniqueDates.forEach(dateStr => {
+  uniqueDates.forEach((dateStr) => {
     const line = createEl('line', {
-      class: 'timeline', x1: '0', y1: '0', x2: '0', y2: height,
+      class: 'timeline',
+      x1: '0',
+      y1: '0',
+      x2: '0',
+      y2: height,
       'data-date': dateStr,
     });
     linesGroup.appendChild(line);
 
     const label = createEl('text', {
-      class: 'timeline-label', x: '0', y: height - TIMELINE_LABEL_Y_OFFSET,
+      class: 'timeline-label',
+      x: '0',
+      y: height - TIMELINE_LABEL_Y_OFFSET,
       'data-date': dateStr,
     });
     const date = new Date(dateStr);
     label.textContent = date.toLocaleDateString('fr-FR', {
-      weekday: 'short', month: 'short', day: 'numeric',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
     });
     linesGroup.appendChild(label);
   });
@@ -681,19 +729,21 @@ function buildTimeline(linesGroup, nodes, height) {
 // ========================================
 
 function applyTransform(dataGroup) {
-  dataGroup.setAttribute('transform',
-    `translate(${viewState.x},${viewState.y}) scale(${viewState.scale})`);
+  dataGroup.setAttribute(
+    'transform',
+    `translate(${viewState.x},${viewState.y}) scale(${viewState.scale})`
+  );
 }
 
 function updateTimelines(svg) {
   const lines = svg.querySelectorAll('.timeline');
   const labels = svg.querySelectorAll('.timeline-label');
 
-  lines.forEach(line => {
+  lines.forEach((line) => {
     const x = calcTimelineX(line.getAttribute('data-date'));
     setAttrs(line, { x1: x, x2: x });
   });
-  labels.forEach(label => {
+  labels.forEach((label) => {
     label.setAttribute('x', calcLabelX(label.getAttribute('data-date')));
   });
 }
@@ -713,39 +763,46 @@ function calcLabelX(dateStr) {
 
 function setupZoomPan(svg, dataGroup) {
   // Wheel zoom
-  svg.addEventListener('wheel', e => {
-    e.preventDefault();
-    const rect = svg.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+  svg.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
 
-    const direction = e.deltaY < 0 ? 1 : -1;
-    const factor = 1 + direction * 0.1;
-    const newScale = Math.min(
-      ZOOM_SCALE_EXTENT[1],
-      Math.max(ZOOM_SCALE_EXTENT[0], viewState.scale * factor)
-    );
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const factor = 1 + direction * 0.1;
+      const newScale = Math.min(
+        ZOOM_SCALE_EXTENT[1],
+        Math.max(ZOOM_SCALE_EXTENT[0], viewState.scale * factor)
+      );
 
-    const ratio = newScale / viewState.scale;
-    viewState.x = mx - (mx - viewState.x) * ratio;
-    viewState.y = my - (my - viewState.y) * ratio;
-    viewState.scale = newScale;
+      const ratio = newScale / viewState.scale;
+      viewState.x = mx - (mx - viewState.x) * ratio;
+      viewState.y = my - (my - viewState.y) * ratio;
+      viewState.scale = newScale;
 
-    applyTransform(dataGroup);
-    updateTimelines(svg);
-  }, { passive: false });
+      applyTransform(dataGroup);
+      updateTimelines(svg);
+    },
+    { passive: false }
+  );
 
   let dragging = false;
   let didDrag = false;
   let startX, startY, origX, origY;
   const DRAG_THRESHOLD = 3;
 
-  svg.addEventListener('pointerdown', e => {
+  svg.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     const target = e.target;
-    if (target.closest('[pointer-events="all"]')
-      || target.classList.contains('expand-button')
-      || target.classList.contains('expand-text')) return;
+    if (
+      target.closest('[pointer-events="all"]') ||
+      target.classList.contains('expand-button') ||
+      target.classList.contains('expand-text')
+    )
+      return;
 
     dragging = true;
     didDrag = false;
@@ -756,7 +813,7 @@ function setupZoomPan(svg, dataGroup) {
     svg.setPointerCapture(e.pointerId);
   });
 
-  svg.addEventListener('pointermove', e => {
+  svg.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
@@ -785,18 +842,18 @@ function setupBranchHighlight(svg) {
   const linkEls = svg.querySelectorAll('.link');
 
   function clearHighlight() {
-    nodeEls.forEach(n => n.classList.remove('dimmed-out', 'highlighted'));
-    linkEls.forEach(l => l.classList.remove('dimmed-out', 'highlight'));
+    nodeEls.forEach((n) => n.classList.remove('dimmed-out', 'highlighted'));
+    linkEls.forEach((l) => l.classList.remove('dimmed-out', 'highlight'));
   }
 
-  nodeEls.forEach(nodeEl => {
+  nodeEls.forEach((nodeEl) => {
     nodeEl.addEventListener('mouseenter', () => {
       const id = nodeEl.getAttribute('data-message-id');
       if (!id) return;
       const ancestors = collectAncestors(id);
       if (ancestors.size === 0) return;
 
-      nodeEls.forEach(n => {
+      nodeEls.forEach((n) => {
         const nid = n.getAttribute('data-message-id');
         if (ancestors.has(nid)) {
           n.classList.remove('dimmed-out');
@@ -807,7 +864,7 @@ function setupBranchHighlight(svg) {
         }
       });
 
-      linkEls.forEach(l => {
+      linkEls.forEach((l) => {
         const sid = l.getAttribute('data-source-id');
         const tid = l.getAttribute('data-target-id');
         if (ancestors.has(sid) && ancestors.has(tid)) {
@@ -857,18 +914,19 @@ function positionTooltip(e) {
 function setupTooltips(svg, nodes) {
   ensureTooltip();
   const byId = new Map();
-  nodes.forEach(n => byId.set(n.messageId, n));
+  nodes.forEach((n) => byId.set(n.messageId, n));
 
   const nodeEls = svg.querySelectorAll('.node');
-  nodeEls.forEach(el => {
+  nodeEls.forEach((el) => {
     const id = el.getAttribute('data-message-id');
     const d = byId.get(id);
     if (!d) return;
 
-    el.addEventListener('mouseenter', e => {
+    el.addEventListener('mouseenter', (e) => {
       const tt = ensureTooltip();
       tt.querySelector('.tree-tooltip-subject').textContent = d.subject || '(sans sujet)';
-      tt.querySelector('.tree-tooltip-meta').textContent = `${d.from || 'Inconnu'} • ${formatFullDate(d.date)}`;
+      tt.querySelector('.tree-tooltip-meta').textContent =
+        `${d.from || 'Inconnu'} • ${formatFullDate(d.date)}`;
       tt.querySelector('.tree-tooltip-body').textContent = (d.bodyText || '').slice(0, 280);
       tt.classList.add('visible');
       positionTooltip(e);
@@ -893,8 +951,8 @@ function calculateFitTransform(dataGroup, container) {
   const cw = Math.max(container.clientWidth || 0, 100);
   const ch = Math.max(container.clientHeight || 0, 100);
 
-  const bw = (bbox.width > 0) ? bbox.width : 100;
-  const bh = (bbox.height > 0) ? bbox.height : 100;
+  const bw = bbox.width > 0 ? bbox.width : 100;
+  const bh = bbox.height > 0 ? bbox.height : 100;
 
   const scaleX = (cw - CONTAINER_PADDING) / bw;
   const scaleY = (ch - CONTAINER_PADDING) / bh;
@@ -923,7 +981,7 @@ function autoFit(containerIdArg) {
   const h = Math.max(container.clientHeight || 0, 100);
   setAttrs(svg, { width: w, height: h });
 
-  svg.querySelectorAll('.timeline').forEach(l => l.setAttribute('y2', h));
+  svg.querySelectorAll('.timeline').forEach((l) => l.setAttribute('y2', h));
 
   const fit = calculateFitTransform(dataGroup, container);
   viewState.x = fit.x;
@@ -1023,8 +1081,10 @@ function renderTree(containerId) {
   svg.appendChild(linesGroup);
 
   const dataGroup = createEl('g', { class: 'data-content' });
-  dataGroup.setAttribute('transform',
-    `translate(${CONTAINER_MARGIN.left + DATA_GROUP_OFFSET},${CONTAINER_MARGIN.top})`);
+  dataGroup.setAttribute(
+    'transform',
+    `translate(${CONTAINER_MARGIN.left + DATA_GROUP_OFFSET},${CONTAINER_MARGIN.top})`
+  );
   svg.appendChild(dataGroup);
 
   buildLinks(dataGroup, treeData.links, positionedNodes);
@@ -1061,7 +1121,8 @@ function createCompleteVisualization(tree, _options = {}) {
     `;
   }
 
-  const containerId = 'tree-container-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  const containerId =
+    'tree-container-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
   const html = `
     <div class="d3-tree-container" style="width: 100%; height: 100%; display: flex; flex-direction: column;">
@@ -1088,7 +1149,9 @@ function createCompleteVisualization(tree, _options = {}) {
       return;
     }
     if (++renderAttempts >= MAX_RENDER_ATTEMPTS) {
-      console.warn(`⚠️ Rendu de l'arbre abandonné : conteneur ${containerId} toujours 0×0 après ${MAX_RENDER_ATTEMPTS} frames`);
+      console.warn(
+        `⚠️ Rendu de l'arbre abandonné : conteneur ${containerId} toujours 0×0 après ${MAX_RENDER_ATTEMPTS} frames`
+      );
       return;
     }
     requestAnimationFrame(tryRender);
@@ -1112,8 +1175,8 @@ function toggleTimelines(containerIdArg) {
   const firstLine = lines[0];
   const isVisible = firstLine && firstLine.style.opacity !== '0' && firstLine.style.opacity !== '';
 
-  lines.forEach(l => l.style.opacity = isVisible ? '0' : '0.6');
-  labels.forEach(l => l.style.opacity = isVisible ? '0' : '1');
+  lines.forEach((l) => (l.style.opacity = isVisible ? '0' : '0.6'));
+  labels.forEach((l) => (l.style.opacity = isVisible ? '0' : '1'));
 }
 
 function getCurrentContainerId() {

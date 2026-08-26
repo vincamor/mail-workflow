@@ -17,14 +17,9 @@ const DEFAULT_FILTERS = {
     'noreply@facebook.com',
     'notifications@linkedin.com',
     'no-reply@google.com',
-    'noreply@github.com'
+    'noreply@github.com',
   ],
-  blacklistedKeywords: [
-    '[SPAM]',
-    'Newsletter',
-    'Unsubscribe',
-    'Promotional'
-  ],
+  blacklistedKeywords: ['[SPAM]', 'Newsletter', 'Unsubscribe', 'Promotional'],
   blacklistedSubjects: [],
   notificationKeywords: [
     'noreply',
@@ -32,16 +27,9 @@ const DEFAULT_FILTERS = {
     'notification',
     'automated',
     'do-not-reply',
-    'donotreply'
+    'donotreply',
   ],
-  promotionalKeywords: [
-    'unsubscribe',
-    'promo',
-    'promotional',
-    'offer',
-    'sale',
-    'discount'
-  ]
+  promotionalKeywords: ['unsubscribe', 'promo', 'promotional', 'offer', 'sale', 'discount'],
 };
 
 // Clé pour IndexedDB
@@ -57,20 +45,22 @@ export async function loadFilters() {
     const transaction = db.transaction(['filters'], 'readonly');
     const store = transaction.objectStore('filters');
     const request = store.get(FILTERS_STORAGE_KEY);
-    
+
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
         const savedFilters = request.result?.value || {};
-        
+
         // Fusionner avec les filtres par défaut pour s'assurer que les keywords sont présents
         const filters = {
           ...DEFAULT_FILTERS,
           ...savedFilters,
           // Toujours inclure les keywords par défaut s'ils ne sont pas personnalisés
-          notificationKeywords: savedFilters.notificationKeywords || DEFAULT_FILTERS.notificationKeywords,
-          promotionalKeywords: savedFilters.promotionalKeywords || DEFAULT_FILTERS.promotionalKeywords
+          notificationKeywords:
+            savedFilters.notificationKeywords || DEFAULT_FILTERS.notificationKeywords,
+          promotionalKeywords:
+            savedFilters.promotionalKeywords || DEFAULT_FILTERS.promotionalKeywords,
         };
-        
+
         console.log('✅ Filtres chargés:', filters);
         resolve(filters);
       };
@@ -100,7 +90,7 @@ export async function saveFilters(filters) {
     await new Promise((resolve, reject) => {
       const request = store.put({
         key: FILTERS_STORAGE_KEY,
-        value: filters
+        value: filters,
       });
       request.onerror = () => reject(request.error);
       transaction.oncomplete = () => resolve();
@@ -123,10 +113,10 @@ export async function saveFilters(filters) {
 function openFiltersDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('EmailFiltersDB', 1);
-    
+
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-    
+
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       if (!db.objectStoreNames.contains('filters')) {
@@ -153,52 +143,52 @@ export async function resetFilters() {
 export function shouldExcludeEmail(email, filters) {
   const subject = (email.subject || '').toLowerCase();
   const from = (email.from || '').toLowerCase();
-  
+
   // 1. Vérifier le sujet vide
   if (filters.excludeNoSubject && (!email.subject || email.subject.trim() === '')) {
     return { shouldExclude: true, reason: 'Sans sujet' };
   }
-  
+
   // 2. Vérifier les notifications
   if (filters.excludeNotifications) {
-    const isNotification = filters.notificationKeywords.some(keyword => 
-      from.includes(keyword.toLowerCase()) || subject.includes(keyword.toLowerCase())
+    const isNotification = filters.notificationKeywords.some(
+      (keyword) => from.includes(keyword.toLowerCase()) || subject.includes(keyword.toLowerCase())
     );
     if (isNotification) {
       return { shouldExclude: true, reason: 'Notification' };
     }
   }
-  
+
   // 3. Vérifier les promotions
   if (filters.excludePromotional) {
-    const isPromotional = filters.promotionalKeywords.some(keyword =>
+    const isPromotional = filters.promotionalKeywords.some((keyword) =>
       subject.includes(keyword.toLowerCase())
     );
     if (isPromotional) {
       return { shouldExclude: true, reason: 'Promotional' };
     }
   }
-  
+
   // 4. Vérifier la liste noire d'expéditeurs
   if (filters.blacklistedSenders && filters.blacklistedSenders.length > 0) {
-    const isBlacklisted = filters.blacklistedSenders.some(sender =>
+    const isBlacklisted = filters.blacklistedSenders.some((sender) =>
       from.includes(sender.toLowerCase())
     );
     if (isBlacklisted) {
       return { shouldExclude: true, reason: 'Expéditeur bloqué' };
     }
   }
-  
+
   // 5. Vérifier les mots-clés interdits
   if (filters.blacklistedKeywords && filters.blacklistedKeywords.length > 0) {
-    const hasBlacklistedKeyword = filters.blacklistedKeywords.some(keyword =>
+    const hasBlacklistedKeyword = filters.blacklistedKeywords.some((keyword) =>
       subject.includes(keyword.toLowerCase())
     );
     if (hasBlacklistedKeyword) {
       return { shouldExclude: true, reason: 'Mot-clé interdit' };
     }
   }
-  
+
   return { shouldExclude: false, reason: null };
 }
 
@@ -215,12 +205,12 @@ export function filterEmails(emails, filters) {
     total: emails.length,
     kept: 0,
     excluded: 0,
-    reasons: {}
+    reasons: {},
   };
-  
+
   for (const email of emails) {
     const result = shouldExcludeEmail(email, filters);
-    
+
     if (result.shouldExclude) {
       excluded.push({ ...email, exclusionReason: result.reason });
       stats.excluded++;
@@ -230,7 +220,7 @@ export function filterEmails(emails, filters) {
       stats.kept++;
     }
   }
-  
+
   return { filtered, excluded, stats };
 }
 
@@ -241,4 +231,3 @@ export function filterEmails(emails, filters) {
 export function getDefaultFilters() {
   return { ...DEFAULT_FILTERS };
 }
-

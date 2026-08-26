@@ -42,15 +42,15 @@ export function stripQuotedText(body) {
 
   // Patterns detectes n'importe ou dans le texte — on coupe a la premiere occurrence.
   const QUOTE_MARKERS = [
-    /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i,  // Gmail FR
-    /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i,       // Gmail EN date "On Thu, Sep 19, 2024 at..."
-    /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i,               // Gmail EN variant
-    /[-_]{3,}\s*(Original|Forwarded|Begin\s+forwarded)\s+message/i,                     // Outlook dividers
-    /_{5,}/,                                                                             // Underscore separator
-    /From:\s*.+?Sent:\s*.+?To:/is,                                                       // Outlook header block
-    /^De\s*:\s*.+<.+@/im,                                                                // Outlook FR "De : ..."
-    /^Envoy[ée]\s*:\s*/im,                                                               // Outlook FR "Envoye : ..."
-    /^Sent\s*:\s*/im,                                                                    // Outlook EN "Sent: ..."
+    /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i, // Gmail FR
+    /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN date "On Thu, Sep 19, 2024 at..."
+    /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN variant
+    /[-_]{3,}\s*(Original|Forwarded|Begin\s+forwarded)\s+message/i, // Outlook dividers
+    /_{5,}/, // Underscore separator
+    /From:\s*.+?Sent:\s*.+?To:/is, // Outlook header block
+    /^De\s*:\s*.+<.+@/im, // Outlook FR "De : ..."
+    /^Envoy[ée]\s*:\s*/im, // Outlook FR "Envoye : ..."
+    /^Sent\s*:\s*/im, // Outlook EN "Sent: ..."
   ];
 
   // Cherche la plus ancienne occurrence de citation
@@ -87,9 +87,7 @@ export function buildInitialContext(subjectKey, emails, totalCount) {
   out += `# Contenu cite (reponses precedentes) strippe — chaque mail ne contient que son contenu propre\n\n`;
 
   selected.forEach((email, i) => {
-    const date = email.date
-      ? new Date(email.date).toISOString().split('T')[0]
-      : 'inconnue';
+    const date = email.date ? new Date(email.date).toISOString().split('T')[0] : 'inconnue';
     const from = email.from || 'inconnu';
     const stripped = stripQuotedText(email.bodyText || '');
     const body = stripped.slice(0, MAX_BODY_CHARS);
@@ -116,8 +114,8 @@ export function parseOpenAIChunk(line) {
       return {
         usage: {
           input_tokens: obj.usage.prompt_tokens || 0,
-          output_tokens: obj.usage.completion_tokens || 0
-        }
+          output_tokens: obj.usage.completion_tokens || 0,
+        },
       };
     }
     return null;
@@ -140,16 +138,16 @@ export function parseAnthropicChunk(line) {
       return {
         usage: {
           input_tokens: obj.message.usage.input_tokens || 0,
-          output_tokens: 0
-        }
+          output_tokens: 0,
+        },
       };
     }
     if (obj.type === 'message_delta' && obj.usage) {
       return {
         usage: {
           input_tokens: 0,
-          output_tokens: obj.usage.output_tokens || 0
-        }
+          output_tokens: obj.usage.output_tokens || 0,
+        },
       };
     }
     return null;
@@ -174,10 +172,14 @@ async function streamChat(body, provider, onDelta) {
     response = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
   } catch (e) {
-    return { assistantContent: '', usage: null, error: `Impossible de joindre le serveur: ${e.message}` };
+    return {
+      assistantContent: '',
+      usage: null,
+      error: `Impossible de joindre le serveur: ${e.message}`,
+    };
   }
 
   if (!response.ok) {
@@ -242,9 +244,9 @@ async function runAssistantTurn(chat, onDelta) {
     ...config,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...chat.messages.map(m => ({ role: m.role, content: m.content }))
+      ...chat.messages.map((m) => ({ role: m.role, content: m.content })),
     ],
-    stream: true
+    stream: true,
   };
 
   const { assistantContent, usage, error } = await streamChat(body, config.provider, onDelta);
@@ -279,7 +281,7 @@ export async function sendMessage(subjectKey, userMessage, opts) {
       tokensIn: 0,
       tokensOut: 0,
       msgCount: 0,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
   }
 
@@ -296,7 +298,7 @@ export async function sendMessage(subjectKey, userMessage, opts) {
       role: 'user',
       content: ctxContent,
       ts: Date.now(),
-      isContextMessage: true
+      isContextMessage: true,
     });
   }
 
@@ -321,7 +323,7 @@ export async function regenerateLastMessage(subjectKey, opts) {
     return;
   }
   if (chat.messages[chat.messages.length - 1].role !== 'assistant') {
-    onError && onError('Le dernier message n\'est pas de l\'assistant');
+    onError && onError("Le dernier message n'est pas de l'assistant");
     return;
   }
   chat.messages.pop();

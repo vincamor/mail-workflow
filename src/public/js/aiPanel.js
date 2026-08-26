@@ -75,13 +75,15 @@ export function initAIPanel() {
       provider: providerSelect.value,
       baseUrl: baseUrlInput.value.trim(),
       apiKey: apiKeyInput.value.trim(),
-      model: modelInput.value.trim()
+      model: modelInput.value.trim(),
     };
     saveAIConfig(newConfig);
     testResult.textContent = 'Configuration sauvegardee';
     testResult.className = 'ai-test-result ai-test-success';
     testResult.style.display = 'block';
-    setTimeout(() => { testResult.style.display = 'none'; }, 3000);
+    setTimeout(() => {
+      testResult.style.display = 'none';
+    }, 3000);
   });
 
   // Test connection
@@ -90,7 +92,7 @@ export function initAIPanel() {
       provider: providerSelect.value,
       baseUrl: baseUrlInput.value.trim(),
       apiKey: apiKeyInput.value.trim(),
-      model: modelInput.value.trim()
+      model: modelInput.value.trim(),
     };
 
     testBtn.disabled = true;
@@ -115,7 +117,7 @@ export function initAIPanel() {
     const syncFilterBtnState = () => {
       const key = apiKeyInput.value.trim();
       filterBtn.disabled = !key;
-      filterBtn.title = key ? '' : 'Configurez d\'abord votre provider IA';
+      filterBtn.title = key ? '' : "Configurez d'abord votre provider IA";
     };
 
     // Etat initial base sur la config sauvegardee
@@ -129,7 +131,7 @@ export function initAIPanel() {
     filterBtn.addEventListener('click', async () => {
       const subjects = getCurrentSubjects();
       if (!subjects || subjects.length === 0) {
-        testResult.textContent = 'Aucun sujet a analyser. Telechargez d\'abord vos emails.';
+        testResult.textContent = "Aucun sujet a analyser. Telechargez d'abord vos emails.";
         testResult.className = 'ai-test-result ai-test-error';
         testResult.style.display = 'block';
         return;
@@ -151,7 +153,10 @@ export function initAIPanel() {
         const getEmailsForSubject = async (subjectInfo) => {
           if (!fileInfo || !fileInfo.fileHandle) return [];
           try {
-            return await emailAnalyzer.getEmailsForSubjectOptimized(fileInfo.fileHandle, subjectInfo);
+            return await emailAnalyzer.getEmailsForSubjectOptimized(
+              fileInfo.fileHandle,
+              subjectInfo
+            );
           } catch (e) {
             console.warn('Erreur chargement mails pour "' + subjectInfo.subject + '":', e);
             return [];
@@ -186,7 +191,9 @@ export function initAIPanel() {
       chatBtn.disabled = !enabled;
       chatBtn.title = enabled
         ? 'Ouvrir le chat IA'
-        : (!key ? 'Configurez d\'abord le provider IA' : 'Selectionnez un sujet d\'abord');
+        : !key
+          ? "Configurez d'abord le provider IA"
+          : "Selectionnez un sujet d'abord";
     }
   };
 

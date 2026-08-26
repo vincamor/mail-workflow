@@ -10,7 +10,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--scrim, rgba(13, 5, 20, 0.90));
+  background: var(--scrim, rgba(13, 5, 20, 0.9));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 9999;
@@ -21,8 +21,12 @@
 }
 
 @keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* === CONTENT CARD === */
@@ -55,8 +59,14 @@
 }
 
 @keyframes overlaySlideUp {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* === SPINNER === */
@@ -72,7 +82,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* === FLYING EMAILS === */
@@ -91,16 +103,38 @@
   filter: drop-shadow(0 0 8px rgba(242, 160, 123, 0.3));
 }
 
-.flying-email:nth-child(1) { left: 10%; animation-delay: 0s; }
-.flying-email:nth-child(2) { left: 40%; animation-delay: 0.4s; }
-.flying-email:nth-child(3) { left: 70%; animation-delay: 0.8s; }
+.flying-email:nth-child(1) {
+  left: 10%;
+  animation-delay: 0s;
+}
+.flying-email:nth-child(2) {
+  left: 40%;
+  animation-delay: 0.4s;
+}
+.flying-email:nth-child(3) {
+  left: 70%;
+  animation-delay: 0.8s;
+}
 
 @keyframes flyEmail {
-  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-  20% { opacity: 1; }
-  50% { transform: translateY(-50px) rotate(15deg); opacity: 1; }
-  80% { opacity: 0.5; }
-  100% { transform: translateY(-100px) rotate(30deg); opacity: 0; }
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-50px) rotate(15deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100px) rotate(30deg);
+    opacity: 0;
+  }
 }
 
 /* === EMAIL COUNTER === */
@@ -136,8 +170,13 @@
 }
 
 @keyframes counterPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 /* === SUCCESS === */
@@ -162,9 +201,17 @@
 }
 
 @keyframes successPop {
-  0% { transform: scale(0); opacity: 0; }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* === TEXT === */
@@ -230,6 +277,11 @@
     min-width: 300px;
     padding: var(--space-8) var(--space-6);
   }
-  .loading-spinner { width: 40px; height: 40px; }
-  .loading-overlay-text { font-size: var(--text-base); }
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+  }
+  .loading-overlay-text {
+    font-size: var(--text-base);
+  }
 }

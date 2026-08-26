@@ -147,7 +147,7 @@ function checkSessionSecret(env) {
   if (isBlank(secret)) {
     report('fail', 'SESSION_SECRET', 'not set', [
       'The server refuses to start without it (unless NODE_ENV=development).',
-      'Generate one: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      "Generate one: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
       'then put it in .env as SESSION_SECRET=<the value>. Or run "npm run setup".',
     ]);
     return;
@@ -155,14 +155,14 @@ function checkSessionSecret(env) {
   if (WEAK_SECRETS.has(secret.trim().toLowerCase())) {
     report('warn', 'SESSION_SECRET', `set but looks like a placeholder (${secret.length} chars)`, [
       'Replace it with a random value:',
-      'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
     ]);
     return;
   }
   if (secret.length < 32) {
     report('warn', 'SESSION_SECRET', `set but short (${secret.length} chars, 32+ recommended)`, [
       'Regenerate a longer one:',
-      'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
     ]);
     return;
   }
@@ -432,7 +432,10 @@ async function checkRedis(env) {
  * @param {Record<string,string>} env
  */
 async function checkOllama(env) {
-  const enabled = String(env.ALLOW_LOCAL_AI || '').trim().toLowerCase() === 'true';
+  const enabled =
+    String(env.ALLOW_LOCAL_AI || '')
+      .trim()
+      .toLowerCase() === 'true';
   if (!enabled) {
     report('skip', 'Ollama (local AI)', 'ALLOW_LOCAL_AI is not "true"');
     return;
@@ -442,11 +445,16 @@ async function checkOllama(env) {
     report('ok', 'Ollama (local AI)', `reachable at ${OLLAMA_HOST}:${OLLAMA_PORT}`);
     return;
   }
-  report('warn', 'Ollama (local AI)', `not reachable at ${OLLAMA_HOST}:${OLLAMA_PORT} (${probe.reason})`, [
-    'Install Ollama from https://ollama.com/, then run "ollama serve"',
-    'and pull a model, e.g. "ollama pull llama3.1".',
-    'If you do not use a local model, remove ALLOW_LOCAL_AI from .env.',
-  ]);
+  report(
+    'warn',
+    'Ollama (local AI)',
+    `not reachable at ${OLLAMA_HOST}:${OLLAMA_PORT} (${probe.reason})`,
+    [
+      'Install Ollama from https://ollama.com/, then run "ollama serve"',
+      'and pull a model, e.g. "ollama pull llama3.1".',
+      'If you do not use a local model, remove ALLOW_LOCAL_AI from .env.',
+    ]
+  );
 }
 
 /**
@@ -561,7 +569,9 @@ async function main() {
     return 1;
   }
   if (tally.warn > 0) {
-    say(color.yellow('  No blocking problem. The warnings above are safe to ignore for local use.'));
+    say(
+      color.yellow('  No blocking problem. The warnings above are safe to ignore for local use.')
+    );
     say();
     return 0;
   }

@@ -37,12 +37,12 @@ describe('aiChatStore (real module)', () => {
       subjectKey: 'Projet Alpha',
       messages: [
         { role: 'user', content: 'Hi', ts: 1000 },
-        { role: 'assistant', content: 'Hello', ts: 1001 }
+        { role: 'assistant', content: 'Hello', ts: 1001 },
       ],
       tokensIn: 50,
       tokensOut: 30,
       msgCount: 2,
-      updatedAt: 1002
+      updatedAt: 1002,
     };
     await saveChat('Projet Alpha', chat);
     const loaded = await loadChat('Projet Alpha');
@@ -67,7 +67,14 @@ describe('aiChatStore (real module)', () => {
   });
 
   test('appendMessage appends to existing entry', async () => {
-    await saveChat('Exists', { subjectKey: 'Exists', messages: [{ role: 'user', content: 'a', ts: 1 }], tokensIn: 0, tokensOut: 0, msgCount: 1, updatedAt: 1 });
+    await saveChat('Exists', {
+      subjectKey: 'Exists',
+      messages: [{ role: 'user', content: 'a', ts: 1 }],
+      tokensIn: 0,
+      tokensOut: 0,
+      msgCount: 1,
+      updatedAt: 1,
+    });
     await appendMessage('Exists', { role: 'assistant', content: 'b', ts: 2 });
     const loaded = await loadChat('Exists');
     expect(loaded.messages).toHaveLength(2);

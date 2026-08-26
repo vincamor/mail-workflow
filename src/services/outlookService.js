@@ -62,8 +62,8 @@ async function refreshOutlookAccessToken(session) {
       redirect_uri: REDIRECT_URI,
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      scope: 'openid profile offline_access User.Read Mail.Read Mail.ReadWrite Mail.Send'
-    })
+      scope: 'openid profile offline_access User.Read Mail.Read Mail.ReadWrite Mail.Send',
+    }),
   });
 
   const data = await res.json();
@@ -78,7 +78,7 @@ async function refreshOutlookAccessToken(session) {
     ...session.tokens,
     access_token: data.access_token,
     expires_in: data.expires_in,
-    expires_at: Date.now() + (data.expires_in * 1000)
+    expires_at: Date.now() + data.expires_in * 1000,
   };
   if (data.refresh_token) session.tokens.refresh_token = data.refresh_token;
 
@@ -121,7 +121,7 @@ const OUTLOOK_SELECT_FIELDS = [
   'internetMessageHeaders',
   'body',
   'categories',
-  'hasAttachments'
+  'hasAttachments',
 ].join(',');
 
 // ─────────────────────────────────────────────
@@ -179,10 +179,12 @@ function formatOutlookEmail(message) {
   // Extraction des headers internet (In-Reply-To, References, Message-ID)
   const headers = message.internetMessageHeaders || [];
   if (!headers.length) {
-    console.warn(`⚠️  formatOutlookEmail: internetMessageHeaders absent pour le message ${message.id} — inReplyTo/references seront vides`);
+    console.warn(
+      `⚠️  formatOutlookEmail: internetMessageHeaders absent pour le message ${message.id} — inReplyTo/references seront vides`
+    );
   }
   const getHeader = (name) => {
-    const h = headers.find(h => h.name?.toLowerCase() === name.toLowerCase());
+    const h = headers.find((h) => h.name?.toLowerCase() === name.toLowerCase());
     return h ? h.value : '';
   };
 
@@ -214,7 +216,7 @@ function formatOutlookEmail(message) {
     internalDate,
     hasAttachments: message.hasAttachments || false,
     bodyText: bodyTextStripped,
-    bodyHtml
+    bodyHtml,
   };
 
   return formatted;
@@ -237,8 +239,15 @@ function buildOutlookQuery(filters, afterDate = null) {
 
   // Les filtres de mots-clés / expéditeurs sont appliqués côté client
   // via shouldExcludeEmail — les filtres OData Graph sont limités pour les champs de texte
-  if (filters && (filters.excludeNotifications || filters.excludePromotional || filters.blacklistedSenders?.length)) {
-    console.log(`🔍 Outlook: filtres textuel/expéditeur appliqués côté client (shouldExcludeEmail)`);
+  if (
+    filters &&
+    (filters.excludeNotifications ||
+      filters.excludePromotional ||
+      filters.blacklistedSenders?.length)
+  ) {
+    console.log(
+      `🔍 Outlook: filtres textuel/expéditeur appliqués côté client (shouldExcludeEmail)`
+    );
   }
 
   const filter = filterParts.join(' and ') || null;
@@ -278,7 +287,7 @@ async function getAllMessagesFromFolder(accessToken, folder, filterQuery) {
     console.log(`📄 ${folder} — Page ${pageCount}...`);
 
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!response.ok) {
@@ -293,7 +302,9 @@ async function getAllMessagesFromFolder(accessToken, folder, filterQuery) {
     const messages = data.value || [];
     allMessages = allMessages.concat(messages);
 
-    console.log(`📄 ${folder} — Page ${pageCount}: ${messages.length} messages reçus (cumul: ${allMessages.length})`);
+    console.log(
+      `📄 ${folder} — Page ${pageCount}: ${messages.length} messages reçus (cumul: ${allMessages.length})`
+    );
 
     // nextLink présent → il reste des pages
     url = data['@odata.nextLink'] || null;
@@ -302,7 +313,9 @@ async function getAllMessagesFromFolder(accessToken, folder, filterQuery) {
     }
   }
 
-  console.log(`✅ Dossier "${folder}" terminé: ${allMessages.length} messages en ${pageCount} page(s)`);
+  console.log(
+    `✅ Dossier "${folder}" terminé: ${allMessages.length} messages en ${pageCount} page(s)`
+  );
   return allMessages;
 }
 
@@ -328,7 +341,9 @@ exports.getEmailCount = async (req, res) => {
 
   const { filters, afterDate } = parseFiltersFromRequest(req);
 
-  console.log(`📬 Outlook polling count — afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'aucun'}`);
+  console.log(
+    `📬 Outlook polling count — afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'aucun'}`
+  );
 
   // Helper : récupère uniquement les IDs d'un dossier depuis afterDate (sans charger les corps)
   async function listMessageIds(folder, filterQuery) {
@@ -340,7 +355,7 @@ exports.getEmailCount = async (req, res) => {
 
     while (url) {
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (!response.ok) {
@@ -351,7 +366,7 @@ exports.getEmailCount = async (req, res) => {
       }
 
       const data = await response.json();
-      (data.value || []).forEach(m => ids.set(m.id, true));
+      (data.value || []).forEach((m) => ids.set(m.id, true));
       url = data['@odata.nextLink'] || null;
     }
 
@@ -364,16 +379,17 @@ exports.getEmailCount = async (req, res) => {
     // Deux appels parallèles : inbox + sentitems (comme Gmail fait INBOX + SENT + ALL MAIL)
     const [inboxIds, sentIds] = await Promise.all([
       listMessageIds('inbox', filterQuery),
-      listMessageIds('sentitems', filterQuery)
+      listMessageIds('sentitems', filterQuery),
     ]);
 
     // Déduplication
     const allIds = new Map([...inboxIds, ...sentIds]);
     const newCount = allIds.size;
 
-    console.log(`📬 Outlook polling: ${newCount} messages depuis afterDate (${inboxIds.size} inbox + ${sentIds.size} sentitems avant dédup)`);
+    console.log(
+      `📬 Outlook polling: ${newCount} messages depuis afterDate (${inboxIds.size} inbox + ${sentIds.size} sentitems avant dédup)`
+    );
     res.json({ newCount });
-
   } catch (error) {
     console.error('❌ Erreur Outlook getEmailCount:', error);
     if (isTokenError(error)) {
@@ -411,7 +427,7 @@ exports.downloadEmailsInChunks = async (req, res) => {
     fetchMessage: async (msgId) => {
       const url = `https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(msgId)}?$select=${OUTLOOK_SELECT_FIELDS}`;
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!response.ok) return null;
       const message = await response.json();
@@ -458,21 +474,22 @@ exports.sendReply = async (req, res) => {
   // Helper : parse une chaîne "Nom <email>, ..." en tableau de recipients Graph
   function parseRecipients(str) {
     if (!str || !str.trim()) return [];
-    return str.split(',')
-      .map(r => r.trim())
+    return str
+      .split(',')
+      .map((r) => r.trim())
       .filter(Boolean)
-      .map(r => {
+      .map((r) => {
         const match = r.match(/^(.+?)\s*<([^>]+)>$/);
         if (match) {
           return { emailAddress: { name: match[1].trim(), address: match[2].trim() } };
         }
         return { emailAddress: { name: r, address: r } };
       })
-      .filter(r => r.emailAddress.address.includes('@'));
+      .filter((r) => r.emailAddress.address.includes('@'));
   }
 
-  const toRecipients  = parseRecipients(to);
-  const ccRecipients  = parseRecipients(cc);
+  const toRecipients = parseRecipients(to);
+  const ccRecipients = parseRecipients(cc);
 
   console.log(`   Destinataires parsés — To: ${toRecipients.length}, CC: ${ccRecipients.length}`);
 
@@ -483,7 +500,7 @@ exports.sendReply = async (req, res) => {
     console.log(`🔗 sendReply Outlook URL: ${url}`);
 
     const payload = {
-      comment: body
+      comment: body,
     };
 
     // Ajouter les destinataires uniquement s'ils sont fournis
@@ -500,9 +517,9 @@ exports.sendReply = async (req, res) => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     // Graph retourne 202 Accepted (pas de corps) en cas de succès
@@ -524,10 +541,9 @@ exports.sendReply = async (req, res) => {
     }
 
     res.status(500).json({ error: `Erreur lors de l'envoi : ${errMsg}` });
-
   } catch (error) {
     console.error('❌ Erreur sendReply Outlook:', error);
-    res.status(500).json({ error: 'Erreur lors de l\'envoi de la réponse : ' + error.message });
+    res.status(500).json({ error: "Erreur lors de l'envoi de la réponse : " + error.message });
   }
 };
 
@@ -555,14 +571,12 @@ exports.initAuth = (req, res) => {
       'User.Read',
       'Mail.Read',
       'Mail.ReadWrite',
-      'Mail.Send'
+      'Mail.Send',
     ].join(' '),
     prompt: 'consent',
-    state
+    state,
   });
-  req.session.save(() =>
-    res.redirect(`${MS_LOGIN_BASE}/authorize?` + params.toString())
-  );
+  req.session.save(() => res.redirect(`${MS_LOGIN_BASE}/authorize?` + params.toString()));
 };
 
 // ─────────────────────────────────────────────
@@ -597,24 +611,28 @@ exports.handleCallback = async (req, res) => {
           'User.Read',
           'Mail.Read',
           'Mail.ReadWrite',
-          'Mail.Send'
-        ].join(' ')
-      })
+          'Mail.Send',
+        ].join(' '),
+      }),
     });
     const tokens = await tokenRes.json();
 
     if (tokens.error) {
-      console.error('❌ Outlook handleCallback — erreur token:', tokens.error, tokens.error_description);
+      console.error(
+        '❌ Outlook handleCallback — erreur token:',
+        tokens.error,
+        tokens.error_description
+      );
       return res.status(500).send('Erreur OAuth Outlook : ' + tokens.error_description);
     }
 
     // Pour le refresh automatique (getValidAccessToken) : date d'expiration en ms
-    tokens.expires_at = Date.now() + (tokens.expires_in * 1000);
+    tokens.expires_at = Date.now() + tokens.expires_in * 1000;
     console.log('✅ Outlook tokens reçus — expiration dans:', tokens.expires_in, 'secondes');
 
     // Récupérer l'email utilisateur via Microsoft Graph
     const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const userinfo = await userRes.json();
     const email = userinfo.mail || userinfo.userPrincipalName;
@@ -656,32 +674,36 @@ exports.getEmails = async (req, res) => {
   if (!accessToken) {
     return res.status(401).json({
       error: 'Non authentifié (pas de tokens en session)',
-      requiresLogout: true
+      requiresLogout: true,
     });
   }
 
   const { filters, afterDate } = parseFiltersFromRequest(req);
 
-  console.log(`📬 getEmails Outlook — afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'aucun'}, filters: ${filters ? 'oui' : 'non'}`);
+  console.log(
+    `📬 getEmails Outlook — afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'aucun'}, filters: ${filters ? 'oui' : 'non'}`
+  );
 
   try {
     const filterQuery = buildOutlookQuery(filters, afterDate);
 
     // Inbox (emails reçus)
     console.log('📥 Récupération Inbox Outlook...');
-    const inboxMessages = (await getAllMessagesFromFolder(accessToken, 'inbox', filterQuery))
-      .map(m => ({ ...m, _type: 'recu' }));
+    const inboxMessages = (await getAllMessagesFromFolder(accessToken, 'inbox', filterQuery)).map(
+      (m) => ({ ...m, _type: 'recu' })
+    );
     console.log(`📥 Inbox: ${inboxMessages.length} messages`);
 
     // SentItems (emails envoyés)
     console.log('📤 Récupération SentItems Outlook...');
-    const sentMessages = (await getAllMessagesFromFolder(accessToken, 'sentitems', filterQuery))
-      .map(m => ({ ...m, _type: 'envoye' }));
+    const sentMessages = (
+      await getAllMessagesFromFolder(accessToken, 'sentitems', filterQuery)
+    ).map((m) => ({ ...m, _type: 'envoye' }));
     console.log(`📤 SentItems: ${sentMessages.length} messages`);
 
     // Déduplication par ID
     const allMessagesMap = new Map();
-    [...inboxMessages, ...sentMessages].forEach(m => allMessagesMap.set(m.id, m));
+    [...inboxMessages, ...sentMessages].forEach((m) => allMessagesMap.set(m.id, m));
     const allMessages = Array.from(allMessagesMap.values());
     console.log(`🔗 TOTAL Outlook: ${allMessages.length} messages uniques`);
 
@@ -700,19 +722,20 @@ exports.getEmails = async (req, res) => {
       }
     }
 
-    console.log(`✅ getEmails Outlook: ${displayEmails.length} emails formatés pour affichage, ${rejectedCount} rejetés`);
+    console.log(
+      `✅ getEmails Outlook: ${displayEmails.length} emails formatés pour affichage, ${rejectedCount} rejetés`
+    );
 
     res.json({
       displayEmails,
       totalAvailable: allMessages.length,
-      messageIds: allMessages.map(m => ({ id: m.id, type: m._type })),
+      messageIds: allMessages.map((m) => ({ id: m.id, type: m._type })),
       metadata: {
         inboxCount: inboxMessages.length,
         sentCount: sentMessages.length,
-        uniqueCount: allMessages.length
-      }
+        uniqueCount: allMessages.length,
+      },
     });
-
   } catch (error) {
     console.error('❌ Erreur getEmails Outlook:', error);
     if (isTokenError(error)) {
@@ -749,13 +772,15 @@ exports.getEmailDetail = async (req, res) => {
     console.log(`🔗 URL getEmailDetail: ${url}`);
 
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       const errMsg = errData.error?.message || response.statusText;
-      console.error(`❌ Graph API getEmailDetail erreur: ${errMsg} (code HTTP: ${response.status})`);
+      console.error(
+        `❌ Graph API getEmailDetail erreur: ${errMsg} (code HTTP: ${response.status})`
+      );
       throw Object.assign(new Error(errMsg), { statusCode: response.status });
     }
 
@@ -763,10 +788,11 @@ exports.getEmailDetail = async (req, res) => {
     const formatted = formatOutlookEmail(message);
 
     console.log(`✅ getEmailDetail Outlook: message ${messageId} formaté avec succès`);
-    console.log(`   subject: "${formatted.subject}", from: "${formatted.from}", internalDate: ${formatted.internalDate}`);
+    console.log(
+      `   subject: "${formatted.subject}", from: "${formatted.from}", internalDate: ${formatted.internalDate}`
+    );
 
     res.json(formatted);
-
   } catch (error) {
     console.error('❌ Erreur getEmailDetail Outlook:', error);
     if (error.statusCode === 401) {

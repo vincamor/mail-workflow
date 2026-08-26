@@ -14,10 +14,10 @@
 export function showReplyForm(emailData, replyType = 'reply', options = {}) {
   const userId = new URLSearchParams(window.location.search).get('email') || '';
 
-  const to      = buildReplyTo(emailData, userId);
-  const cc      = replyType === 'replyAll' ? buildReplyAllCc(emailData, userId) : '';
+  const to = buildReplyTo(emailData, userId);
+  const cc = replyType === 'replyAll' ? buildReplyAllCc(emailData, userId) : '';
   const subject = /^re\s*:/i.test(emailData.subject || '')
-    ? (emailData.subject || '')
+    ? emailData.subject || ''
     : `Re: ${emailData.subject || ''}`;
 
   // Créer la section si elle n'existe pas encore dans le DOM
@@ -31,14 +31,14 @@ export function showReplyForm(emailData, replyType = 'reply', options = {}) {
   }
 
   // Peupler les champs
-  section.querySelector('#replyTo').value      = to;
-  section.querySelector('#replyCc').value      = cc;
+  section.querySelector('#replyTo').value = to;
+  section.querySelector('#replyCc').value = cc;
   section.querySelector('#replySubject').value = subject;
-  section.querySelector('#replyBody').value    = options.prefilledBody || '';
+  section.querySelector('#replyBody').value = options.prefilledBody || '';
   section.querySelector('#replySendFeedback').textContent = '';
 
   const sendBtn = section.querySelector('#replySendBtn');
-  sendBtn.disabled    = false;
+  sendBtn.disabled = false;
   setSendButtonLabel(sendBtn, 'Envoyer', 'icon-send');
 
   // Afficher
@@ -51,7 +51,10 @@ export function showReplyForm(emailData, replyType = 'reply', options = {}) {
   const replyBodyTextarea = section.querySelector('#replyBody');
   replyBodyTextarea.focus();
   if (options.prefilledBody) {
-    replyBodyTextarea.setSelectionRange(replyBodyTextarea.value.length, replyBodyTextarea.value.length);
+    replyBodyTextarea.setSelectionRange(
+      replyBodyTextarea.value.length,
+      replyBodyTextarea.value.length
+    );
   }
 
   // Rebind des handlers à chaque ouverture pour capturer l'emailData courant
@@ -127,12 +130,12 @@ function createReplySection() {
 // ---------------------------------------------------------------------------
 
 async function doSendReply(emailData, section) {
-  const to       = section.querySelector('#replyTo').value.trim();
-  const cc       = section.querySelector('#replyCc').value.trim();
-  const subject  = section.querySelector('#replySubject').value.trim();
-  const body     = section.querySelector('#replyBody').value.trim();
+  const to = section.querySelector('#replyTo').value.trim();
+  const cc = section.querySelector('#replyCc').value.trim();
+  const subject = section.querySelector('#replySubject').value.trim();
+  const body = section.querySelector('#replyBody').value.trim();
   const feedback = section.querySelector('#replySendFeedback');
-  const sendBtn  = section.querySelector('#replySendBtn');
+  const sendBtn = section.querySelector('#replySendBtn');
 
   if (!body) {
     feedback.textContent = 'Le message ne peut pas être vide.';
@@ -140,7 +143,7 @@ async function doSendReply(emailData, section) {
     return;
   }
 
-  sendBtn.disabled    = true;
+  sendBtn.disabled = true;
   sendBtn.textContent = 'Envoi…';
   feedback.textContent = '';
 
@@ -158,9 +161,9 @@ async function doSendReply(emailData, section) {
         cc: cc || undefined,
         subject,
         body,
-        id:         emailData.id,          // ID interne Outlook (AAMkADAwATM0...) — ignoré par Gmail
-        threadId:   emailData.threadId,
-        messageId:  emailData.messageId,
+        id: emailData.id, // ID interne Outlook (AAMkADAwATM0...) — ignoré par Gmail
+        threadId: emailData.threadId,
+        messageId: emailData.messageId,
         references: emailData.references || '',
       }),
     });
@@ -171,17 +174,19 @@ async function doSendReply(emailData, section) {
       feedback.textContent = 'Réponse envoyée.';
       feedback.style.color = 'var(--success)';
       setSendButtonLabel(sendBtn, 'Envoyé', 'icon-check');
-      setTimeout(() => { section.style.display = 'none'; }, 1800);
+      setTimeout(() => {
+        section.style.display = 'none';
+      }, 1800);
     } else {
       feedback.textContent = data.error || "Erreur lors de l'envoi.";
       feedback.style.color = 'var(--error)';
-      sendBtn.disabled     = false;
+      sendBtn.disabled = false;
       setSendButtonLabel(sendBtn, 'Envoyer', 'icon-send');
     }
   } catch {
     feedback.textContent = 'Erreur réseau. Veuillez réessayer.';
     feedback.style.color = 'var(--error)';
-    sendBtn.disabled     = false;
+    sendBtn.disabled = false;
     setSendButtonLabel(sendBtn, 'Envoyer', 'icon-send');
   }
 }
@@ -213,8 +218,8 @@ function buildReplyAllCc(emailData, userId) {
     ...(emailData.cc ? emailData.cc.split(',') : []),
   ];
   return all
-    .map(r => r.trim())
-    .filter(r => r && extractEmailAddress(r).toLowerCase() !== userId.toLowerCase())
+    .map((r) => r.trim())
+    .filter((r) => r && extractEmailAddress(r).toLowerCase() !== userId.toLowerCase())
     .join(', ');
 }
 

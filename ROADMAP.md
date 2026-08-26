@@ -38,8 +38,8 @@ Sequencing that is not negotiable:
 1. **Prettier runs once, as its own commit, first.** Mixing a reformat with a
    36-file translation produces an unreviewable diff.
 2. **A terminology glossary (`docs/internal/glossary.md`) is written before the
-   translation starts.** Without it, ten parallel contributors render *sujet* as
-   *subject*, *topic* and *thread* in ten different files. The glossary does not
+   translation starts.** Without it, ten parallel contributors render _sujet_ as
+   _subject_, _topic_ and _thread_ in ten different files. The glossary does not
    exist yet, and it blocks everything after it.
 3. **The AI prompts go last, and carefully.** Translating a prompt changes model
    behaviour, and `tests/backend/aiFilterPrompts.test.js` asserts on prompt

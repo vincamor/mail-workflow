@@ -38,22 +38,18 @@ const PUBLIC_PROVIDER_HOSTS = {
 };
 
 // Hostnames metadata cloud connus, bloqués explicitement (défense en profondeur)
-const BLOCKED_HOSTNAMES = new Set([
-  'metadata.google.internal',
-  'metadata',
-  'instance-data',
-]);
+const BLOCKED_HOSTNAMES = new Set(['metadata.google.internal', 'metadata', 'instance-data']);
 
 function isPrivateIPv4(ip) {
   const parts = ip.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return true; // prudence
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return true; // prudence
   const [a, b] = parts;
-  if (a === 0 || a === 10 || a === 127) return true;          // 0/8, 10/8, 127/8
-  if (a === 169 && b === 254) return true;                     // link-local + metadata
-  if (a === 172 && b >= 16 && b <= 31) return true;            // 172.16/12
-  if (a === 192 && b === 168) return true;                     // 192.168/16
-  if (a === 100 && b >= 64 && b <= 127) return true;           // 100.64/10 (CGNAT)
-  if (a >= 224) return true;                                   // multicast/broadcast
+  if (a === 0 || a === 10 || a === 127) return true; // 0/8, 10/8, 127/8
+  if (a === 169 && b === 254) return true; // link-local + metadata
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12
+  if (a === 192 && b === 168) return true; // 192.168/16
+  if (a === 100 && b >= 64 && b <= 127) return true; // 100.64/10 (CGNAT)
+  if (a >= 224) return true; // multicast/broadcast
   return false;
 }
 
@@ -62,12 +58,15 @@ function isPrivateIPv4(ip) {
 // NB : new URL() sérialise TOUJOURS les IPv4-mapped en hexa compressé
 // (::ffff:127.0.0.1 -> ::ffff:7f00:1) — l'ancienne regex dotted les ratait.
 function ipv6ToBigInt(ip) {
-  let s = String(ip).toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  let s = String(ip)
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+    .split('%')[0];
   // quad-pointé embarqué en fin d'adresse -> convertir en deux hextets
   const dotted = s.match(/^(.*:)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
   if (dotted) {
     const v4 = dotted[2].split('.').map(Number);
-    if (v4.some(n => n > 255)) return null;
+    if (v4.some((n) => n > 255)) return null;
     const hi = ((v4[0] << 8) | v4[1]).toString(16);
     const lo = ((v4[2] << 8) | v4[3]).toString(16);
     s = `${dotted[1]}${hi}:${lo}`;
@@ -95,41 +94,50 @@ function ipv6ToBigInt(ip) {
 
 function isPrivateIPv6(ip) {
   const n = ipv6ToBigInt(ip);
-  if (n === null) return true;                                // non parsable → refus
-  if (n === 0n || n === 1n) return true;                      // :: et ::1
+  if (n === null) return true; // non parsable → refus
+  if (n === 0n || n === 1n) return true; // :: et ::1
   const high96 = n >> 32n;
   const embeddedV4 = () => {
     const v = Number(n & 0xffffffffn);
     return [(v >>> 24) & 0xff, (v >>> 16) & 0xff, (v >>> 8) & 0xff, v & 0xff].join('.');
   };
   // IPv4-mapped ::ffff:0:0/96, IPv4-compat ::/96, NAT64 64:ff9b::/96 → tester le v4
-  const NAT64_PREFIX = 0x0064ff9bn << 64n;                    // 64:ff9b::/96 (96 bits de poids fort)
+  const NAT64_PREFIX = 0x0064ff9bn << 64n; // 64:ff9b::/96 (96 bits de poids fort)
   if (high96 === 0xffffn || high96 === 0n || high96 === NAT64_PREFIX) {
     return isPrivateIPv4(embeddedV4());
   }
   const topByte = n >> 120n;
-  if (topByte === 0xffn) return true;                         // ff00::/8 multicast
-  if ((topByte & 0xfen) === 0xfcn) return true;               // fc00::/7 (ULA)
-  if (((n >> 112n) & 0xffc0n) === 0xfe80n) return true;       // fe80::/10 (link-local)
+  if (topByte === 0xffn) return true; // ff00::/8 multicast
+  if ((topByte & 0xfen) === 0xfcn) return true; // fc00::/7 (ULA)
+  if (((n >> 112n) & 0xffc0n) === 0xfe80n) return true; // fe80::/10 (link-local)
   return false;
 }
 
 function isPrivateIp(ip) {
-  const bare = String(ip).toLowerCase().replace(/^\[|\]$/g, '');
+  const bare = String(ip)
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '');
   if (net.isIPv4(bare)) return isPrivateIPv4(bare);
   if (net.isIPv6(bare)) return isPrivateIPv6(bare);
-  return true;                                                // forme inconnue → prudence
+  return true; // forme inconnue → prudence
 }
 
 function isLoopbackHostname(hostname) {
-  return hostname === 'localhost' ||
+  return (
+    hostname === 'localhost' ||
     hostname === '::1' ||
-    (net.isIPv4(hostname) && hostname.startsWith('127.'));
+    (net.isIPv4(hostname) && hostname.startsWith('127.'))
+  );
 }
 
 function getLocalAiAllowlist() {
   const raw = process.env.LOCAL_AI_ALLOWED_HOSTS || '127.0.0.1:11434,localhost:11434,[::1]:11434';
-  return new Set(raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+  return new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+  );
 }
 
 /**
@@ -180,7 +188,9 @@ async function assertSafeProviderUrl(provider, baseUrl) {
     if (process.env.ALLOW_LOCAL_AI === 'true' && getLocalAiAllowlist().has(hostPort)) {
       return;
     }
-    reject('baseUrl locale refusée — définir ALLOW_LOCAL_AI=true pour autoriser Ollama local (127.0.0.1:11434)');
+    reject(
+      'baseUrl locale refusée — définir ALLOW_LOCAL_AI=true pour autoriser Ollama local (127.0.0.1:11434)'
+    );
   }
 
   // ollama distant / custom : résolution DNS + rejet des adresses privées
@@ -258,7 +268,7 @@ function buildProviderRequest({ provider, apiKey, model, baseUrl, messages, stre
       url: `${cleanBaseUrl}/v1/chat/completions`,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: {
         model,
@@ -270,8 +280,8 @@ function buildProviderRequest({ provider, apiKey, model, baseUrl, messages, stre
   }
 
   if (provider === 'anthropic') {
-    const systemMsg = messages.find(m => m.role === 'system');
-    const nonSystemMessages = messages.filter(m => m.role !== 'system');
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     const body = {
       model,

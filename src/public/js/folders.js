@@ -25,7 +25,7 @@ export function setCurrentFolderHandle(handle) {
 }
 
 // Fonction pour obtenir le handle du fichier JSONL
-export async function getEmailFileHandle(userId, provider = "gmail") {
+export async function getEmailFileHandle(userId, provider = 'gmail') {
   // Mode demo : dataset embarque servi en HTTP, lu via un faux handle qui
   // duck-type FileSystemFileHandle. Aucun dossier local n'est requis.
   if (isDemoMode()) {
@@ -34,13 +34,15 @@ export async function getEmailFileHandle(userId, provider = "gmail") {
 
   try {
     if (!currentFolderHandle) {
-      console.error("Aucun dossier sélectionné");
+      console.error('Aucun dossier sélectionné');
       return null;
     }
 
     const fileName = `${provider}_emails.jsonl`;
     // Résolution tolérante : accepte racine, dossier EmailWorkflow ou dossier compte.
-    const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, { create: false });
+    const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
+      create: false,
+    });
     if (!userFolderHandle) {
       return { fileHandle: null, fileName, exists: false };
     }
@@ -65,8 +67,7 @@ export async function getEmailFileHandle(userId, provider = "gmail") {
 export async function analyzeEmailFile(fileHandle) {
   try {
     const file = await fileHandle.getFile();
-    if (file.size === 0)
-      return { exists: false, emailCount: 0, emailIds: new Set() };
+    if (file.size === 0) return { exists: false, emailCount: 0, emailIds: new Set() };
 
     // Lecture streaming : évite de charger tout le fichier en une seule string.
     // On extrait uniquement l'ID de chaque ligne — l'objet complet (bodyHtml,
@@ -92,7 +93,7 @@ export async function analyzeEmailFile(fileHandle) {
             emailCount++;
           }
         } catch (e) {
-          console.warn("Ligne malformée ignorée:", line.substring(0, 50));
+          console.warn('Ligne malformée ignorée:', line.substring(0, 50));
         }
       }
     }
@@ -106,7 +107,9 @@ export async function analyzeEmailFile(fileHandle) {
           emailIds.add(emailId);
           emailCount++;
         }
-      } catch (e) { /* ligne malformée ignorée */ }
+      } catch (e) {
+        /* ligne malformée ignorée */
+      }
     }
 
     return {
@@ -125,8 +128,7 @@ export function getEmailStats(emails) {
 
   const dates = emails
     .map((email) => {
-      const date =
-        email.internalDate || email.receivedDateTime || email.date;
+      const date = email.internalDate || email.receivedDateTime || email.date;
       return date ? new Date(date) : null;
     })
     .filter((date) => date && !isNaN(date.getTime()));
@@ -148,21 +150,21 @@ export function getEmailStats(emails) {
 
 // UI - Modal et info dossier
 export function showFolderInfo(_folderName) {
-  document.getElementById("folderSection").style.display = "block";
+  document.getElementById('folderSection').style.display = 'block';
   // currentFolderName n'existe plus dans la nouvelle interface
   // Le nom est géré par currentFolderPath dans updateFolderStatus
 }
 
 export function hideFolderInfo() {
-  document.getElementById("folderSection").style.display = "none";
+  document.getElementById('folderSection').style.display = 'none';
 }
 
 // Initialiser les handlers de dossiers
 export function initFolderHandlers(userId, onFolderSelected) {
-  const changeFolderBtn = document.getElementById("changeFolderBtn");
+  const changeFolderBtn = document.getElementById('changeFolderBtn');
 
   if (!changeFolderBtn) {
-    console.error("Bouton changeFolderBtn non trouvé");
+    console.error('Bouton changeFolderBtn non trouvé');
     return;
   }
 
@@ -172,8 +174,8 @@ export function initFolderHandlers(userId, onFolderSelected) {
     // Le clic fournit l'activation utilisateur requise par requestPermission()
     if (pendingReauthHandle) {
       try {
-        const perm = await pendingReauthHandle.requestPermission({ mode: "readwrite" });
-        if (perm === "granted") {
+        const perm = await pendingReauthHandle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
           const handle = pendingReauthHandle;
           pendingReauthHandle = null;
           currentFolderHandle = handle;
@@ -196,8 +198,8 @@ export function initFolderHandlers(userId, onFolderSelected) {
 
     try {
       const folderHandle = await window.showDirectoryPicker({
-        mode: "readwrite",
-        startIn: "documents",
+        mode: 'readwrite',
+        startIn: 'documents',
       });
 
       // Stocker le handle dans IndexedDB
@@ -206,28 +208,28 @@ export function initFolderHandlers(userId, onFolderSelected) {
       if (stored) {
         currentFolderHandle = folderHandle;
         console.log(`✅ Dossier sélectionné: ${folderHandle.name}`);
-        
+
         // Mettre à jour l'interface visuelle
         updateFolderStatus(folderHandle);
-        
+
         // Activer les étapes suivantes
         showStep2();
         showStep3();
-        
+
         // Activer le bouton de téléchargement
         enableDownloadButton();
-        
+
         if (onFolderSelected) {
           onFolderSelected();
         }
       } else {
-        console.error("❌ Échec du stockage du handle");
-        toastError("Erreur lors de la sauvegarde du dossier");
+        console.error('❌ Échec du stockage du handle');
+        toastError('Erreur lors de la sauvegarde du dossier');
       }
     } catch (e) {
       if (e.name !== 'AbortError') {
-        console.error("❌ Erreur sélection dossier:", e);
-        toastError("Erreur lors de la s\u00e9lection du dossier");
+        console.error('❌ Erreur sélection dossier:', e);
+        toastError('Erreur lors de la s\u00e9lection du dossier');
       }
     }
   };
@@ -238,26 +240,26 @@ export function initFolderHandlers(userId, onFolderSelected) {
  */
 export function updateFolderStatus(folderHandle) {
   console.log('🔄 updateFolderStatus appelé avec:', folderHandle);
-  
+
   const folderStatus = document.getElementById('folderStatus');
   const folderPath = document.getElementById('currentFolderPath');
   const changeFolderBtn = document.getElementById('changeFolderBtn');
-  
+
   console.log('📍 Éléments DOM:', {
     folderStatus: !!folderStatus,
     folderPath: !!folderPath,
-    changeFolderBtn: !!changeFolderBtn
+    changeFolderBtn: !!changeFolderBtn,
   });
-  
+
   if (!folderStatus || !folderPath) {
     console.error('❌ Éléments folderStatus ou folderPath non trouvés');
     return;
   }
-  
+
   // Changer le statut visuel
   folderStatus.classList.remove('folder-status-empty');
   folderStatus.classList.add('folder-status-selected');
-  
+
   // Mettre à jour le contenu
   const titleElement = folderStatus.querySelector('.folder-status-title');
   if (titleElement) {
@@ -265,12 +267,12 @@ export function updateFolderStatus(folderHandle) {
   } else {
     console.error('❌ Élément folder-status-title non trouvé');
   }
-  
+
   // Mettre à jour le chemin
   const folderName = folderHandle.name || 'Dossier';
   folderPath.textContent = folderName;
   console.log(`✅ Dossier affiché: ${folderName}`);
-  
+
   // Changer le texte du bouton
   if (changeFolderBtn) {
     const btnText = changeFolderBtn.querySelector('.btn-text');
@@ -302,7 +304,7 @@ export function updateFolderStatusNeedsReauth(folderHandle) {
 
   if (changeFolderBtn) {
     const btnText = changeFolderBtn.querySelector('.btn-text');
-    if (btnText) btnText.textContent = 'Reautoriser l\'acces';
+    if (btnText) btnText.textContent = "Reautoriser l'acces";
   }
 }
 
@@ -322,11 +324,11 @@ export function showStep2() {
 export function showStep3() {
   const step3 = document.getElementById('step3Guide');
   const downloadInfo = document.getElementById('downloadInfo');
-  
+
   if (step3) {
     step3.style.display = 'block';
   }
-  
+
   if (downloadInfo) {
     downloadInfo.style.display = 'flex';
   }
@@ -348,15 +350,12 @@ export async function restoreFolder(userId) {
     // Debug: Lister tous les handles stockés
     console.log("🔍 DEBUG: Vérification du contenu de l'IndexedDB...");
     const db = await openDB();
-    const transaction = db.transaction(["folderHandles"], "readonly");
-    const store = transaction.objectStore("folderHandles");
+    const transaction = db.transaction(['folderHandles'], 'readonly');
+    const store = transaction.objectStore('folderHandles');
 
     const allHandlesRequest = store.getAll();
     allHandlesRequest.onsuccess = () => {
-      console.log(
-        "🔍 DEBUG: Tous les handles stockés:",
-        allHandlesRequest.result
-      );
+      console.log('🔍 DEBUG: Tous les handles stockés:', allHandlesRequest.result);
     };
 
     // Essayer de restaurer le handle depuis IndexedDB
@@ -387,9 +386,8 @@ export async function restoreFolder(userId) {
     console.log(`⏳ Handle en attente de reautorisation pour: ${userId}`);
     return false;
   } catch (error) {
-    console.error("❌ Erreur restauration handle:", error);
+    console.error('❌ Erreur restauration handle:', error);
     // Ne plus afficher la modal en cas d'erreur
     return false;
   }
 }
-

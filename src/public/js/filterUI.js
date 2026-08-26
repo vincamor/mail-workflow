@@ -16,7 +16,7 @@ let lastFocusedBeforeModal = null;
 export async function initFilterUI() {
   currentFilters = await loadFilters();
   createFilterModal();
-  
+
   // Ajouter le bouton dans la section dossier
   addFilterButton();
 }
@@ -27,21 +27,22 @@ export async function initFilterUI() {
 function addFilterButton() {
   // Vérifier si le bouton existe déjà
   if (document.getElementById('filterButton')) return;
-  
+
   // Trouver le container du dossier
   const folderContent = document.querySelector('#folderDrawer .folder-content');
-  
+
   if (!folderContent) {
     console.warn('Section dossier non trouvée');
     return;
   }
-  
+
   const filterButton = document.createElement('button');
   filterButton.id = 'filterButton';
   filterButton.className = 'filter-button';
-  filterButton.innerHTML = '<span class="btn-icon icon icon-settings" aria-hidden="true"></span><span class="btn-text">Filtres de téléchargement</span>';
+  filterButton.innerHTML =
+    '<span class="btn-icon icon icon-settings" aria-hidden="true"></span><span class="btn-text">Filtres de téléchargement</span>';
   filterButton.onclick = showFilterModal;
-  
+
   // Insérer après step2Guide
   const step2Guide = document.getElementById('step2Guide');
   if (step2Guide) {
@@ -58,7 +59,7 @@ function addFilterButton() {
 function createFilterModal() {
   // Vérifier si la modal existe déjà
   if (document.getElementById('filterModal')) return;
-  
+
   const modal = document.createElement('div');
   modal.id = 'filterModal';
   modal.className = 'filter-modal';
@@ -218,9 +219,9 @@ function createFilterModal() {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
-  
+
   // Événements
   setupFilterModalEvents();
 }
@@ -234,7 +235,7 @@ function setupFilterModalEvents() {
   document.getElementById('filterModal').onclick = (e) => {
     if (e.target.id === 'filterModal') hideFilterModal();
   };
-  
+
   // Checkbox date personnalisée
   document.getElementById('filterUseCustomAfterDate').onchange = (e) => {
     const group = document.getElementById('customAfterDateGroup');
@@ -246,19 +247,19 @@ function setupFilterModalEvents() {
     const group = document.getElementById('minConversationLengthGroup');
     group.style.display = e.target.checked ? 'block' : 'none';
   };
-  
+
   // Ajout expéditeur
   document.getElementById('addBlacklistedSender').onclick = addBlacklistedSender;
   document.getElementById('newBlacklistedSender').onkeypress = (e) => {
     if (e.key === 'Enter') addBlacklistedSender();
   };
-  
+
   // Ajout mot-clé
   document.getElementById('addBlacklistedKeyword').onclick = addBlacklistedKeyword;
   document.getElementById('newBlacklistedKeyword').onkeypress = (e) => {
     if (e.key === 'Enter') addBlacklistedKeyword();
   };
-  
+
   // Boutons
   document.getElementById('resetFilters').onclick = async () => {
     const ok = await showConfirmModal({
@@ -341,22 +342,27 @@ function populateFilterModal() {
   document.getElementById('filterNoSubject').checked = currentFilters.excludeNoSubject;
   document.getElementById('filterNotifications').checked = currentFilters.excludeNotifications;
   document.getElementById('filterPromotional').checked = currentFilters.excludePromotional;
-  document.getElementById('filterAutoExcludeRepetitive').checked = currentFilters.autoExcludeRepetitive !== false;
-  document.getElementById('filterShortConversations').checked = currentFilters.excludeShortConversations;
+  document.getElementById('filterAutoExcludeRepetitive').checked =
+    currentFilters.autoExcludeRepetitive !== false;
+  document.getElementById('filterShortConversations').checked =
+    currentFilters.excludeShortConversations;
   document.getElementById('minConversationLength').value = currentFilters.minConversationLength;
-  
+
   // Date personnalisée
-  document.getElementById('filterUseCustomAfterDate').checked = currentFilters.useCustomAfterDate || false;
+  document.getElementById('filterUseCustomAfterDate').checked =
+    currentFilters.useCustomAfterDate || false;
   document.getElementById('filterCustomAfterDate').value = currentFilters.customAfterDate || '';
-  document.getElementById('customAfterDateGroup').style.display = currentFilters.useCustomAfterDate ? 'block' : 'none';
+  document.getElementById('customAfterDateGroup').style.display = currentFilters.useCustomAfterDate
+    ? 'block'
+    : 'none';
 
   // Afficher/masquer le champ conversations courtes
   const group = document.getElementById('minConversationLengthGroup');
   group.style.display = currentFilters.excludeShortConversations ? 'block' : 'none';
-  
+
   // Liste noire expéditeurs
   renderBlacklistedSenders();
-  
+
   // Liste mots-clés
   renderBlacklistedKeywords();
 
@@ -370,12 +376,12 @@ function populateFilterModal() {
 function renderBlacklistedSenders() {
   const list = document.getElementById('blacklistedSendersList');
   list.innerHTML = '';
-  
+
   if (!currentFilters.blacklistedSenders || currentFilters.blacklistedSenders.length === 0) {
     list.innerHTML = '<p class="filter-empty">Aucun expéditeur bloqué</p>';
     return;
   }
-  
+
   currentFilters.blacklistedSenders.forEach((sender, index) => {
     const item = document.createElement('div');
     item.className = 'filter-list-item';
@@ -396,12 +402,12 @@ function renderBlacklistedSenders() {
 function renderBlacklistedKeywords() {
   const list = document.getElementById('blacklistedKeywordsList');
   list.innerHTML = '';
-  
+
   if (!currentFilters.blacklistedKeywords || currentFilters.blacklistedKeywords.length === 0) {
     list.innerHTML = '<p class="filter-empty">Aucun mot-clé bloqué</p>';
     return;
   }
-  
+
   currentFilters.blacklistedKeywords.forEach((keyword, index) => {
     const item = document.createElement('div');
     item.className = 'filter-list-item';
@@ -470,13 +476,13 @@ async function removeBlacklistedSubject(index) {
 function addBlacklistedSender() {
   const input = document.getElementById('newBlacklistedSender');
   const email = input.value.trim();
-  
+
   if (!email) return;
-  
+
   if (!currentFilters.blacklistedSenders) {
     currentFilters.blacklistedSenders = [];
   }
-  
+
   if (!currentFilters.blacklistedSenders.includes(email)) {
     currentFilters.blacklistedSenders.push(email);
     renderBlacklistedSenders();
@@ -500,13 +506,13 @@ function removeBlacklistedSender(index) {
 function addBlacklistedKeyword() {
   const input = document.getElementById('newBlacklistedKeyword');
   const keyword = input.value.trim();
-  
+
   if (!keyword) return;
-  
+
   if (!currentFilters.blacklistedKeywords) {
     currentFilters.blacklistedKeywords = [];
   }
-  
+
   if (!currentFilters.blacklistedKeywords.includes(keyword)) {
     currentFilters.blacklistedKeywords.push(keyword);
     renderBlacklistedKeywords();
@@ -532,12 +538,18 @@ async function saveCurrentFilters() {
   currentFilters.excludeNoSubject = document.getElementById('filterNoSubject').checked;
   currentFilters.excludeNotifications = document.getElementById('filterNotifications').checked;
   currentFilters.excludePromotional = document.getElementById('filterPromotional').checked;
-  currentFilters.autoExcludeRepetitive = document.getElementById('filterAutoExcludeRepetitive').checked;
-  currentFilters.excludeShortConversations = document.getElementById('filterShortConversations').checked;
-  currentFilters.minConversationLength = parseInt(document.getElementById('minConversationLength').value);
+  currentFilters.autoExcludeRepetitive = document.getElementById(
+    'filterAutoExcludeRepetitive'
+  ).checked;
+  currentFilters.excludeShortConversations = document.getElementById(
+    'filterShortConversations'
+  ).checked;
+  currentFilters.minConversationLength = parseInt(
+    document.getElementById('minConversationLength').value
+  );
   currentFilters.useCustomAfterDate = document.getElementById('filterUseCustomAfterDate').checked;
   currentFilters.customAfterDate = document.getElementById('filterCustomAfterDate').value || null;
-  
+
   await saveFilters(currentFilters);
   toastSuccess('Filtres sauvegard\u00e9s avec succ\u00e8s !');
   hideFilterModal();
@@ -577,10 +589,10 @@ export function getCurrentFilters() {
   if (!currentFilters) {
     return null;
   }
-  
+
   // Assurer que les arrays de keywords sont présents
   const filters = { ...currentFilters };
-  
+
   // Ajouter les keywords par défaut s'ils manquent
   const defaultFilters = getDefaultFilters();
   if (!filters.notificationKeywords || filters.notificationKeywords.length === 0) {
@@ -589,7 +601,7 @@ export function getCurrentFilters() {
   if (!filters.promotionalKeywords || filters.promotionalKeywords.length === 0) {
     filters.promotionalKeywords = defaultFilters.promotionalKeywords;
   }
-  
+
   return filters;
 }
 
@@ -599,12 +611,12 @@ export function getCurrentFilters() {
 export function showFilterStats(stats) {
   const statsDiv = document.getElementById('filterStats');
   const content = document.getElementById('filterStatsContent');
-  
+
   if (!stats || stats.total === 0) {
     statsDiv.style.display = 'none';
     return;
   }
-  
+
   let html = `
     <div class="stats-grid">
       <div class="stat-item">
@@ -621,7 +633,7 @@ export function showFilterStats(stats) {
       </div>
     </div>
   `;
-  
+
   if (stats.reasons && Object.keys(stats.reasons).length > 0) {
     html += '<div class="stats-reasons"><h4>Raisons d\'exclusion :</h4><ul>';
     for (const [reason, count] of Object.entries(stats.reasons)) {
@@ -629,8 +641,7 @@ export function showFilterStats(stats) {
     }
     html += '</ul></div>';
   }
-  
+
   content.innerHTML = html;
   statsDiv.style.display = 'block';
 }
-

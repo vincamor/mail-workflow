@@ -119,7 +119,7 @@ describe('demo mode — isDemoMode()', () => {
     expect(isDemoMode()).toBe(true);
   });
 
-  test('l\'identite demo est bien celle du fixture', async () => {
+  test("l'identite demo est bien celle du fixture", async () => {
     const mod = await import('../../src/public/js/demo.js');
     expect(mod.DEMO_PROVIDER).toBe('gmail');
     expect(mod.DEMO_USER_ID).toBe('demo@example.com');
@@ -133,7 +133,7 @@ describe('demo mode — isDemoMode()', () => {
  * LE test qui compte : le fixture embarque traverse la VRAIE chaine d'analyse et
  * produit un graphe {nodes, links} valide et non trivial.
  */
-describe('demo mode — le fixture traverse la vraie chaine d\'analyse', () => {
+describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
   let analyzer;
   let rawEmails;
   let cleanEmails;
@@ -161,12 +161,24 @@ describe('demo mode — le fixture traverse la vraie chaine d\'analyse', () => {
     }
   });
 
-  test('les enregistrements ont la forme ecrite par l\'app reelle', () => {
+  test("les enregistrements ont la forme ecrite par l'app reelle", () => {
     // Champs produits par formatGmailEmail(), moins ceux que emails.js retire
     // avant ecriture (bodyHtml, sizeEstimate, historyId, labelIds).
     const expected = [
-      'id', 'threadId', 'snippet', 'subject', 'from', 'to', 'cc', 'date',
-      'messageId', 'inReplyTo', 'references', 'internalDate', 'hasAttachments', 'bodyText',
+      'id',
+      'threadId',
+      'snippet',
+      'subject',
+      'from',
+      'to',
+      'cc',
+      'date',
+      'messageId',
+      'inReplyTo',
+      'references',
+      'internalDate',
+      'hasAttachments',
+      'bodyText',
     ];
     for (const e of rawEmails) {
       expect(Object.keys(e).sort()).toEqual([...expected].sort());

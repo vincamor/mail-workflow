@@ -189,7 +189,9 @@ button:disabled {
 
 /* === LOADING STATE === */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-loading {

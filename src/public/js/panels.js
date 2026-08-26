@@ -60,8 +60,7 @@ function applyLayout() {
     const leftResizer = state.leftCollapsed ? 0 : RESIZER_WIDTH;
     const rightResizer = state.rightCollapsed ? 0 : RESIZER_WIDTH;
 
-    layout.style.gridTemplateColumns =
-      `${left}px ${leftResizer}px 1fr ${rightResizer}px ${right}px`;
+    layout.style.gridTemplateColumns = `${left}px ${leftResizer}px 1fr ${rightResizer}px ${right}px`;
   }
 
   layout.classList.toggle('left-collapsed', state.leftCollapsed);
@@ -143,7 +142,11 @@ export function initPanelResizers() {
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     if (resizer.setPointerCapture && e.pointerId !== undefined) {
-      try { resizer.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      try {
+        resizer.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
     }
     e.preventDefault();
   }

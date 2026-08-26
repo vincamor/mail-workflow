@@ -57,9 +57,7 @@ const MANAGED_KEYS = [
 // --- Colors (TTY + NO_COLOR guarded) ----------------------------------------
 
 const COLOR_ENABLED =
-  Boolean(process.stdout.isTTY) &&
-  !process.env.NO_COLOR &&
-  process.env.TERM !== 'dumb';
+  Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== 'dumb';
 
 /**
  * Wrap `text` in an SGR code, or return it untouched when colors are disabled.
@@ -190,7 +188,9 @@ function isBlank(value) {
  * @returns {string}
  */
 function formatValue(value) {
-  const clean = String(value).replace(/[\r\n]+/g, ' ').trim();
+  const clean = String(value)
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
   if (clean === '') return '';
   if (/[\s#"']/.test(clean)) {
     return `"${clean.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
@@ -245,9 +245,7 @@ function renderEnvFromTemplate(templateText, values) {
       return line;
     });
 
-  const extras = Object.keys(values).filter(
-    (key) => !used.has(key) && !isBlank(values[key])
-  );
+  const extras = Object.keys(values).filter((key) => !used.has(key) && !isBlank(values[key]));
   if (extras.length > 0) {
     lines.push('');
     lines.push('# --- Added by `npm run setup` ---');
@@ -277,12 +275,8 @@ function defaultPortForProtocol(protocol) {
 function parseUrlSafe(value) {
   try {
     const url = new URL(String(value).trim());
-    const port = url.port
-      ? Number.parseInt(url.port, 10)
-      : defaultPortForProtocol(url.protocol);
-    const isLocal = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(
-      url.hostname.toLowerCase()
-    );
+    const port = url.port ? Number.parseInt(url.port, 10) : defaultPortForProtocol(url.protocol);
+    const isLocal = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname.toLowerCase());
     return {
       ok: true,
       url,
