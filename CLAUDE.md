@@ -69,9 +69,19 @@ src/
                                   email-detail, reply, filterUI, panels, ui, aiChat*, aiFilter*
     styles/                       base/variables.css (tokens) + layout + components
 tests/
-  backend/                        gmailService, outlookService, emailUtils, aiService, quoteStripper
-  frontend/                       progressiveLoading, aiChat, aiChatStore, folderResolver
-docs/                             PROJECT_OVERVIEW, FileSystem_Handle_Workflow, OUTLOOK_IMPLEMENTATION, DEPLOY_RAILWAY
+  backend/                        gmailService, outlookService, emailUtils, aiService,
+                                  quoteStripper, aiFilterPrompts
+  frontend/                       progressiveLoading, aiChat, aiChatStore, folderResolver, demoMode
+scripts/                          setup.js · doctor.js · demo.js · generate-demo-data.js
+docs/
+  README.md                       documentation index, grouped by audience
+  setup/                          OAuth provider guides (google-cloud, azure-ad)
+  guides/                         deployment.md · data-format.md   (user-facing)
+  internal/                       architecture.md · filesystem-handles.md ·
+                                  outlook-implementation.md        (contributor-facing)
+  design/                         attachments-research.md
+  specs/                          2026-08-25-oss-repo-design.md
+ROADMAP.md                        decided / considered / known defects (repo root)
 ```
 
 ### Front-end wiring

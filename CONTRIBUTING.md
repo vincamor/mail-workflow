@@ -12,8 +12,10 @@ easy to review.
   and test backend code on any OS/browser; you just can't exercise the local-folder storage
   flow without Chromium.
 - Your own OAuth apps (Google Cloud project for Gmail, Azure app registration for Outlook)
-  if you want to test the OAuth flows end to end. See `docs/PROJECT_OVERVIEW.md` and
-  `docs/OUTLOOK_IMPLEMENTATION.md`.
+  if you want to test the OAuth flows end to end. Step-by-step guides:
+  [`docs/setup/google-cloud.md`](docs/setup/google-cloud.md) and
+  [`docs/setup/azure-ad.md`](docs/setup/azure-ad.md). `npm run setup` walks you
+  through both interactively, and `npm run doctor` diagnoses a broken `.env`.
 
 ## Local setup
 
@@ -59,10 +61,22 @@ src/
                            folders, folderResolver, storage, groups, aiChat*, ...
     styles/                base/variables.css (design tokens) + layout + components
 tests/
-  backend/                 gmailService, outlookService, emailUtils, aiService, quoteStripper
-  frontend/                 progressiveLoading, aiChat, aiChatStore, folderResolver
-docs/                      architecture & deployment notes
+  backend/                 gmailService, outlookService, emailUtils, aiService,
+                           quoteStripper, aiFilterPrompts
+  frontend/                progressiveLoading, aiChat, aiChatStore, folderResolver,
+                           demoMode
+scripts/                   setup.js, doctor.js, demo.js, generate-demo-data.js
+docs/
+  setup/                   Google Cloud and Azure AD guides
+  guides/                  deployment, on-disk data format
+  internal/                architecture, filesystem handles, Outlook implementation
+  design/                  design notes for work not yet built
+  specs/                   decision records
 ```
+
+See [`docs/README.md`](docs/README.md) for an index grouped by audience, and
+[`docs/internal/architecture.md`](docs/internal/architecture.md) for the detailed
+walkthrough.
 
 The **backend is CommonJS** (`require`/`module.exports`), the **front-end is ES modules**
 (`import`/`export`, loaded via `<script type="module">`). **There is no build step** — the
