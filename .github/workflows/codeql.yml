@@ -32,6 +32,15 @@ concurrency:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
+    # Code scanning is free on public repositories, but on private ones it needs
+    # GitHub Advanced Security. Without it the upload step fails with
+    # "Code scanning is not enabled for this repository", leaving a permanently
+    # red job that teaches everyone to ignore red jobs.
+    #
+    # This repository is private until v1.0.0. The guard makes the workflow skip
+    # cleanly meanwhile, and it starts running by itself the day the repository
+    # becomes public — no edit required.
+    if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

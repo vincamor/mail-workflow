@@ -20,8 +20,11 @@ name: CI
 #     widened per job only where genuinely required.
 
 on:
+  # Only main on push. Branch work is covered by the pull_request trigger, and
+  # listening to both on every branch ran the whole suite twice per pull
+  # request — visible immediately on the first Dependabot batch.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
     branches: [main]
 
