@@ -47,6 +47,7 @@ instructions and they are not kept in sync with the code.
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [specs/2026-08-25-oss-repo-design.md](specs/2026-08-25-oss-repo-design.md) | Why the repository is shaped like this: the open-source release plan, the decisions taken (English-only UI, no Docker, no npm package), the demo-mode design, and the defects the release work uncovered |
 | [design/attachments-research.md](design/attachments-research.md)           | What attachment support would actually cost. Verified API facts on Gmail and Graph attachments, quota, size thresholds, CSP and filename safety — research only, no design decisions                     |
+| [design/attachments.md](design/attachments.md)                             | The full design built on that research: on-disk format, fetch pipeline, disk budget, inline images and the CSP, filename safety, migration, and a five-phase plan. Designed, not built                   |
 
 ---
 
