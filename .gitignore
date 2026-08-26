@@ -11,6 +11,15 @@ node_modules/
 *_emails.jsonl
 *_sync_metadata.json
 *_groups.json
+
+# EXCEPTION — jeu de démonstration versionné.
+# Les règles ci-dessus protègent les vraies données de l'utilisateur ; elles
+# avalaient aussi, silencieusement, les fixtures de `npm run demo`. Le dossier
+# src/public/demo/ ne contient QUE des données fictives générées par
+# scripts/generate-demo-data.js (domaines @example.com / @example.org).
+# La négation est volontairement limitée à ce dossier : ne pas l'élargir.
+!src/public/demo/
+!src/public/demo/*.jsonl
 .temp
 *.temp
 
