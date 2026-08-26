@@ -293,54 +293,95 @@ project's `--experimental-vm-modules` setup.
 
 ---
 
-## 7. Where the work stopped — 2026-08-25
+## 7. Where the work stopped — 2026-08-26
 
-**Wave 0 and wave 1 are complete.** 16 commits on `main`. Three indicators green
-at once: 11 suites / 159 tests, `npm run lint` clean, `npm audit` at 0
-vulnerabilities (down from 11, of which 7 high).
+**Waves 0, 1 and 2 are complete and pushed.** 24 commits on `main`, CI green
+(tests on Node 20 and 22, lint, format), `npm audit` at 0 vulnerabilities.
 
-**Nothing has been pushed.** The remote `https://github.com/vincamor/mail-workflow.git`
-is configured but still empty. The repository was created **private**, per the
-approach-A decision to publish at v1.0.0. The first push is
-`git push -u origin main` and needs an explicit go-ahead.
+The repository is live at `https://github.com/vincamor/mail-workflow`, still
+**private** per the approach-A decision to go public at v1.0.0. The history was
+never rewritten — every push has been a fast-forward.
 
-### Delivered in wave 1
+### Delivered
 
-| Commit                          | Lane                                                |
-| ------------------------------- | --------------------------------------------------- |
-| `48bba75`                       | Initial import, `.gitattributes`, secret audit      |
-| `f02a221`                       | Governance files, package metadata fixed            |
-| `9609ef0`                       | ESLint flat config + Prettier                       |
-| `7e367b4`, `b2c2b38`            | This spec                                           |
-| `5150f49`                       | Google Cloud and Azure AD setup guides              |
-| `c5d7ac3`                       | CI hardening, CodeQL, Dependabot                    |
-| `6412d8e`                       | Attachments API research                            |
-| `b50bcfe`                       | `npm run setup` and `npm run doctor`                |
-| `accbce9`                       | Demo mode                                           |
-| `0f31c5b`, `f376a76`, `b9854cf` | Three application bug fixes                         |
-| `2c5f84f`, `32e023e`            | `@azure/msal-node` dropped, all advisories resolved |
-| `b303fe5`                       | Clean lint baseline, dead code removed              |
+| Commit                        | Lane                                                         |
+| ----------------------------- | ------------------------------------------------------------ |
+| `48bba75`                     | Initial import, `.gitattributes`, secret audit               |
+| `f02a221`                     | Governance files, package metadata fixed                     |
+| `9609ef0`                     | ESLint flat config + Prettier                                |
+| `5150f49`                     | Google Cloud and Azure AD setup guides                       |
+| `c5d7ac3`                     | CI hardening, CodeQL, Dependabot                             |
+| `6412d8e`                     | Attachments API research                                     |
+| `b50bcfe`                     | `npm run setup` and `npm run doctor`                         |
+| `accbce9`                     | Demo mode                                                    |
+| `0f31c5b` `f376a76` `b9854cf` | Three application bug fixes                                  |
+| `2c5f84f` `32e023e`           | `@azure/msal-node` dropped, all advisories resolved          |
+| `b303fe5`                     | Clean lint baseline, dead code removed                       |
+| `7aa5c84`                     | Demo fixtures actually committed (caught by CI)              |
+| `8f24c27`                     | Stop duplicate CI runs, skip CodeQL while private            |
+| `e090b2f`                     | Docs restructured by audience, README v2, attachments design |
+| `bef050a`                     | Prettier applied to the whole codebase                       |
+| `8ea21a9`                     | Railway deploy job dropped                                   |
 
-Four latent bugs were found and fixed along the way; they are described in
-section 6, which also still lists the one **not** fixed (the front-end test that
-duplicates the code it claims to test).
+### What the first push caught
+
+`.gitignore` carries `*_emails.jsonl` to protect the user's real mail. It also
+swallowed the demo fixtures: `git add src/public/demo/` succeeded and staged
+nothing. Locally everything worked because the files sit on disk; the repository
+simply did not contain them. CI failed with 11 errors on the first push. Fixed
+in `7aa5c84` with a negation scoped strictly to `src/public/demo/`.
+
+This is the argument for the demo's regression test, made concrete.
+
+### Open decision — Dependabot PR #3, `connect-redis` 9 → 10
+
+Five Dependabot pull requests were opened. #1 and #2 (the minor/patch groups)
+are merged. #3, #4 and #5 remain open; all were rebased onto the fixed `main`
+and are green.
+
+**Four are verified safe.** All the upgrades were installed together on a scratch
+branch and exercised: 159 tests green, lint clean under `globals` 17, both
+provider services load under `googleapis` 176, the app boots and serves
+`/?demo=1` and `/health` with 200, and each of the six `googleapis` calls the
+code makes still exists in v176.
+
+**PR #3 is not safe, and CI cannot see why.** `connect-redis@10.0.0` declares
+`engines.node: ">=22"`. This project declares `>=20`, `.nvmrc` says 20, and CI
+tests Node 20. It would still go green: npm does not fail on `EBADENGINE`, and
+no test covers the Redis path because sessions are in memory in CI. The breakage
+would only appear for someone self-hosting on Node 20 with Redis — precisely the
+case `docs/guides/deployment.md` describes.
+
+Two options, and **this needs Enzo's decision**:
+
+- **Keep Node 20.** Do not merge #3; stay on `connect-redis` 9. Dependabot will
+  re-open it; close it or add an ignore rule.
+- **Move to Node 22.** Merge #3 and update all six places consistently:
+  `package.json` `engines`, `.nvmrc`, the CI matrix, the version check in
+  `scripts/setup.js`, the one in `scripts/doctor.js`, and the README
+  requirements. Node 20 leaves maintenance in April 2026, so this is defensible
+  — but it narrows who can install the project.
 
 ### Next session — in this order
 
-1. **Decide on the first push.** Everything below assumes it has happened, since
-   the bug reports in section 6 should become GitHub issues.
-2. **Wave 2**, three parallel lanes: A6 restructure `docs/` (separate user guides
-   from internal notes, add `DATA_FORMAT.md` and `ROADMAP.md`), A7 README v2
-   without images, C2 the full attachments design built on `docs/design/attachments-research.md`.
-3. **Run Prettier once, as its own commit.** This must land before wave 3.
-   Mixing a reformat with a 36-file translation produces an unreviewable diff.
-4. **Wave 3**, the English migration. B0 (the glossary) blocks the fan-out and
-   is not written yet. Scope measured: ~250-400 user-visible strings, ~600 French
-   comments and log lines across 36 files. The AI prompts are the risk zone —
-   translating them changes model behaviour and
-   `tests/backend/aiFilterPrompts.test.js` asserts on their content.
-5. **Wave 4**, release: screenshots of the English UI, README illustration,
-   `v1.0.0`, switch to public.
+1. **Merge PRs #5 and #4** (`gh pr merge <n> --squash --delete-branch`), then
+   pull and re-verify on `main`. #1 and #2 are already merged. Decide on #3 per
+   the section above.
+2. **Wave 3 — the English migration.** The Prettier prerequisite is done. B0,
+   the glossary (`docs/internal/glossary.md`), is still unwritten and blocks the
+   fan-out. Scope measured: ~250-400 user-visible strings, ~600 French comments
+   and log lines across 36 files. The AI prompts are the risk zone — translating
+   them changes model behaviour and `tests/backend/aiFilterPrompts.test.js`
+   asserts on their content.
+   `CLAUDE.md` still says "French UI copy and code comments"; that line must be
+   updated as part of this wave.
+3. **Wave 4 — release.** Screenshots of the English UI (the README carries a
+   marked `<!-- screenshot: conversation tree, demo mode -->` placeholder), then
+   `v1.0.0`, GitHub Release, and the switch to public. CodeQL starts running by
+   itself at that point — its job is guarded on repository visibility.
+4. **Open the section 6 defects as GitHub issues**, now that the repo exists.
+   Section 6.1 and 6.2 are fixed; the front-end test that duplicates the code it
+   claims to test is not.
 
 ### Two latent issues noticed but deliberately left alone
 
