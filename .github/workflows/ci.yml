@@ -104,3 +104,13 @@ jobs:
 
       - name: Prettier (check only)
         run: npm run format:check
+
+      # Fails on high and critical advisories only. Moderate and low ones are
+      # reported but do not block: this is a local-first app with no server-side
+      # data store, and a blocking gate on every low advisory would train people
+      # to bypass it — which is worse than not having it.
+      #
+      # This is the check that actually matters. Dependabot's *version* updates
+      # are convenience; being told about a vulnerability is not.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high

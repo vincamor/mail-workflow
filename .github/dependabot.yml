@@ -14,8 +14,14 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: '/'
+    # Monthly, not weekly. These are *version* updates — convenience, not
+    # safety. Security is handled by two things that do not depend on this file:
+    # Dependabot security alerts (enabled in the repository settings, which also
+    # open fix PRs out of schedule) and the `npm audit --audit-level=high` step
+    # in CI. A weekly drip of routine bumps mostly teaches you to merge without
+    # looking, which is the failure mode worth avoiding.
     schedule:
-      interval: weekly
+      interval: monthly
       day: monday
       time: '06:00'
       timezone: Europe/Paris
