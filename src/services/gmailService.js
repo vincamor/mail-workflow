@@ -4,36 +4,36 @@ const oauthConfig = require('../config/oauth');
 const { streamEmailChunks, isTokenError, parseFiltersFromRequest } = require('./emailUtils');
 const { stripQuotedText } = require('./quoteStripper');
 
-// Timeout global (30s) sur tous les appels sortants googleapis (gaxios)
+// Global timeout (30s) on all outgoing googleapis (gaxios) calls
 google.options({ timeout: 30000 });
-// Suppression de toutes les dépendances DB et stockage local
+// Removal of all DB dependencies and local storage
 
-// Fonction utilitaire pour décoder les données base64 des emails Gmail
+// Utility function to decode base64 data from Gmail emails
 function decodeBase64Data(data) {
   if (!data) return '';
   try {
-    // Gestion des caractères spéciaux dans base64
+    // Handling special characters in base64
     const cleanData = data.replace(/-/g, '+').replace(/_/g, '/');
     const buffer = Buffer.from(cleanData, 'base64');
     return buffer.toString('utf-8');
   } catch (error) {
-    console.error('Erreur décodage base64:', error);
-    return data; // Retourne les données originales si le décodage échoue
+    console.error('Base64 decoding error:', error);
+    return data; // Returns original data if decoding fails
   }
 }
 
-// Fonction pour extraire et décoder le contenu d'un email Gmail
+// Function to extract and decode the content of a Gmail email
 function extractEmailContent(payload) {
   if (!payload) return { text: '', html: '' };
 
   let textContent = '';
   let htmlContent = '';
 
-  // Fonction récursive pour parcourir les parties du payload
+  // Recursive function to traverse payload parts
   function processPart(part) {
     if (!part) return;
 
-    // Si c'est une partie avec des données
+    // If it's a part with data
     if (part.body && part.body.data) {
       const decodedContent = decodeBase64Data(part.body.data);
 
@@ -44,7 +44,7 @@ function extractEmailContent(payload) {
       }
     }
 
-    // Traiter les sous-parties si elles existent
+    // Process subparts if they exist
     if (part.parts && Array.isArray(part.parts)) {
       part.parts.forEach(processPart);
     }
@@ -65,18 +65,18 @@ function checkForAttachments(payload) {
   return false;
 }
 
-// Fonction pour nettoyer et formater un email Gmail
+// Function to clean and format a Gmail email
 function formatGmailEmail(email) {
   if (!email) return null;
 
-  // Extraire les en-têtes
+  // Extract headers
   const headers = email.payload?.headers || [];
   const getHeader = (name) => {
     const header = headers.find((h) => h.name.toLowerCase() === name.toLowerCase());
     return header ? header.value : '';
   };
 
-  // Extraire le contenu
+  // Extract content
   const content = extractEmailContent(email.payload);
 
   // Detect attachments — any part with a non-empty filename
@@ -96,13 +96,13 @@ function formatGmailEmail(email) {
     references: getHeader('References'),
     internalDate: email.internalDate,
     hasAttachments,
-    // Contenu décodé — bodyText est strippe des citations (forward-only, JSONL plus compact)
+    // Decoded content — bodyText is stripped of quoted text (forward-only, more compact JSONL)
     bodyText: stripQuotedText(content.text),
     bodyHtml: content.html,
   };
 }
 
-// Initie OAuth Gmail
+// Initialize Gmail OAuth
 exports.initAuth = (req, res) => {
   const oauth2Client = new google.auth.OAuth2(
     oauthConfig.gmail.clientId,
@@ -116,7 +116,7 @@ exports.initAuth = (req, res) => {
     'email',
     'profile',
   ];
-  // Anti-CSRF OAuth : state aléatoire stocké en session, vérifié au callback
+  // Anti-CSRF OAuth: random state stored in session, verified at callback
   const state = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
   const url = oauth2Client.generateAuthUrl({
@@ -128,16 +128,16 @@ exports.initAuth = (req, res) => {
   req.session.save(() => res.redirect(url));
 };
 
-// Callback OAuth Gmail
+// Gmail OAuth callback
 exports.handleCallback = async (req, res) => {
   const code = req.query.code;
 
-  // Vérification du state anti-CSRF (généré dans initAuth)
+  // Anti-CSRF state verification (generated in initAuth)
   const expectedState = req.session.oauthState;
   delete req.session.oauthState;
   if (!req.query.state || !expectedState || req.query.state !== expectedState) {
-    console.error('Erreur callback Gmail: state OAuth absent ou invalide');
-    return res.status(403).send('Erreur OAuth Gmail : state invalide');
+    console.error('Gmail callback error: OAuth state missing or invalid');
+    return res.status(403).send('Gmail OAuth error: invalid state');
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -148,33 +148,33 @@ exports.handleCallback = async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
-    // Récupérer l'email utilisateur
+    // Retrieve user email
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const userinfo = await oauth2.userinfo.get();
     const email = userinfo.data.email;
-    // Régénérer la session (anti-fixation) puis stocker les tokens
+    // Regenerate session (anti-fixation) then store tokens
     req.session.regenerate((err) => {
       if (err) {
-        console.error('Erreur régénération session Gmail:', err);
-        return res.status(500).send('Erreur OAuth Gmail');
+        console.error('Gmail session regeneration error:', err);
+        return res.status(500).send('Gmail OAuth error');
       }
       req.session.tokens = tokens;
       req.session.email = email;
-      // Rediriger vers le frontend avec l'email et provider
+      // Redirect to frontend with email and provider
       req.session.save(() => res.redirect('/?provider=gmail&email=' + encodeURIComponent(email)));
     });
   } catch (err) {
-    console.error('Erreur callback Gmail:', err);
-    res.status(500).send('Erreur OAuth Gmail');
+    console.error('Gmail callback error:', err);
+    res.status(500).send('Gmail OAuth error');
   }
 };
 
-// Récupère les emails pour un utilisateur (directement via l'API Gmail)
+// Retrieve emails for a user (directly via Gmail API)
 exports.getEmails = async (req, res) => {
   const tokens = req.session.tokens;
   if (!tokens) {
     return res.status(401).json({
-      error: 'Non authentifié (pas de tokens en session)',
+      error: 'Not authenticated (no tokens in session)',
       requiresLogout: true,
     });
   }
@@ -190,7 +190,7 @@ exports.getEmails = async (req, res) => {
 
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-  // Fonction helper pour récupérer tous les messages avec pagination
+  // Helper function to retrieve all messages with pagination
   async function getAllMessages(labelIds = null, maxResults = 5000, query = '') {
     let allMessages = [];
     let nextPageToken = null;
@@ -198,7 +198,7 @@ exports.getEmails = async (req, res) => {
 
     do {
       pageCount++;
-      console.log(`📄 Page ${pageCount} - Récupération des messages...`);
+      console.log(`📄 Page ${pageCount} - Retrieving messages...`);
 
       const params = {
         userId: 'me',
@@ -224,7 +224,7 @@ exports.getEmails = async (req, res) => {
       nextPageToken = response.data.nextPageToken;
 
       console.log(
-        `📄 Page ${pageCount} - ${messages.length} messages récupérés (total: ${allMessages.length})`
+        `📄 Page ${pageCount} - ${messages.length} messages retrieved (total: ${allMessages.length})`
       );
     } while (nextPageToken);
 
@@ -232,57 +232,57 @@ exports.getEmails = async (req, res) => {
   }
 
   try {
-    // Construire la query Gmail à partir des filtres + afterDate (sync incrémentale)
+    // Build Gmail query from filters + afterDate (incremental sync)
     const gmailQuery = buildGmailQuery(filters, afterDate);
 
     if (gmailQuery) {
-      console.log(`🔍 Application des filtres Gmail API: ${gmailQuery}`);
-      console.log(`📋 Filtres reçus:`, JSON.stringify(filters, null, 2));
+      console.log(`🔍 Applying Gmail API filters: ${gmailQuery}`);
+      console.log(`📋 Filters received:`, JSON.stringify(filters, null, 2));
       if (afterDate)
         console.log(
-          `📅 Mode sync incrémentale depuis: ${new Date(parseInt(afterDate)).toISOString()}`
+          `📅 Incremental sync mode since: ${new Date(parseInt(afterDate)).toISOString()}`
         );
     } else {
-      console.log(`⚠️ Aucun filtre appliqué — téléchargement complet`);
+      console.log(`⚠️ No filters applied — full download`);
     }
 
-    // INBOX - emails reçus avec pagination (tous les emails disponibles)
-    console.log('📥 Récupération des emails INBOX...');
+    // INBOX - received emails with pagination (all available emails)
+    console.log('📥 Retrieving INBOX emails...');
     const inboxMessages = (await getAllMessages(['INBOX'], 5000, gmailQuery)).map((m) => ({
       ...m,
       _type: 'recu',
     }));
     console.log(`📥 INBOX: ${inboxMessages.length} messages`);
 
-    // SENT - emails envoyés avec pagination (tous les emails disponibles)
-    console.log('📤 Récupération des emails SENT...');
+    // SENT - sent emails with pagination (all available emails)
+    console.log('📤 Retrieving SENT emails...');
     const sentMessages = (await getAllMessages(['SENT'], 5000, gmailQuery)).map((m) => ({
       ...m,
       _type: 'envoye',
     }));
     console.log(`📤 SENT: ${sentMessages.length} messages`);
 
-    // ALL MAIL - emails archivés/autres labels avec pagination (tous les emails disponibles)
-    console.log('📁 Récupération des emails ALL MAIL...');
+    // ALL MAIL - archived/other labels emails with pagination (all available emails)
+    console.log('📁 Retrieving ALL MAIL emails...');
     const allMailMessages = (await getAllMessages(null, 5000, gmailQuery)).map((m) => ({
       ...m,
       _type: 'archive',
     }));
     console.log(`📁 ALL MAIL: ${allMailMessages.length} messages`);
 
-    // Fusion et déduplication
+    // Merging and deduplication
     const allMessagesMap = new Map();
     [...inboxMessages, ...sentMessages, ...allMailMessages].forEach((m) => {
       allMessagesMap.set(m.id, m);
     });
     const allMessages = Array.from(allMessagesMap.values());
-    console.log(`🔗 TOTAL: ${allMessages.length} messages uniques`);
+    console.log(`🔗 TOTAL: ${allMessages.length} unique messages`);
 
-    // Récupération des détails (seulement pour l'affichage - 20 premiers)
+    // Retrieving details (only for display - first 20)
     const displayEmails = [];
     let rejectedCount = 0;
 
-    // Traiter seulement les 20 premiers pour l'affichage
+    // Process only the first 20 for display
     const emailsToProcess = allMessages.slice(0, 20);
 
     for (let i = 0; i < emailsToProcess.length; i++) {
@@ -306,11 +306,11 @@ exports.getEmails = async (req, res) => {
     }
 
     console.log(
-      `✅ ${displayEmails.length} emails affichés (sur ${allMessages.length} disponibles)`
+      `✅ ${displayEmails.length} emails displayed (out of ${allMessages.length} available)`
     );
-    console.log(`❌ ${rejectedCount} emails rejetés`);
+    console.log(`❌ ${rejectedCount} emails rejected`);
 
-    // Retourner les emails d'affichage + métadonnées pour le téléchargement
+    // Return display emails + metadata for download
     res.json({
       displayEmails: displayEmails,
       totalAvailable: allMessages.length,
@@ -323,96 +323,96 @@ exports.getEmails = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('❌ Erreur:', error);
+    console.error('❌ Error:', error);
 
     if (isTokenError(error)) {
-      return res.status(401).json({ error: 'Token expiré ou invalide', requiresLogout: true });
+      return res.status(401).json({ error: 'Token expired or invalid', requiresLogout: true });
     }
-    res.status(500).json({ error: 'Erreur récupération emails' });
+    res.status(500).json({ error: 'Error retrieving emails' });
   }
 };
 
 /**
- * Convertit les filtres en query Gmail API
- * @param {Object} filters - Configuration des filtres
- * @param {string|null} afterDate - internalDate Gmail (ms depuis epoch) du dernier email stocké.
- *   Si fourni, ajoute "after:YYYY/MM/DD" à la query pour la sync incrémentale.
- *   Si null, aucun filtre de date (comportement identique au téléchargement complet).
- * @returns {string} - Query string pour Gmail API
+ * Convert filters to Gmail API query
+ * @param {Object} filters - Filter configuration
+ * @param {string|null} afterDate - Gmail internalDate (ms since epoch) of the last stored email.
+ *   If provided, adds "after:YYYY/MM/DD" to the query for incremental sync.
+ *   If null, no date filter (behavior identical to full download).
+ * @returns {string} - Query string for Gmail API
  */
 function buildGmailQuery(filters, afterDate = null) {
   const queryParts = [];
 
-  // Filtre de date pour la sync incrémentale (optionnel)
+  // Date filter for incremental sync (optional)
   if (afterDate) {
     const date = new Date(parseInt(afterDate));
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     queryParts.push(`after:${year}/${month}/${day}`);
-    console.log(`📅 Filtre de date sync incrémentale: after:${year}/${month}/${day}`);
+    console.log(`📅 Incremental sync date filter: after:${year}/${month}/${day}`);
   }
 
   if (!filters) {
     const query = queryParts.join(' ');
-    if (query) console.log(`🔍 Query Gmail: ${query}`);
+    if (query) console.log(`🔍 Gmail query: ${query}`);
     return query;
   }
 
-  // 1. Exclure les notifications par expéditeur
+  // 1. Exclude notifications by sender
   if (filters.excludeNotifications && filters.notificationKeywords) {
     filters.notificationKeywords.forEach((keyword) => {
       queryParts.push(`-from:${keyword}`);
     });
   }
 
-  // 2. Exclure les expéditeurs de la liste noire
+  // 2. Exclude blacklisted senders
   if (filters.blacklistedSenders && filters.blacklistedSenders.length > 0) {
     filters.blacklistedSenders.forEach((sender) => {
-      // Extraire juste l'adresse email si format "Name <email>"
+      // Extract just the email address if format "Name <email>"
       const match = sender.match(/<([^>]+)>/);
       const emailOnly = match ? match[1] : sender;
       queryParts.push(`-from:${emailOnly}`);
     });
   }
 
-  // 3. Exclure les mots-clés du sujet
+  // 3. Exclude subject keywords
   if (filters.blacklistedKeywords && filters.blacklistedKeywords.length > 0) {
     filters.blacklistedKeywords.forEach((keyword) => {
       queryParts.push(`-subject:"${keyword}"`);
     });
   }
 
-  // 4. Exclure les promotions par mots-clés
+  // 4. Exclude promotions by keywords
   if (filters.excludePromotional && filters.promotionalKeywords) {
     filters.promotionalKeywords.forEach((keyword) => {
       queryParts.push(`-subject:${keyword}`);
     });
   }
 
-  // 5. Exclure les emails sans sujet (non supporté directement par Gmail API)
-  // On les filtrera côté serveur après téléchargement
+  // 5. Exclude emails without subject (not directly supported by Gmail API)
+  // We'll filter them server-side after download
 
   const query = queryParts.join(' ');
   if (query) {
-    console.log(`🔍 Query Gmail: ${query}`);
+    console.log(`🔍 Gmail query: ${query}`);
   }
 
   return query;
 }
 
-// shouldExcludeEmail importé depuis emailUtils.js
+// shouldExcludeEmail imported from emailUtils.js
 
-// Télécharge les emails par tranches avec progression SSE (via streamEmailChunks partagé)
+// Download emails in chunks with SSE progress (via shared streamEmailChunks)
 exports.downloadEmailsInChunks = async (req, res) => {
   const tokens = req.session.tokens;
   if (!tokens) {
-    return res.status(401).json({ error: 'Non authentifié', requiresLogout: true });
+    return res.status(401).json({ error: 'Not authenticated', requiresLogout: true });
   }
 
   const { messageIds, chunkSize = 500, filters = null } = req.body;
   if (!messageIds || !Array.isArray(messageIds)) {
-    return res.status(400).json({ error: 'Liste des IDs de messages requise' });
+    return res.status(400).json({ error: 'List of message IDs required' });
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -436,13 +436,13 @@ exports.downloadEmailsInChunks = async (req, res) => {
 };
 
 /**
- * Retourne uniquement le nombre de messages disponibles depuis une date donnée.
- * Endpoint léger utilisé par le polling toutes les 5 min — ne récupère aucun contenu d'email.
+ * Returns only the count of available messages since a given date.
+ * Lightweight endpoint used for polling every 5 minutes — does not retrieve any email content.
  */
 exports.getEmailCount = async (req, res) => {
   const tokens = req.session.tokens;
   if (!tokens) {
-    return res.status(401).json({ error: 'Non authentifié', requiresLogout: true });
+    return res.status(401).json({ error: 'Not authenticated', requiresLogout: true });
   }
 
   const { filters, afterDate } = parseFiltersFromRequest(req);
@@ -455,7 +455,7 @@ exports.getEmailCount = async (req, res) => {
   oauth2Client.setCredentials(tokens);
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-  // Helper local pour lister les IDs (sans récupérer les détails)
+  // Local helper to list IDs (without retrieving details)
   async function listMessageIds(labelIds, query) {
     const ids = new Map();
     let nextPageToken = null;
@@ -480,40 +480,40 @@ exports.getEmailCount = async (req, res) => {
       listMessageIds(null, gmailQuery),
     ]);
 
-    // Déduplication
+    // Deduplication
     const allIds = new Map([...inboxIds, ...sentIds, ...allMailIds]);
     const newCount = allIds.size;
 
     console.log(
-      `📬 Polling count: ${newCount} messages (afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'aucun'})`
+      `📬 Polling count: ${newCount} messages (afterDate: ${afterDate ? new Date(parseInt(afterDate)).toISOString() : 'none'})`
     );
     res.json({ newCount });
   } catch (error) {
-    console.error('❌ Erreur getEmailCount:', error);
+    console.error('❌ getEmailCount error:', error);
     if (isTokenError(error)) {
-      return res.status(401).json({ error: 'Token expiré', requiresLogout: true });
+      return res.status(401).json({ error: 'Token expired', requiresLogout: true });
     }
-    res.status(500).json({ error: 'Erreur comptage emails' });
+    res.status(500).json({ error: 'Error counting emails' });
   }
 };
 
 /**
- * Envoie une réponse à un email dans un thread Gmail existant.
- * Requiert le scope gmail.send.
+ * Send a reply to an email in an existing Gmail thread.
+ * Requires gmail.send scope.
  *
- * Body attendu : { to, cc?, subject, body, threadId, messageId, references? }
- *   - to         : destinataire(s) — adresse du from de l'email original
- *   - cc         : destinataires en copie (optionnel)
- *   - subject    : sujet de l'email original (préfixé "Re:" si absent)
- *   - body       : texte brut de la réponse
- *   - threadId   : ID du thread Gmail (pour rattacher la réponse au bon fil)
- *   - messageId  : Message-ID de l'email auquel on répond (pour In-Reply-To)
- *   - references : chaîne References de l'email original (optionnel)
+ * Expected body: { to, cc?, subject, body, threadId, messageId, references? }
+ *   - to         : recipient(s) — address from the original email's from field
+ *   - cc         : carbon copy recipients (optional)
+ *   - subject    : subject of the original email (prefixed with "Re:" if absent)
+ *   - body       : plain text of the reply
+ *   - threadId   : ID of the Gmail thread (to attach reply to the correct conversation)
+ *   - messageId  : Message-ID of the email being replied to (for In-Reply-To)
+ *   - references : References chain of the original email (optional)
  */
 exports.sendReply = async (req, res) => {
   const tokens = req.session.tokens;
   if (!tokens) {
-    return res.status(401).json({ error: 'Non authentifié', requiresLogout: true });
+    return res.status(401).json({ error: 'Not authenticated', requiresLogout: true });
   }
 
   const { to, cc, subject, body, threadId, messageId, references } = req.body;
@@ -521,7 +521,7 @@ exports.sendReply = async (req, res) => {
   if (!to || !body || !threadId || !messageId) {
     return res
       .status(400)
-      .json({ error: 'Champs requis manquants (to, body, threadId, messageId)' });
+      .json({ error: 'Missing required fields (to, body, threadId, messageId)' });
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -533,13 +533,13 @@ exports.sendReply = async (req, res) => {
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
   try {
-    // Construction du sujet — évite de doubler "Re:"
+    // Building subject — avoid doubling "Re:"
     const replySubject = /^re\s*:/i.test(subject) ? subject : `Re: ${subject}`;
 
-    // Chaîne References : ajoute le messageId de l'email d'origine à la fin
+    // References chain: adds the messageId of the original email at the end
     const replyReferences = references ? `${references} ${messageId}` : messageId;
 
-    // Construction du message RFC 2822
+    // Building RFC 2822 message
     const headerLines = [
       `To: ${to}`,
       cc && cc.trim() ? `Cc: ${cc}` : null,
@@ -561,17 +561,17 @@ exports.sendReply = async (req, res) => {
       },
     });
 
-    console.log(`✅ Réponse envoyée — id: ${response.data.id}, thread: ${threadId}`);
+    console.log(`✅ Reply sent — id: ${response.data.id}, thread: ${threadId}`);
     res.json({ success: true, messageId: response.data.id });
   } catch (error) {
-    console.error('❌ Erreur sendReply:', error);
+    console.error('❌ sendReply error:', error);
     if (isTokenError(error)) {
-      return res.status(401).json({ error: 'Token expiré', requiresLogout: true });
+      return res.status(401).json({ error: 'Token expired', requiresLogout: true });
     }
-    res.status(500).json({ error: "Erreur lors de l'envoi de la réponse : " + error.message });
+    res.status(500).json({ error: 'Error sending reply: ' + error.message });
   }
 };
 
-// Exports supplémentaires pour les tests unitaires
+// Additional exports for unit tests
 module.exports.formatGmailEmail = formatGmailEmail;
 module.exports.buildGmailQuery = buildGmailQuery;

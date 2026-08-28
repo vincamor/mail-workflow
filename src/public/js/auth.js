@@ -1,24 +1,24 @@
 /**
- * Module de gestion de l'authentification et de la session
+ * Authentication and session management module
  */
 import { showConfirmModal } from './toast.js';
 
-// Fonction de déconnexion automatique
+// Automatic logout function
 export function handleAutoLogout() {
-  console.log('❌ Session expirée - Déconnexion automatique');
-  // Nettoyer la session
+  console.log('❌ Session expired - automatic logout');
+  // Clear the session
   sessionStorage.clear();
-  // Retourner à la page de connexion
+  // Return to the login page
   window.location = window.location.pathname;
 }
 
-// Wrapper fetch avec gestion auto-déconnexion
+// Fetch wrapper with auto-logout handling
 export function setupFetchInterceptor() {
   const originalFetch = window.fetch;
   window.fetch = async function (...args) {
     const response = await originalFetch(...args);
 
-    // Si erreur 401 (non authentifié)
+    // If 401 error (not authenticated)
     if (response.status === 401) {
       const clonedResponse = response.clone();
       try {
@@ -28,7 +28,7 @@ export function setupFetchInterceptor() {
           return response;
         }
       } catch (e) {
-        // Si pas de JSON, juste déconnecter
+        // If no JSON, just log out
         handleAutoLogout();
       }
     }
@@ -37,35 +37,35 @@ export function setupFetchInterceptor() {
   };
 }
 
-// Déconnexion manuelle
+// Manual logout
 export async function handleDisconnect() {
   const ok = await showConfirmModal({
-    title: 'D\u00e9connexion',
-    message: '\u00cates-vous s\u00fbr de vouloir vous d\u00e9connecter\u00a0?',
+    title: 'Sign out',
+    message: 'Are you sure you want to sign out?',
     type: 'warning',
-    confirmText: 'Se d\u00e9connecter',
+    confirmText: 'Sign out',
   });
   if (ok) {
-    // Detruire la session serveur (tokens OAuth + cookie) avant de rediriger.
-    // Best-effort : on nettoie l'UI et on redirige meme si la requete echoue.
+    // Destroy the server session (OAuth tokens + cookie) before redirecting.
+    // Best-effort: clean up the UI and redirect even if the request fails.
     try {
       await fetch('/auth/logout', { method: 'POST' });
     } catch (e) {
-      console.warn('Logout serveur echoue (nettoyage local malgre tout) :', e);
+      console.warn('Server logout failed (cleaning up locally regardless):', e);
     }
-    // Masquer la section utilisateur
+    // Hide the user section
     document.getElementById('userSection').style.display = 'none';
-    // Retourner à l'interface de connexion
+    // Return to the sign-in interface
     document.getElementById('appInterface').style.display = 'none';
     document.getElementById('loginInterface').style.display = 'block';
-    // Rediriger pour nettoyer l'URL
+    // Redirect to clean up the URL
     setTimeout(() => {
       window.location = window.location.pathname;
     }, 500);
   }
 }
 
-// Initialiser les boutons de connexion
+// Initialise the sign-in buttons
 export function initLoginButtons() {
   document.getElementById('gmailBtn').onclick = () => {
     window.location = '/gmail/';

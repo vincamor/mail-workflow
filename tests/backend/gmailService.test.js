@@ -2,7 +2,7 @@ const { describe, it, expect } = require('@jest/globals');
 const { formatGmailEmail, buildGmailQuery } = require('../../src/services/gmailService');
 
 describe('formatGmailEmail', () => {
-  it('normalise un email Gmail brut en format JSONL unifié', () => {
+  it('normalises a raw Gmail email into unified JSONL format', () => {
     const raw = {
       id: 'msg-1',
       threadId: 'thread-1',
@@ -43,7 +43,7 @@ describe('formatGmailEmail', () => {
 });
 
 describe('buildGmailQuery', () => {
-  it('génère une query avec after:YYYY/MM/DD à partir de internalDate en ms', () => {
+  it('generates a query with after:YYYY/MM/DD from internalDate in ms', () => {
     const filters = null;
     const internalDateMs = String(Date.UTC(2025, 2, 12)); // 2025-03-12T00:00:00.000Z
 

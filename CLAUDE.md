@@ -94,6 +94,12 @@ folder directly), used by every reader/writer so they agree on one folder.
 
 ## Conventions
 
-- French UI copy and code comments; English is fine for new docs.
+- **English everywhere** — UI copy, code comments, log messages, docs. See
+  [docs/internal/glossary.md](docs/internal/glossary.md) for the binding terminology
+  (notably `sujet` → **subject**, never _thread_) and for the three categories of
+  French string that are deliberately kept: AI-prompt JSON keys
+  (`exclure`/`garder`/`incertain`), the marketing-email detection regexes in
+  `aiFilter.js`, and the French Gmail quote patterns in `email-detail.js`. Those match
+  real user data or an internal protocol — translating them breaks behaviour.
 - Small, focused commits; conventional-commit style (`fix(tree): …`).
 - ES modules front-end, CommonJS backend. Front-end tests load ESM via dynamic `import()` and require `npm test` (not `npx jest`) for the `--experimental-vm-modules` flag.

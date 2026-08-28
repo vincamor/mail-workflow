@@ -1,6 +1,6 @@
 /**
- * Theme Manager — Switch entre 5 thèmes visuels
- * Applique les tokens CSS via data-theme sur :root
+ * Theme Manager — Switches between 5 visual themes
+ * Applies CSS tokens via data-theme on :root
  */
 
 const THEMES = {

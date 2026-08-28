@@ -1,6 +1,6 @@
 /**
- * Module de configuration du provider IA
- * Gestion de la persistance dans localStorage
+ * AI provider configuration module
+ * Handles persistence in localStorage
  */
 
 const STORAGE_KEY = 'mailproject-ai-config';
@@ -21,7 +21,7 @@ const PROVIDER_DEFAULTS = {
     model: 'claude-sonnet-4-20250514',
     placeholder: 'claude-sonnet-4-20250514, claude-haiku-4-5-20251001...',
   },
-  custom: { baseUrl: '', model: '', placeholder: 'nom du modele' },
+  custom: { baseUrl: '', model: '', placeholder: 'model name' },
 };
 
 export function getAIConfig() {
@@ -29,7 +29,7 @@ export function getAIConfig() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
   } catch (e) {
-    console.warn('Config IA corrompue dans localStorage, reset');
+    console.warn('Corrupted AI config in localStorage, resetting');
   }
   return { provider: 'ollama', apiKey: '', model: 'gemma3:4b', baseUrl: 'http://localhost:11434' };
 }
@@ -55,10 +55,10 @@ export async function testAIConnection(config) {
     });
     const data = await response.json();
     if (response.ok) {
-      return { ok: true, message: `Connecte a ${data.provider} (${data.model})` };
+      return { ok: true, message: `Connected to ${data.provider} (${data.model})` };
     }
-    return { ok: false, message: data.error || 'Connexion echouee' };
+    return { ok: false, message: data.error || 'Connection failed' };
   } catch (err) {
-    return { ok: false, message: `Erreur reseau: ${err.message}` };
+    return { ok: false, message: `Network error: ${err.message}` };
   }
 }

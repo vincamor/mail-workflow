@@ -1,18 +1,18 @@
 /**
- * Utilitaires partages entre gmailService et outlookService.
- * Evite la duplication du filtrage, du streaming SSE et du error handling.
+ * Utilities shared between gmailService and outlookService.
+ * Avoids duplication of filtering, SSE streaming and error handling.
  */
 
 // ─────────────────────────────────────────────
-//  Filtrage email (identique Gmail / Outlook)
+//  Email filtering (identical Gmail / Outlook)
 // ─────────────────────────────────────────────
 
 /**
- * Determine si un email formate doit etre exclu selon les filtres utilisateur.
- * Utilise comme filet de securite apres le filtrage cote API (query Gmail / OData Outlook).
- * @param {Object} email - Email formate ({ subject, from, ... })
- * @param {Object} filters - Configuration des filtres
- * @returns {boolean} true si l'email doit etre exclu
+ * Determines if a formatted email should be excluded based on user filters.
+ * Used as a safety net after API-side filtering (Gmail query / Outlook OData).
+ * @param {Object} email - Formatted email ({ subject, from, ... })
+ * @param {Object} filters - Filter configuration
+ * @returns {boolean} true if the email should be excluded
  */
 function shouldExcludeEmail(email, filters) {
   if (!filters) return false;
@@ -46,9 +46,9 @@ function shouldExcludeEmail(email, filters) {
     if (filters.blacklistedKeywords.some((kw) => subject.includes(kw.toLowerCase()))) return true;
   }
 
-  // 6. Vérifier les sujets exclus
+  // 6. Check excluded subjects
   if (filters.blacklistedSubjects && filters.blacklistedSubjects.length > 0) {
-    // Normaliser comme le frontend : retirer Re:/Fwd: et trim
+    // Normalize like frontend: remove Re:/Fwd: and trim
     const cleanSubject = (email.subject || '').replace(/^(Re:|Fwd:|FW:|RE:|FWD:)\s*/i, '').trim();
     if (filters.blacklistedSubjects.some((excluded) => excluded === cleanSubject)) {
       return true;
@@ -59,38 +59,38 @@ function shouldExcludeEmail(email, filters) {
 }
 
 // ─────────────────────────────────────────────
-//  Auto-detection des expéditeurs répétitifs
+//  Auto-detection of repetitive senders
 // ─────────────────────────────────────────────
 
-const AUTO_EXCLUDE_THRESHOLD_1 = 5; // première évaluation
-const AUTO_EXCLUDE_THRESHOLD_2 = 10; // réévaluation si non-concluant à 5
-const AUTO_EXCLUDE_SIMILARITY_RATIO = 0.6; // 60% de sujets identiques = spam
-const AUTO_EXCLUDE_BODY_MIN_LENGTH = 1000; // body check uniquement pour gros mails
-const AUTO_EXCLUDE_BODY_DEVIATION = 0.1; // écart-type < 10% de la moyenne
+const AUTO_EXCLUDE_THRESHOLD_1 = 5; // first evaluation
+const AUTO_EXCLUDE_THRESHOLD_2 = 10; // re-evaluation if inconclusive at 5
+const AUTO_EXCLUDE_SIMILARITY_RATIO = 0.6; // 60% identical subjects = spam
+const AUTO_EXCLUDE_BODY_MIN_LENGTH = 1000; // body check only for large emails
+const AUTO_EXCLUDE_BODY_DEVIATION = 0.1; // standard deviation < 10% of mean
 
 /**
- * Normalise un sujet pour comparaison : retire Re:/Fwd:, chiffres, dates, ponctuation.
- * "Votre digest du 01/03/2026" → "votre digest du"
- * "Re: Fwd: Alert connexion #42" → "alert connexion"
+ * Normalizes a subject for comparison: removes Re:/Fwd:, digits, dates, punctuation.
+ * "Your digest from 01/03/2026" → "your digest from"
+ * "Re: Fwd: Connection alert #42" → "connection alert"
  */
 function normalizeSubject(subject) {
   return (subject || '')
     .toLowerCase()
-    .replace(/^(re|fwd|fw|tr)\s*:\s*/gi, '') // prefixes email
+    .replace(/^(re|fwd|fw|tr)\s*:\s*/gi, '') // email prefixes
     .replace(/\d{1,4}[/\-.]\d{1,2}[/\-.]\d{1,4}/g, '') // dates
-    .replace(/\d+/g, '') // tous les chiffres
+    .replace(/\d+/g, '') // all digits
     .replace(/#/g, '') // hash
-    .replace(/[^\p{L}\s]/gu, '') // ponctuation (garde lettres unicode)
+    .replace(/[^\p{L}\s]/gu, '') // punctuation (keep unicode letters)
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * Analyse les sujets et bodies stockés pour un sender ayant atteint le seuil.
- * @param {string[]} subjects - Sujets originaux
- * @param {number[]} bodyLengths - Longueurs des bodies
- * @param {number} [similarityRatio] - Ratio minimum de sujets identiques (defaut: AUTO_EXCLUDE_SIMILARITY_RATIO)
- * @returns {boolean} true si le sender est détecté comme répétitif
+ * Analyzes subjects and bodies stored for a sender that has reached the threshold.
+ * @param {string[]} subjects - Original subjects
+ * @param {number[]} bodyLengths - Body lengths
+ * @param {number} [similarityRatio] - Minimum ratio of identical subjects (default: AUTO_EXCLUDE_SIMILARITY_RATIO)
+ * @returns {boolean} true if the sender is detected as repetitive
  */
 function isSenderRepetitive(
   subjects,
@@ -100,7 +100,7 @@ function isSenderRepetitive(
   const total = subjects.length;
   const minMatch = Math.ceil(total * similarityRatio);
 
-  // Check 1 : sujets normalisés
+  // Check 1: normalized subjects
   const normalized = subjects.map(normalizeSubject);
   const counts = {};
   for (const s of normalized) {
@@ -111,7 +111,7 @@ function isSenderRepetitive(
     return true;
   }
 
-  // Check 2 : body length (uniquement pour gros mails avec body non-vide)
+  // Check 2: body length (only for large emails with non-empty body)
   const nonZeroLengths = bodyLengths.filter((l) => l > 0);
   if (nonZeroLengths.length >= 3) {
     const avgLength = nonZeroLengths.reduce((a, b) => a + b, 0) / nonZeroLengths.length;
@@ -129,7 +129,7 @@ function isSenderRepetitive(
 }
 
 /**
- * Extrait l'adresse email d'un champ From (ignore le display name).
+ * Extracts the email address from a From field (ignores display name).
  * "Railway <hello@notify.railway.app>" → "hello@notify.railway.app"
  * "hello@test.com" → "hello@test.com"
  */
@@ -140,26 +140,26 @@ function extractEmailAddress(from) {
 }
 
 // ─────────────────────────────────────────────
-//  SSE Streaming (identique Gmail / Outlook)
+//  SSE Streaming (identical Gmail / Outlook)
 // ─────────────────────────────────────────────
 
 /**
- * Telecharge des emails par tranches via SSE.
- * Logique 100% identique entre Gmail et Outlook — seul le fetchMessage differe.
+ * Downloads emails in chunks via SSE.
+ * Logic is 100% identical between Gmail and Outlook — only fetchMessage differs.
  *
  * @param {Object} res - Express response
  * @param {Object} options
- * @param {Array} options.messageIds - Liste des IDs a telecharger
- * @param {number} options.chunkSize - Taille des tranches (default 500)
- * @param {Object|null} options.filters - Filtres utilisateur
+ * @param {Array} options.messageIds - List of IDs to download
+ * @param {number} options.chunkSize - Chunk size (default 500)
+ * @param {Object|null} options.filters - User filters
  * @param {Function} options.fetchMessage - async (msgId) => formattedEmail | null
- *   Fonction provider-specific qui recupere et formate un email par son ID.
- * @param {string} options.provider - Nom du provider (pour les logs)
+ *   Provider-specific function that retrieves and formats an email by its ID.
+ * @param {string} options.provider - Provider name (for logs)
  */
 const RATE_LIMIT_BACKOFF_MS = 2000;
 
 /**
- * Detecte une erreur de rate-limit / indisponibilite provider (429 / 503).
+ * Detects a rate-limit or provider unavailability error (429 / 503).
  */
 function isRateLimitError(error) {
   const status = error?.code || error?.statusCode || error?.status || error?.response?.status;
@@ -170,7 +170,7 @@ async function streamEmailChunks(
   res,
   { messageIds, chunkSize = 500, filters = null, fetchMessage, provider = '' }
 ) {
-  // Headers SSE
+  // SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -179,7 +179,7 @@ async function streamEmailChunks(
     if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
-  // Arret de la boucle si le client se deconnecte (meme pattern que routes/ai.js)
+  // Stop loop if client disconnects (same pattern as routes/ai.js)
   let clientDisconnected = false;
   if (res.req && typeof res.req.on === 'function') {
     res.req.on('close', () => {
@@ -193,24 +193,24 @@ async function streamEmailChunks(
   let totalFiltered = 0;
   let totalRateLimited = 0;
 
-  // Auto-detection des expéditeurs répétitifs
+  // Auto-detection of repetitive senders
   const autoExcludeEnabled = filters && filters.autoExcludeRepetitive !== false;
   const senderCounts = new Map(); // sender → count
   const senderSamples = new Map(); // sender → { subjects: [], bodyLengths: [] }
-  const senderExcluded = new Set(); // senders détectés comme répétitifs
-  const senderWhitelisted = new Set(); // senders analysés et légitimes
+  const senderExcluded = new Set(); // senders detected as repetitive
+  const senderWhitelisted = new Set(); // senders analysed and legitimate
   const senderAnalysis = new Map(); // sender → { normalized, maxMatch, avgBody, decision }
   let totalAutoExcluded = 0;
 
   console.log(
-    `📦 ${provider} downloadEmailsInChunks: ${messageIds.length} emails en ${totalChunks} tranche(s) de ${chunkSize}`
+    `📦 ${provider} downloadEmailsInChunks: ${messageIds.length} emails in ${totalChunks} chunk(s) of ${chunkSize}`
   );
   if (autoExcludeEnabled) {
     console.log(
-      `🔍 Auto-exclusion activée (seuil: ${AUTO_EXCLUDE_THRESHOLD_1}/${AUTO_EXCLUDE_THRESHOLD_2} mails, similarité: ${AUTO_EXCLUDE_SIMILARITY_RATIO * 100}%, body min: ${AUTO_EXCLUDE_BODY_MIN_LENGTH} chars)`
+      `🔍 Auto-exclusion enabled (threshold: ${AUTO_EXCLUDE_THRESHOLD_1}/${AUTO_EXCLUDE_THRESHOLD_2} emails, similarity: ${AUTO_EXCLUDE_SIMILARITY_RATIO * 100}%, body min: ${AUTO_EXCLUDE_BODY_MIN_LENGTH} chars)`
     );
   } else {
-    console.log(`⏭️ Auto-exclusion désactivée`);
+    console.log(`⏭️ Auto-exclusion disabled`);
   }
 
   sendSSE({
@@ -234,8 +234,8 @@ async function streamEmailChunks(
         if (clientDisconnected) break;
         const msgId = msgRef.id || msgRef;
 
-        // Fetch avec distinction rate-limit (429/503) vs email invalide :
-        // backoff simple + un retry unique, sinon rejet classique.
+        // Fetch with distinction between rate-limit (429/503) vs invalid email:
+        // simple backoff + one unique retry, otherwise reject normally.
         let formatted = null;
         try {
           formatted = await fetchMessage(msgId);
@@ -243,14 +243,14 @@ async function streamEmailChunks(
           if (isRateLimitError(fetchErr)) {
             totalRateLimited++;
             console.warn(
-              `⏳ ${provider} rate-limit provider sur ${msgId} — backoff ${RATE_LIMIT_BACKOFF_MS}ms puis retry`
+              `⏳ ${provider} provider rate-limit on ${msgId} — backoff ${RATE_LIMIT_BACKOFF_MS}ms then retry`
             );
             await new Promise((r) => setTimeout(r, RATE_LIMIT_BACKOFF_MS));
             try {
               formatted = await fetchMessage(msgId);
             } catch (retryErr) {
               console.warn(
-                `❌ ${provider} retry apres rate-limit echoue sur ${msgId}: ${retryErr.message}`
+                `❌ ${provider} retry after rate-limit failed on ${msgId}: ${retryErr.message}`
               );
               chunkRejected++;
               continue;
@@ -272,11 +272,11 @@ async function streamEmailChunks(
             continue;
           }
 
-          // Auto-detection des expéditeurs répétitifs
+          // Auto-detection of repetitive senders
           if (autoExcludeEnabled) {
             const sender = extractEmailAddress(formatted.from);
             if (sender && senderExcluded.has(sender)) {
-              // Déjà détecté comme répétitif → skip direct
+              // Already detected as repetitive → direct skip
               chunkFiltered++;
               totalFiltered++;
               totalAutoExcluded++;
@@ -286,7 +286,7 @@ async function streamEmailChunks(
               const count = (senderCounts.get(sender) || 0) + 1;
               senderCounts.set(sender, count);
 
-              // Stocker les samples tant qu'on est en phase d'évaluation
+              // Store samples while in evaluation phase
               if (count <= AUTO_EXCLUDE_THRESHOLD_2) {
                 if (!senderSamples.has(sender)) {
                   senderSamples.set(sender, { subjects: [], bodyLengths: [] });
@@ -296,7 +296,7 @@ async function streamEmailChunks(
                 samples.bodyLengths.push((formatted.bodyText || '').length);
               }
 
-              // Évaluation aux seuils (5 et 10)
+              // Evaluation at thresholds (5 and 10)
               if (count === AUTO_EXCLUDE_THRESHOLD_1 || count === AUTO_EXCLUDE_THRESHOLD_2) {
                 const samples = senderSamples.get(sender);
                 const normalized = samples.subjects.map(normalizeSubject);
@@ -319,34 +319,36 @@ async function streamEmailChunks(
 
                 if (isSenderRepetitive(samples.subjects, samples.bodyLengths)) {
                   senderExcluded.add(sender);
-                  senderWhitelisted.delete(sender); // au cas où whitelisté à 5, exclu à 10
-                  analysisDetail.decision = 'EXCLU';
-                  console.log(`🔄 AUTO-EXCLU: ${sender} (évaluation à ${count} mails)`);
-                  console.log(`   ├─ Sujets normalisés: ${JSON.stringify(normalized)}`);
+                  senderWhitelisted.delete(sender); // in case whitelisted at 5, excluded at 10
+                  analysisDetail.decision = 'EXCLUDED';
+                  console.log(`🔄 AUTO-EXCLUDED: ${sender} (evaluation at ${count} emails)`);
+                  console.log(`   ├─ Normalized subjects: ${JSON.stringify(normalized)}`);
                   console.log(
-                    `   ├─ Similarité: ${maxSubjectCount}/${count} identiques (seuil: ${minRequired})`
+                    `   ├─ Similarity: ${maxSubjectCount}/${count} identical (threshold: ${minRequired})`
                   );
                   console.log(
-                    `   ├─ Body lengths: [${samples.bodyLengths.join(', ')}] (moy: ${Math.round(avgBodyLen)})`
+                    `   ├─ Body lengths: [${samples.bodyLengths.join(', ')}] (avg: ${Math.round(avgBodyLen)})`
                   );
-                  console.log(`   └─ Les emails suivants de ce sender seront filtrés`);
+                  console.log(`   └─ Following emails from this sender will be filtered`);
                   senderSamples.delete(sender);
                 } else if (count === AUTO_EXCLUDE_THRESHOLD_2) {
-                  // Whitelist définitive seulement au 2ème seuil
+                  // Final whitelist only at 2nd threshold
                   senderWhitelisted.add(sender);
-                  analysisDetail.decision = 'WHITELIST';
-                  console.log(`✅ WHITELISTE: ${sender} (évaluation finale à ${count} mails)`);
-                  console.log(`   ├─ Sujets normalisés: ${JSON.stringify(normalized)}`);
+                  analysisDetail.decision = 'WHITELISTED';
+                  console.log(`✅ WHITELISTED: ${sender} (final evaluation at ${count} emails)`);
+                  console.log(`   ├─ Normalized subjects: ${JSON.stringify(normalized)}`);
                   console.log(
-                    `   ├─ Similarité: ${maxSubjectCount}/${count} identiques (seuil: ${minRequired} — non atteint)`
+                    `   ├─ Similarity: ${maxSubjectCount}/${count} identical (threshold: ${minRequired} — not reached)`
                   );
-                  console.log(`   └─ Body moy: ${Math.round(avgBodyLen)} chars — sender légitime`);
+                  console.log(
+                    `   └─ Body avg: ${Math.round(avgBodyLen)} chars — legitimate sender`
+                  );
                   senderSamples.delete(sender);
                 } else {
-                  // Seuil 1 non-concluant → on continue à sampler jusqu'au seuil 2
-                  analysisDetail.decision = 'EN-ATTENTE';
+                  // Threshold 1 inconclusive → continue sampling until threshold 2
+                  analysisDetail.decision = 'PENDING';
                   console.log(
-                    `⏳ EN ATTENTE: ${sender} (${maxSubjectCount}/${count} identiques, seuil ${minRequired} — réévaluation à ${AUTO_EXCLUDE_THRESHOLD_2} mails)`
+                    `⏳ PENDING: ${sender} (${maxSubjectCount}/${count} identical, threshold ${minRequired} — re-evaluation at ${AUTO_EXCLUDE_THRESHOLD_2} emails)`
                   );
                 }
                 senderAnalysis.set(sender, analysisDetail);
@@ -366,7 +368,7 @@ async function streamEmailChunks(
 
       if (clientDisconnected) {
         console.log(
-          `🔌 ${provider} downloadEmailsInChunks: client deconnecte — arret du streaming`
+          `🔌 ${provider} downloadEmailsInChunks: client disconnected — stopping streaming`
         );
         return;
       }
@@ -392,7 +394,7 @@ async function streamEmailChunks(
 
     const autoExcludedSenders = Array.from(senderExcluded);
 
-    // Diagnostic : top senders par nombre d'emails (pour debug)
+    // Diagnostic: top senders by email count (for debug)
     const topSenders = Array.from(senderCounts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
@@ -402,10 +404,10 @@ async function streamEmailChunks(
           sender,
           count,
           status: senderExcluded.has(sender)
-            ? 'EXCLU'
+            ? 'EXCLUDED'
             : senderWhitelisted.has(sender)
-              ? 'WHITELIST'
-              : 'NON-ANALYSE',
+              ? 'WHITELISTED'
+              : 'NOT-ANALYSED',
           ...(analysis
             ? {
                 normalized: analysis.normalized,
@@ -418,15 +420,15 @@ async function streamEmailChunks(
         };
       });
 
-    console.log(`\n📊 ═══ BILAN AUTO-EXCLUSION ═══`);
-    console.log(`   Senders analysés: ${senderCounts.size}`);
+    console.log(`\n📊 ═══ AUTO-EXCLUSION SUMMARY ═══`);
+    console.log(`   Senders analysed: ${senderCounts.size}`);
     console.log(
-      `   Senders exclus: ${senderExcluded.size} → ${autoExcludedSenders.join(', ') || '(aucun)'}`
+      `   Excluded senders: ${senderExcluded.size} → ${autoExcludedSenders.join(', ') || '(none)'}`
     );
-    console.log(`   Senders whitelistés: ${senderWhitelisted.size}`);
-    console.log(`   Emails auto-exclus: ${totalAutoExcluded}`);
-    console.log(`   Emails gardés: ${totalRetrieved}`);
-    console.log(`   Emails filtrés (règles + auto): ${totalFiltered}`);
+    console.log(`   Whitelisted senders: ${senderWhitelisted.size}`);
+    console.log(`   Auto-excluded emails: ${totalAutoExcluded}`);
+    console.log(`   Kept emails: ${totalRetrieved}`);
+    console.log(`   Filtered emails (rules + auto): ${totalFiltered}`);
     console.log(`═══════════════════════════════\n`);
 
     sendSSE({
@@ -442,16 +444,16 @@ async function streamEmailChunks(
       topSenders,
       chunksProcessed: totalChunks,
       message:
-        `${totalRetrieved} emails téléchargés` +
-        (totalFiltered > 0 ? ` (${totalFiltered} filtrés)` : '') +
+        `${totalRetrieved} emails downloaded` +
+        (totalFiltered > 0 ? ` (${totalFiltered} filtered)` : '') +
         (totalAutoExcluded > 0
-          ? ` (${totalAutoExcluded} auto-exclus de ${autoExcludedSenders.length} sender(s))`
+          ? ` (${totalAutoExcluded} auto-excluded from ${autoExcludedSenders.length} sender(s))`
           : ''),
     });
 
     res.end();
   } catch (error) {
-    console.error(`❌ Erreur ${provider} downloadEmailsInChunks:`, error);
+    console.error(`❌ Error ${provider} downloadEmailsInChunks:`, error);
     sendSSE({
       type: 'error',
       error: error.message,
@@ -467,11 +469,11 @@ async function streamEmailChunks(
 }
 
 // ─────────────────────────────────────────────
-//  Error handling token (pattern repete 10+ fois)
+//  Error handling token (pattern repeated 10+ times)
 // ─────────────────────────────────────────────
 
 /**
- * Determine si une erreur est liee a un token expire/invalide.
+ * Determines if an error is related to an expired/invalid token.
  */
 function isTokenError(error) {
   return !!(
@@ -484,7 +486,7 @@ function isTokenError(error) {
 }
 
 /**
- * Parse les filtres et afterDate depuis la query string ou le body de la requete.
+ * Parses filters and afterDate from the query string or request body.
  */
 function parseFiltersFromRequest(req) {
   const filters = req.query.filters ? JSON.parse(req.query.filters) : req.body?.filters || null;

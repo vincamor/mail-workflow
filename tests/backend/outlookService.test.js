@@ -1,13 +1,13 @@
 const { describe, it, expect } = require('@jest/globals');
 
-// Aucun mock MSAL n'est nécessaire : le ConfidentialClientApplication mort a été
-// supprimé du service. Ce mock existait pour empêcher son initialisation réelle,
-// et c'est précisément lui qui masquait le crash au démarrage avec des secrets
-// vides. Le service se charge maintenant sans aucune credential.
+// No MSAL mock is necessary: the defunct ConfidentialClientApplication has been
+// removed from the service. This mock existed to prevent its actual initialization,
+// and it was precisely it that masked the startup crash with empty secrets.
+// The service now loads without any credential.
 const { formatOutlookEmail, buildOutlookQuery } = require('../../src/services/outlookService');
 
 describe('formatOutlookEmail', () => {
-  it('normalise un message Outlook Graph en format JSONL unifié', () => {
+  it('normalises an Outlook Graph message into unified JSONL format', () => {
     const raw = {
       id: 'o-msg-1',
       conversationId: 'conv-1',
@@ -47,7 +47,7 @@ describe('formatOutlookEmail', () => {
     expect(formatted.bodyText).toContain('Hello world');
   });
 
-  it('aligne les champs principaux avec formatGmailEmail pour des emails équivalents', () => {
+  it('aligns main fields with formatGmailEmail for equivalent emails', () => {
     const gmailLike = {
       id: 'g-1',
       threadId: 'thread-1',
@@ -99,7 +99,7 @@ describe('formatOutlookEmail', () => {
 });
 
 describe('buildOutlookQuery', () => {
-  it('génère un filtre receivedDateTime gt ISO à partir de internalDate en ms', () => {
+  it('generates a receivedDateTime gt ISO filter from internalDate in ms', () => {
     const filters = null;
     const internalDateMs = String(Date.UTC(2025, 2, 12));
 

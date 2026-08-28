@@ -22,8 +22,8 @@ describe('aiChat — buildInitialContext', () => {
       { date: 1712100000000, from: 'b@x.com', bodyText: 'world' },
     ];
     const ctx = buildInitialContext('Projet Alpha', emails, 2);
-    expect(ctx).toContain('# Thread : Projet Alpha');
-    expect(ctx).toContain('# 2 mails envoyes (sur 2 au total)');
+    expect(ctx).toContain('# Subject: Projet Alpha');
+    expect(ctx).toContain('# 2 emails sent (out of 2 in total)');
   });
 
   test('sorts emails descending by date', () => {
@@ -44,9 +44,9 @@ describe('aiChat — buildInitialContext', () => {
       bodyText: `body${i}`,
     }));
     const ctx = buildInitialContext('S', emails, 30);
-    const count = (ctx.match(/## Mail /g) || []).length;
+    const count = (ctx.match(/## Email /g) || []).length;
     expect(count).toBe(20);
-    expect(ctx).toContain('20 mails envoyes (sur 30 au total)');
+    expect(ctx).toContain('20 emails sent (out of 30 in total)');
   });
 
   test('truncates bodies longer than 3000 chars', () => {
@@ -61,8 +61,8 @@ describe('aiChat — buildInitialContext', () => {
   test('handles missing date or from gracefully', () => {
     const emails = [{ bodyText: 'only body' }];
     const ctx = buildInitialContext('S', emails, 1);
-    expect(ctx).toContain('De: inconnu');
-    expect(ctx).toContain('inconnue'); // date unknown
+    expect(ctx).toContain('From: unknown');
+    expect(ctx).toContain('unknown'); // date falls back to 'unknown'
   });
 });
 

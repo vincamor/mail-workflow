@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-// SESSION_SECRET requis dès qu'on n'est pas explicitement en développement
-// (évite de démarrer en prod avec dev_secret si NODE_ENV n'est pas défini, ex. Railway)
+// SESSION_SECRET required as soon as not explicitly in development
+// (avoids starting in prod with dev_secret if NODE_ENV not defined, e.g. Railway)
 if (!process.env.SESSION_SECRET && process.env.NODE_ENV !== 'development') {
-  console.error('SESSION_SECRET doit être défini.');
-  console.error('En production (Railway, etc.) : Variables du service → ajouter SESSION_SECRET.');
-  console.error('En local : définir NODE_ENV=development ou ajouter SESSION_SECRET dans .env');
+  console.error('SESSION_SECRET must be defined.');
+  console.error('In production (Railway, etc.): Service variables → add SESSION_SECRET.');
+  console.error('Locally: set NODE_ENV=development or add SESSION_SECRET in .env');
   process.exit(1);
 }
 
@@ -21,7 +21,7 @@ const aiRoutes = require('./routes/ai');
 
 const PORT = process.env.PORT || 3000;
 
-// Session store : Redis si REDIS_URL défini, sinon mémoire (perdu au redémarrage)
+// Session store: Redis if REDIS_URL defined, otherwise in-memory (lost on restart)
 async function createSessionStore() {
   const REDIS_URL = process.env.REDIS_URL;
   if (REDIS_URL) {
@@ -30,10 +30,10 @@ async function createSessionStore() {
     const redisClient = createClient({ url: REDIS_URL });
     redisClient.on('error', (err) => console.error('Redis client error:', err));
     await redisClient.connect();
-    console.log('Redis connecté — sessions persistantes');
+    console.log('Redis connected — persistent sessions');
     return new RedisStore({ client: redisClient });
   }
-  console.warn('REDIS_URL non défini — sessions en mémoire (perdues au redémarrage)');
+  console.warn('REDIS_URL not defined — in-memory sessions (lost on restart)');
   return undefined;
 }
 
@@ -42,7 +42,7 @@ async function start() {
 
   const app = express();
 
-  // En production derrière un proxy (Railway, Render, etc.)
+  // In production behind a proxy (Railway, Render, etc.)
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
@@ -62,9 +62,9 @@ async function start() {
     })
   );
 
-  // Helmet avec CSP par défaut, sauf img-src élargi à https: et data:
-  // pour que les emails HTML (iframe sandbox srcdoc) affichent leurs images distantes.
-  // script-src et les autres directives restent celles par défaut de Helmet.
+  // Helmet with default CSP, except img-src widened to https: and data:
+  // so that HTML emails (iframe sandbox srcdoc) display their remote images.
+  // script-src and other directives remain Helmet's defaults.
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -76,13 +76,13 @@ async function start() {
     })
   );
 
-  // CORS restreint à l'origine de l'app (frontend servi par le même serveur)
+  // CORS restricted to app origin (frontend served by same server)
   const APP_ORIGIN = process.env.APP_ORIGIN || 'http://localhost:3000';
   app.use(cors({ origin: APP_ORIGIN }));
 
-  // Limites de body : 10mb uniquement pour les routes qui reçoivent de grandes
-  // listes d'IDs (download-chunks — les IDs Outlook font ~150 chars × milliers)
-  // ou un contexte IA volumineux ; 1mb partout ailleurs.
+  // Body limits: 10mb only for routes receiving large
+  // ID lists (download-chunks — Outlook IDs are ~150 chars × thousands)
+  // or voluminous AI context; 1mb everywhere else.
   app.use(
     ['/gmail/download-chunks', '/outlook/download-chunks', '/api/ai'],
     express.json({ limit: '10mb' })
@@ -90,46 +90,46 @@ async function start() {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
-  // Routes OAuth et emails
+  // OAuth and email routes
   app.use('/gmail', gmailRoutes);
   app.use('/outlook', outlookRoutes);
 
-  // Routes IA (proxy multi-provider)
+  // AI routes (multi-provider proxy)
   app.use('/api/ai', aiRoutes);
 
-  // Déconnexion : détruit la session serveur (tokens OAuth inclus)
+  // Sign out: destroys server session (OAuth tokens included)
   app.post('/auth/logout', (req, res) => {
     req.session.destroy((err) => {
       if (err) {
-        console.error('Erreur logout:', err);
-        return res.status(500).json({ error: 'Erreur lors de la déconnexion' });
+        console.error('Sign out error:', err);
+        return res.status(500).json({ error: 'Error during sign out' });
       }
       res.clearCookie('connect.sid');
       res.json({ success: true });
     });
   });
 
-  // Health check simple pour l'hébergeur
+  // Simple health check for hosting provider
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: Date.now() });
   });
 
-  // Frontend minimal
+  // Minimal frontend
   app.use('/', express.static(path.join(__dirname, 'public')));
 
-  // Le dossier services N'EST PLUS servi en entier (il contient du code backend).
-  // Seul emailAnalyzer_browser.js est exposé — ES module importé par le frontend.
+  // The services folder is NO LONGER served in full (it contains backend code).
+  // Only emailAnalyzer_browser.js is exposed — ES module imported by frontend.
   app.get('/services/emailAnalyzer_browser.js', (req, res) => {
     res.sendFile(path.join(__dirname, 'services', 'emailAnalyzer_browser.js'));
   });
   app.use('/styles', express.static(path.join(__dirname, 'public/styles')));
 
   app.listen(PORT, () => {
-    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+    console.log(`Server started on http://localhost:${PORT}`);
   });
 }
 
 start().catch((err) => {
-  console.error('Erreur démarrage:', err);
+  console.error('Startup error:', err);
   process.exit(1);
 });

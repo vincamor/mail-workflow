@@ -1,12 +1,12 @@
 /**
- * Menu contextuel pour la gestion des groupes de sujets
+ * Context menu for managing subject groups
  *
- * Déclenché au clic droit sur :
- *   - .subject-drawer-header  → menu sujet (ajouter/retirer d'un groupe)
- *   - .group-header            → menu groupe (renommer, sous-groupe, supprimer)
+ * Triggered on right-click on:
+ *   - .subject-drawer-header  → subject menu (add/remove from a group)
+ *   - .group-header            → group menu (rename, subgroup, delete)
  *
- * Utilise event delegation sur #subjectsList pour fonctionner
- * même après les re-rendus de la liste.
+ * Uses event delegation on #subjectsList to keep working
+ * even after the list is re-rendered.
  */
 
 import { getCurrentGroupsData, saveGroupsData, refreshSubjectsDisplay } from './analysis.js';
@@ -28,16 +28,16 @@ import {
 import { toastError, toastSuccess, showConfirmModal } from './toast.js';
 
 const GROUP_COLORS = [
-  { name: 'Rouge', value: '#ef4444' },
+  { name: 'Red', value: '#ef4444' },
   { name: 'Orange', value: '#f97316' },
-  { name: 'Ambre', value: '#f59e0b' },
-  { name: 'Vert', value: '#22c55e' },
-  { name: 'Émeraude', value: '#10b981' },
+  { name: 'Amber', value: '#f59e0b' },
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Emerald', value: '#10b981' },
   { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Bleu', value: '#3b82f6' },
+  { name: 'Blue', value: '#3b82f6' },
   { name: 'Indigo', value: '#6366f1' },
   { name: 'Violet', value: '#a855f7' },
-  { name: 'Rose', value: '#ec4899' },
+  { name: 'Pink', value: '#ec4899' },
 ];
 
 let menuEl = null;
@@ -48,13 +48,13 @@ export function initGroupContextMenu() {
   menuEl = document.getElementById('groupContextMenu');
   if (!menuEl) return;
 
-  // Fermeture sur clic extérieur ou Echap
+  // Close on outside click or Escape
   document.addEventListener('click', closeMenu);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeMenu();
   });
 
-  // Délégation sur #subjectsList (persiste entre les re-rendus)
+  // Delegation on #subjectsList (persists across re-renders)
   const subjectsList = document.getElementById('subjectsList');
   if (subjectsList) {
     subjectsList.addEventListener('contextmenu', handleContextMenu);
@@ -65,14 +65,14 @@ function closeMenu() {
   if (menuEl) menuEl.style.display = 'none';
 }
 
-// ─── Dispatch selon la cible ──────────────────────────────────────────────────
+// ─── Dispatch based on target ──────────────────────────────────────────────────
 
 function handleContextMenu(event) {
   event.preventDefault();
 
   const data = getCurrentGroupsData();
 
-  // Clic droit sur un sujet
+  // Right-click on a subject
   const drawer = event.target.closest('.subject-drawer');
   if (drawer) {
     const subjectKey = drawer.getAttribute('data-subject');
@@ -83,7 +83,7 @@ function handleContextMenu(event) {
     }
   }
 
-  // Clic droit sur un groupe
+  // Right-click on a group
   const groupItem = event.target.closest('.group-item');
   if (groupItem) {
     const groupId = groupItem.getAttribute('data-group-id');
@@ -94,13 +94,13 @@ function handleContextMenu(event) {
   }
 }
 
-// ─── Menu sujet ───────────────────────────────────────────────────────────────
+// ─── Subject menu ───────────────────────────────────────────────────────────────
 
 function buildSubjectMenu(subjectKey, data) {
   menuEl.innerHTML = '';
 
-  // ── Section "Ajouter à" ──
-  const addLabel = makeLabel('Ajouter à');
+  // ── "Add to" section ──
+  const addLabel = makeLabel('Add to');
   menuEl.appendChild(addLabel);
 
   if (data && data.groups.length > 0) {
@@ -115,15 +115,15 @@ function buildSubjectMenu(subjectKey, data) {
     });
   }
 
-  // Option "Nouveau groupe…"
-  const newGroupItem = makeItem('＋ Nouveau groupe…', 'context-menu-item--accent');
+  // "New group…" option
+  const newGroupItem = makeItem('＋ New group…', 'context-menu-item--accent');
   newGroupItem.addEventListener('click', () => {
     closeMenu();
     promptCreateGroupAndAdd(subjectKey);
   });
   menuEl.appendChild(newGroupItem);
 
-  // ── Section "Retirer de" (visible seulement si déjà membre) ──
+  // ── "Remove from" section (visible only if already a member) ──
   if (data) {
     const memberIds = getGroupsForSubject(data, subjectKey);
     if (memberIds.length > 0) {
@@ -131,7 +131,7 @@ function buildSubjectMenu(subjectKey, data) {
       memberIds.forEach((groupId) => {
         const group = data.groups.find((g) => g.id === groupId);
         if (!group) return;
-        const removeItem = makeItem(`Retirer de "${group.name}"`, 'context-menu-item--danger');
+        const removeItem = makeItem(`Remove from "${group.name}"`, 'context-menu-item--danger');
         removeItem.addEventListener('click', async () => {
           closeMenu();
           removeSubjectFromGroup(data, subjectKey, groupId);
@@ -143,9 +143,9 @@ function buildSubjectMenu(subjectKey, data) {
     }
   }
 
-  // ── Section "Exclure" ──
+  // ── "Exclude" section ──
   menuEl.appendChild(makeSeparator());
-  const excludeItem = makeItem('Exclure ce sujet', 'context-menu-item--danger', 'icon-ban');
+  const excludeItem = makeItem('Exclude this subject', 'context-menu-item--danger', 'icon-ban');
   excludeItem.addEventListener('click', async () => {
     closeMenu();
     await excludeSubject(subjectKey);
@@ -179,24 +179,24 @@ function makeGroupOption(group, subjectKey, memberIds, data, isChild) {
   return item;
 }
 
-// ─── Menu groupe ─────────────────────────────────────────────────────────────
+// ─── Group menu ─────────────────────────────────────────────────────────────
 
 function buildGroupMenu(groupId, data) {
   menuEl.innerHTML = '';
   const group = data.groups.find((g) => g.id === groupId);
   if (!group) return;
 
-  // Renommer
-  const renameItem = makeItem('Renommer', '', 'icon-edit');
+  // Rename
+  const renameItem = makeItem('Rename', '', 'icon-edit');
   renameItem.addEventListener('click', () => {
     closeMenu();
     promptRenameGroup(groupId, group.name, data);
   });
   menuEl.appendChild(renameItem);
 
-  // Ajouter un sous-groupe (uniquement si groupe racine)
+  // Add a subgroup (only if root group)
   if (group.parentId === null) {
-    const addSubItem = makeItem('Ajouter un sous-groupe', '', 'icon-folder');
+    const addSubItem = makeItem('Add a subgroup', '', 'icon-folder');
     addSubItem.addEventListener('click', () => {
       closeMenu();
       promptCreateSubGroup(groupId, data);
@@ -206,14 +206,14 @@ function buildGroupMenu(groupId, data) {
 
   menuEl.appendChild(makeSeparator());
 
-  // Palette de couleurs
-  menuEl.appendChild(makeLabel('Couleur du dossier'));
+  // Colour palette
+  menuEl.appendChild(makeLabel('Folder colour'));
   menuEl.appendChild(makeColorPicker(groupId, group.color || null, data));
 
   menuEl.appendChild(makeSeparator());
 
-  // Supprimer
-  const deleteItem = makeItem('Supprimer', 'context-menu-item--danger', 'icon-trash');
+  // Delete
+  const deleteItem = makeItem('Delete', 'context-menu-item--danger', 'icon-trash');
   deleteItem.addEventListener('click', () => {
     closeMenu();
     confirmDeleteGroup(groupId, group.name, data);
@@ -243,11 +243,11 @@ function makeColorPicker(groupId, currentColor, data) {
     row.appendChild(swatch);
   });
 
-  // Bouton "Aucune couleur"
+  // "No colour" button
   const noneBtn = document.createElement('button');
   noneBtn.className = 'color-swatch color-swatch--none';
-  noneBtn.title = 'Aucune couleur';
-  noneBtn.setAttribute('aria-label', 'Aucune couleur');
+  noneBtn.title = 'No colour';
+  noneBtn.setAttribute('aria-label', 'No colour');
   noneBtn.innerHTML = '<span class="icon icon-close icon-sm" aria-hidden="true"></span>';
   noneBtn.addEventListener('click', async () => {
     closeMenu();
@@ -260,10 +260,10 @@ function makeColorPicker(groupId, currentColor, data) {
   return row;
 }
 
-// ─── Actions asynchrones ─────────────────────────────────────────────────────
+// ─── Async actions ─────────────────────────────────────────────────────
 
 async function promptCreateGroupAndAdd(subjectKey) {
-  const name = window.prompt('Nom du nouveau groupe :');
+  const name = window.prompt('New group name:');
   if (!name || !name.trim()) return;
 
   const data = getCurrentGroupsData();
@@ -275,12 +275,12 @@ async function promptCreateGroupAndAdd(subjectKey) {
     await saveGroupsData();
     refreshSubjectsDisplay();
   } catch (e) {
-    toastError('Erreur : ' + e.message);
+    toastError('Error: ' + e.message);
   }
 }
 
 async function promptRenameGroup(groupId, currentName, data) {
-  const newName = window.prompt('Nouveau nom :', currentName);
+  const newName = window.prompt('New name:', currentName);
   if (!newName || !newName.trim() || newName.trim() === currentName) return;
 
   renameGroup(data, groupId, newName.trim());
@@ -289,7 +289,7 @@ async function promptRenameGroup(groupId, currentName, data) {
 }
 
 async function promptCreateSubGroup(parentId, data) {
-  const name = window.prompt('Nom du sous-groupe :');
+  const name = window.prompt('Subgroup name:');
   if (!name || !name.trim()) return;
 
   try {
@@ -297,17 +297,17 @@ async function promptCreateSubGroup(parentId, data) {
     await saveGroupsData();
     refreshSubjectsDisplay();
   } catch (e) {
-    toastError('Erreur : ' + e.message);
+    toastError('Error: ' + e.message);
   }
 }
 
 async function confirmDeleteGroup(groupId, groupName, data) {
   const ok = await showConfirmModal({
-    title: 'Supprimer le groupe',
-    message: `Supprimer le groupe \u00ab\u00a0${groupName}\u00a0\u00bb\u00a0?<br><br>Les sujets seront lib\u00e9r\u00e9s (non supprim\u00e9s).`,
+    title: 'Delete group',
+    message: `Delete the group "${groupName}"?<br><br>The subjects will be freed (not deleted).`,
     html: true,
     type: 'warning',
-    confirmText: 'Supprimer',
+    confirmText: 'Delete',
   });
   if (!ok) return;
 
@@ -318,11 +318,11 @@ async function confirmDeleteGroup(groupId, groupName, data) {
 
 async function excludeSubject(subjectKey) {
   const ok = await showConfirmModal({
-    title: 'Exclure ce sujet',
-    message: `Exclure le sujet \u00ab\u00a0${subjectKey}\u00a0\u00bb de l\u2019affichage\u00a0?<br><br>Les emails de ce sujet seront aussi supprim\u00e9s du fichier local. Il ne sera plus t\u00e9l\u00e9charg\u00e9 \u00e0 l\u2019avenir.`,
+    title: 'Exclude this subject',
+    message: `Exclude the subject "${subjectKey}" from the display?<br><br>The emails for this subject will also be deleted from the local file. It will no longer be downloaded in future.`,
     html: true,
     type: 'warning',
-    confirmText: 'Exclure',
+    confirmText: 'Exclude',
   });
   if (!ok) return;
 
@@ -336,7 +336,7 @@ async function excludeSubject(subjectKey) {
     await saveFilters(filters);
     updateCurrentFilters(filters);
     refreshSubjectsDisplay();
-    toastSuccess(`Sujet exclu : \u00ab\u00a0${subjectKey}\u00a0\u00bb`);
+    toastSuccess(`Subject excluded: "${subjectKey}"`);
 
     // Cleanup JSONL in background
     try {
@@ -345,15 +345,15 @@ async function excludeSubject(subjectKey) {
       const userId = urlParams.get('email');
       if (userId) {
         const result = await cleanupExcludedSubjectFromJSONL(provider, userId, subjectKey);
-        console.log(`🗑️ JSONL nettoyé: ${result.removed} emails supprimés`);
+        console.log(`🗑️ JSONL cleaned up: ${result.removed} emails removed`);
       }
     } catch (e) {
-      console.warn("⚠️ Nettoyage JSONL échoué (le sujet reste exclu de l'affichage):", e);
+      console.warn('⚠️ JSONL cleanup failed (the subject stays excluded from the display):', e);
     }
   }
 }
 
-// ─── Helpers DOM ─────────────────────────────────────────────────────────────
+// ─── DOM helpers ─────────────────────────────────────────────────────────────
 
 function makeItem(text, extraClass = '', iconClass = '') {
   const el = document.createElement('div');
@@ -382,7 +382,7 @@ function makeSeparator() {
 }
 
 function positionMenu(x, y) {
-  // Afficher d'abord pour mesurer
+  // Show first to measure
   menuEl.style.display = 'block';
 
   const menuWidth = menuEl.offsetWidth || 200;

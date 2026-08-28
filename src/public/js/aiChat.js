@@ -1,9 +1,9 @@
 /**
- * Orchestrateur du chat IA par sujet.
- * - buildInitialContext : formate les emails d'un thread pour injection IA
- * - sendMessage : envoie un message user, streame la reponse, persiste
- * - regenerateLastMessage : supprime + regenere le dernier message assistant
- * - resetConversation : efface l'historique d'un sujet
+ * Per-subject AI chat orchestrator.
+ * - buildInitialContext: formats a subject's emails for AI injection
+ * - sendMessage: sends a user message, streams the response, persists it
+ * - regenerateLastMessage: deletes + regenerates the last assistant message
+ * - resetConversation: clears a subject's history
  */
 
 import { loadChat, saveChat, deleteChat } from './aiChatStore.js';
@@ -12,35 +12,35 @@ import { getAIConfig } from './aiConfig.js';
 const MAX_EMAILS_IN_CONTEXT = 20;
 const MAX_BODY_CHARS = 3000;
 
-const SYSTEM_PROMPT = `Tu es un assistant email expert. Tu aides un utilisateur a comprendre et a
-traiter ses conversations email.
+const SYSTEM_PROMPT = `You are an expert email assistant. You help a user understand and handle
+their email conversations.
 
-Tu as 3 roles :
-1. Q&A FACTUEL : reponds aux questions sur le thread fourni, UNIQUEMENT
-   avec les informations presentes dans les mails. Si l'info n'y est pas,
-   dis-le franchement : "D'apres le contexte fourni, je ne peux pas repondre a cette question."
-2. REDACTION : quand l'utilisateur demande une reponse, redige-la dans
-   un ton professionnel (sauf indication contraire), adaptee au destinataire
-   et au contexte du thread.
-3. COMPREHENSION : aide a comprendre l'historique — resumes, chronologie,
-   decisions prises, points en suspens.
+You have 3 roles:
+1. FACTUAL Q&A: answer questions about the subject provided, using ONLY
+   the information present in the emails. If the information is not there,
+   say so plainly: "Based on the context provided, I cannot answer that question."
+2. WRITING: when the user asks for a reply, write it in a professional
+   tone (unless told otherwise), suited to the recipient and to the
+   context of the subject.
+3. UNDERSTANDING: help make sense of the history — summaries, timeline,
+   decisions taken, open points.
 
-REGLES CRITIQUES :
-- NE JAMAIS inventer de dates, noms, engagements, chiffres qui ne sont pas
-  explicitement dans les mails. L'hallucination est interdite.
-- Cite les mails quand c'est pertinent (ex: "D'apres le mail du 12 avril de Jean...").
-- Reste concis sauf si on te demande du detail.
-- Reponds dans la langue de l'utilisateur.`;
+CRITICAL RULES:
+- NEVER invent dates, names, commitments or figures that are not
+  explicitly in the emails. Hallucination is forbidden.
+- Quote the emails when relevant (e.g. "According to the 12 April email from Jean...").
+- Stay concise unless you are asked for detail.
+- Answer in the user's language.`;
 
 /**
- * Supprime le contenu cite (historique des reponses precedentes) du corps d'un mail.
- * Recherche par substring (sans ancrage ^) pour etre robuste aux bodies collapses
- * en une seule ligne (ex: HTML converti sans preservation des \n).
+ * Removes the quoted text (history of the previous replies) from an email body.
+ * Matches by substring (no ^ anchor) to stay robust against bodies collapsed
+ * onto a single line (e.g. HTML converted without preserving the \n).
  */
 export function stripQuotedText(body) {
   if (!body) return '';
 
-  // Patterns detectes n'importe ou dans le texte — on coupe a la premiere occurrence.
+  // Patterns matched anywhere in the text — we cut at the first occurrence.
   const QUOTE_MARKERS = [
     /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i, // Gmail FR
     /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN date "On Thu, Sep 19, 2024 at..."
@@ -53,7 +53,7 @@ export function stripQuotedText(body) {
     /^Sent\s*:\s*/im, // Outlook EN "Sent: ..."
   ];
 
-  // Cherche la plus ancienne occurrence de citation
+  // Look for the earliest occurrence of quoted text
   let earliestIndex = body.length;
   for (const re of QUOTE_MARKERS) {
     const m = body.match(re);
@@ -64,7 +64,7 @@ export function stripQuotedText(body) {
 
   const result = body.slice(0, earliestIndex);
 
-  // Retire aussi les lignes commencant par > (citation classique) presentes avant un marker
+  // Also drop the lines starting with > (classic quoting) that appear before a marker
   const lines = result.split('\n');
   const out = [];
   for (const line of lines) {
@@ -76,23 +76,23 @@ export function stripQuotedText(body) {
 }
 
 /**
- * Construit le message-contexte initial a injecter a la premiere requete.
+ * Builds the initial context message injected into the first request.
  */
 export function buildInitialContext(subjectKey, emails, totalCount) {
   const sorted = [...emails].sort((a, b) => (b.date || 0) - (a.date || 0));
   const selected = sorted.slice(0, MAX_EMAILS_IN_CONTEXT);
 
-  let out = `# Thread : ${subjectKey}\n`;
-  out += `# ${selected.length} mails envoyes (sur ${totalCount} au total)\n`;
-  out += `# Contenu cite (reponses precedentes) strippe — chaque mail ne contient que son contenu propre\n\n`;
+  let out = `# Subject: ${subjectKey}\n`;
+  out += `# ${selected.length} emails sent (out of ${totalCount} in total)\n`;
+  out += `# Quoted text (previous replies) stripped — each email only contains its own content\n\n`;
 
   selected.forEach((email, i) => {
-    const date = email.date ? new Date(email.date).toISOString().split('T')[0] : 'inconnue';
-    const from = email.from || 'inconnu';
+    const date = email.date ? new Date(email.date).toISOString().split('T')[0] : 'unknown';
+    const from = email.from || 'unknown';
     const stripped = stripQuotedText(email.bodyText || '');
     const body = stripped.slice(0, MAX_BODY_CHARS);
     const suffix = stripped.length > MAX_BODY_CHARS ? '...' : '';
-    out += `## Mail ${i + 1} — ${date} — De: ${from}\n${body || '(contenu vide apres retrait des citations)'}${suffix}\n\n`;
+    out += `## Email ${i + 1} — ${date} — From: ${from}\n${body || '(empty content after removing the quoted text)'}${suffix}\n\n`;
   });
 
   return out;
@@ -157,11 +157,11 @@ export function parseAnthropicChunk(line) {
 }
 
 /**
- * Consomme un stream SSE depuis /api/ai/chat.
- * Retourne { assistantContent, usage, error }.
- * - assistantContent : contenu final accumule
- * - usage : { input_tokens, output_tokens } ou null si provider n'en fournit pas
- * - error : message d'erreur si quelque chose a echoue, sinon null
+ * Consumes an SSE stream from /api/ai/chat.
+ * Returns { assistantContent, usage, error }.
+ * - assistantContent: the accumulated final content
+ * - usage: { input_tokens, output_tokens }, or null when the provider gives none
+ * - error: an error message if something failed, otherwise null
  * @param {Object} body
  * @param {'openai'|'ollama'|'custom'|'anthropic'} provider
  * @param {(partial: string) => void} onDelta
@@ -178,7 +178,7 @@ async function streamChat(body, provider, onDelta) {
     return {
       assistantContent: '',
       usage: null,
-      error: `Impossible de joindre le serveur: ${e.message}`,
+      error: `Cannot reach the server: ${e.message}`,
     };
   }
 
@@ -214,7 +214,7 @@ async function streamChat(body, provider, onDelta) {
     try {
       chunk = await reader.read();
     } catch (e) {
-      return { assistantContent, usage, error: `Stream interrompu: ${e.message}` };
+      return { assistantContent, usage, error: `Stream interrupted: ${e.message}` };
     }
     const { done, value } = chunk;
     if (done) break;
@@ -234,8 +234,8 @@ function estimateTokens(text) {
 }
 
 /**
- * Execute un tour assistant sur un chat existant : streame, push le message, persiste.
- * Partage entre sendMessage et regenerateLastMessage.
+ * Runs one assistant turn on an existing chat: streams, pushes the message, persists.
+ * Shared by sendMessage and regenerateLastMessage.
  * @returns {Promise<{ chat, error }>}
  */
 async function runAssistantTurn(chat, onDelta) {
@@ -262,13 +262,13 @@ async function runAssistantTurn(chat, onDelta) {
   try {
     await saveChat(chat.subjectKey, chat);
   } catch (e) {
-    return { chat, error: `Erreur sauvegarde: ${e.message}` };
+    return { chat, error: `Save error: ${e.message}` };
   }
   return { chat, error: null };
 }
 
 /**
- * Envoie un message user et streame la reponse assistant.
+ * Sends a user message and streams the assistant response.
  */
 export async function sendMessage(subjectKey, userMessage, opts) {
   const { subjectInfo, getEmailsForSubject, onDelta, onComplete, onError } = opts;
@@ -290,7 +290,7 @@ export async function sendMessage(subjectKey, userMessage, opts) {
     try {
       emails = await getEmailsForSubject(subjectInfo);
     } catch (e) {
-      onError && onError(`Erreur chargement des mails: ${e.message}`);
+      onError && onError(`Error loading the emails: ${e.message}`);
       return;
     }
     const ctxContent = buildInitialContext(subjectKey, emails, emails.length);
@@ -313,17 +313,17 @@ export async function sendMessage(subjectKey, userMessage, opts) {
 }
 
 /**
- * Supprime le dernier message assistant et relance un stream sur le meme historique.
+ * Deletes the last assistant message and restarts a stream on the same history.
  */
 export async function regenerateLastMessage(subjectKey, opts) {
   const { onDelta, onComplete, onError } = opts;
   const chat = await loadChat(subjectKey);
   if (!chat || chat.messages.length === 0) {
-    onError && onError('Aucune conversation a regenerer');
+    onError && onError('No conversation to regenerate');
     return;
   }
   if (chat.messages[chat.messages.length - 1].role !== 'assistant') {
-    onError && onError("Le dernier message n'est pas de l'assistant");
+    onError && onError('The last message is not from the assistant');
     return;
   }
   chat.messages.pop();

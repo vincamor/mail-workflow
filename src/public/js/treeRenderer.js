@@ -1,16 +1,16 @@
 /**
- * Tree Renderer — SVG natif (remplace D3.js)
- * Refonte 2026-04-26 (taste-skill 5/5/6) :
- *  - Composition 3 lignes : sujet / avatar+sender / date+badges
- *  - Tailles variables (root / standard / court)
- *  - Aurora gradient reservee aux mails self-sent (anti-slop)
- *  - Hover branch highlight (ascendants → racine)
+ * Tree Renderer — native SVG (replaces D3.js)
+ * 2026-04-26 rework (taste-skill 5/5/6):
+ *  - 3-line composition: subject / avatar+sender / date+badges
+ *  - Variable sizes (root / standard / short)
+ *  - Aurora gradient reserved for self-sent emails (anti-slop)
+ *  - Hover branch highlight (ancestors → root)
  *  - Custom tooltip + staggered entry
  *  - Empty/skeleton states
  */
 
 // ========================================
-// CONSTANTES
+// CONSTANTS
 // ========================================
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -23,21 +23,21 @@ const DATA_GROUP_OFFSET = 140;
 
 const ZOOM_SCALE_EXTENT = [0.1, 3];
 const CONTAINER_PADDING = 80;
-// Plafond du zoom auto : ne JAMAIS agrandir un petit arbre au-delà de sa taille
-// naturelle. Sans ça, un fil de quelques mails est zoomé jusqu'à ×3 pour remplir
-// la vue → nœuds énormes, flèches qui débordent en haut.
+// Auto-zoom ceiling: NEVER enlarge a small tree beyond its natural size.
+// Without it, a subject of a few emails is zoomed up to ×3 to fill the view
+// → huge nodes, arrows overflowing at the top.
 const MAX_FIT_SCALE = 1;
 
 const TIMELINE_LINE_OFFSET = -15;
 const TIMELINE_LABEL_OFFSET = -80;
 const TIMELINE_LABEL_Y_OFFSET = 55;
 
-// Courbes liens
+// Link curves
 const LINK_END_OFFSET = -12;
 const CURVE_CONTROL_FACTOR_1 = 0.5;
 const CURVE_CONTROL_FACTOR_2 = 0.3;
 
-// Bouton expand
+// Expand button
 const EXPAND_BUTTON_SIZE = 32;
 const EXPAND_BUTTON_MARGIN_RIGHT = 14;
 const EXPAND_BUTTON_RADIUS = 16;
@@ -47,7 +47,7 @@ const STAGGER_MAX_INDEX = 60;
 const STAGGER_STEP_MS = 25;
 
 // ========================================
-// ETAT INTERNE
+// INTERNAL STATE
 // ========================================
 
 let currentContainerId = null;
@@ -58,14 +58,14 @@ let nodeClickHandler = null;
 let parentIndex = new Map(); // targetId → sourceId (child → parent)
 let tooltipEl = null;
 
-// Index dateString → premier noeud de cette date (construit une fois par rendu
-// dans buildTimeline). Evite positionedNodes.find() a chaque frame de pan/zoom.
+// Index dateString → first node with that date (built once per render inside
+// buildTimeline). Avoids positionedNodes.find() on every pan/zoom frame.
 let timelineNodeByDate = new Map();
 
-// Stockage des donnees d'arbre par containerId. Remplace window['treeData_*']
-// (fuite memoire : une cle unique par selection de sujet, jamais liberee).
-// On garde une reference module-level et on purge l'ancienne avant chaque
-// nouvelle visualisation — un seul arbre est affiche a la fois.
+// Tree data stored by containerId. Replaces window['treeData_*'] (memory leak:
+// one unique key per subject selection, never freed). We keep a module-level
+// reference and purge the previous one before each new visualisation — only
+// one tree is displayed at a time.
 const treeDataStore = new Map();
 
 // ========================================
@@ -97,7 +97,7 @@ function extractEmailAddress(from) {
 }
 
 function extractDisplayName(from) {
-  if (!from) return 'Inconnu';
+  if (!from) return 'Unknown';
   const s = String(from);
   const m = s.match(/^\s*(.+?)\s*<.+?>\s*$/);
   if (m && m[1]) {
@@ -131,21 +131,21 @@ function isSelfSent(node, userEmail) {
   return extractEmailAddress(node.from).toLowerCase() === userEmail;
 }
 
-// Palette d'avatars curatée : harmonieuse avec l'identité aubergine/pêche
-// (plus de marron/vert aléatoires issus d'un hue plein spectre). Chaque
-// expéditeur garde une couleur stable, choisie par hash dans cette palette.
+// Curated avatar palette: harmonious with the aubergine/peach identity (no
+// more random browns/greens coming out of a full-spectrum hue). Each sender
+// keeps a stable colour, picked by hash from this palette.
 const AVATAR_PALETTE = [
-  'hsl(18, 68%, 56%)', // pêche / corail
-  'hsl(342, 58%, 58%)', // rose
-  'hsl(286, 52%, 60%)', // orchidée
-  'hsl(252, 46%, 62%)', // lavande / violet
-  'hsl(210, 55%, 58%)', // bleu périclès
-  'hsl(168, 40%, 50%)', // teal doux
-  'hsl(36, 58%, 54%)', // ambre chaud (pas marron)
-  'hsl(320, 48%, 60%)', // magenta doux
+  'hsl(18, 68%, 56%)', // peach / coral
+  'hsl(342, 58%, 58%)', // pink
+  'hsl(286, 52%, 60%)', // orchid
+  'hsl(252, 46%, 62%)', // lavender / violet
+  'hsl(210, 55%, 58%)', // pericles blue
+  'hsl(168, 40%, 50%)', // soft teal
+  'hsl(36, 58%, 54%)', // warm amber (not brown)
+  'hsl(320, 48%, 60%)', // soft magenta
 ];
 
-// Hash → couleur d'avatar deterministe, dans la palette on-thème
+// Hash → deterministic avatar colour, taken from the on-theme palette
 function colorFromEmail(email) {
   const s = email || 'unknown';
   let hash = 0;
@@ -153,7 +153,7 @@ function colorFromEmail(email) {
   return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
 }
 
-// Date relative francaise
+// Relative date
 function formatRelativeDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(String(dateStr).replace(' ', 'T'));
@@ -165,22 +165,22 @@ function formatRelativeDate(dateStr) {
   const diffH = Math.round(diffMs / 3600000);
   const diffD = Math.floor(diffMs / 86400000);
 
-  if (diffMs < 0) return d.toLocaleDateString('fr-FR');
-  if (diffMin < 1) return "a l'instant";
-  if (diffMin < 60) return `il y a ${diffMin}min`;
-  if (diffH < 24) return `il y a ${diffH}h`;
-  if (diffD === 0) return "aujourd'hui";
-  if (diffD === 1) return 'hier';
-  if (diffD < 7) return `il y a ${diffD}j`;
-  if (diffD < 30) return `il y a ${Math.floor(diffD / 7)}sem`;
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' });
+  if (diffMs < 0) return d.toLocaleDateString('en-GB');
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}min ago`;
+  if (diffH < 24) return `${diffH}h ago`;
+  if (diffD === 0) return 'today';
+  if (diffD === 1) return 'yesterday';
+  if (diffD < 7) return `${diffD}d ago`;
+  if (diffD < 30) return `${Math.floor(diffD / 7)}w ago`;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 }
 
 function formatFullDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(String(dateStr).replace(' ', 'T'));
   if (isNaN(d.getTime())) return String(dateStr);
-  return d.toLocaleDateString('fr-FR', {
+  return d.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -191,7 +191,7 @@ function formatFullDate(dateStr) {
 }
 
 // ========================================
-// SIZING — variable par nœud
+// SIZING — per node
 // ========================================
 
 function isRootNode(d) {
@@ -208,23 +208,23 @@ function nodeWidthFor(d) {
 }
 
 function nodeHeightFor() {
-  // Hauteur uniforme : alignement parfait des centres verticaux sur la lane,
-  // les fleches partent toutes au meme Y. Le root est distingue par la largeur
-  // (nodeWidthFor) + un bord plus epais (.node.root dans le CSS).
+  // Uniform height: perfect alignment of the vertical centres on the lane, so
+  // every arrow leaves at the same Y. The root is distinguished by its width
+  // (nodeWidthFor) + a thicker border (.node.root in the CSS).
   return 100;
 }
 
 // ========================================
-// POSITIONNEMENT
+// POSITIONING
 // ========================================
 
 function calculateYLevels(nodes, links) {
   if (!nodes || nodes.length === 0) return;
 
-  // === ETAPE 1 — Le tronc = plus longue chaine chronologique depuis la racine ===
-  // Au lieu de grouper par participants (qui peut fragmenter le tronc visible),
-  // on identifie la chaine parent→enfant la plus longue depuis nodes[0].
-  // Tous les noeuds sur cette chaine sont en lane 0 → tronc parfaitement horizontal.
+  // === STEP 1 — The trunk = longest chronological chain from the root ===
+  // Instead of grouping by participants (which can fragment the visible trunk),
+  // we identify the longest parent→child chain from nodes[0].
+  // Every node on that chain is in lane 0 → perfectly horizontal trunk.
   const childrenMap = new Map();
   if (Array.isArray(links)) {
     for (const l of links) {
@@ -252,12 +252,12 @@ function calculateYLevels(nodes, links) {
   const root = nodes[0];
   const trunkSet = new Set(root && root.messageId ? longestPath(root.messageId) : []);
 
-  // === ETAPE 2 — Lane 0 pour tout le tronc ===
+  // === STEP 2 — Lane 0 for the whole trunk ===
   nodes.forEach((n) => {
     if (trunkSet.has(n.messageId)) n.yLevel = 0;
   });
 
-  // === ETAPE 3 — Branches : grouper par participants, alterner ±1, ±2 ===
+  // === STEP 3 — Branches: group by participants, alternate ±1, ±2 ===
   const nonTrunk = nodes.filter((n) => !trunkSet.has(n.messageId));
   if (nonTrunk.length === 0) return;
 
@@ -342,7 +342,7 @@ function buildSVGDefs(svg) {
   });
   marker.appendChild(createEl('path', { d: 'M0,-5L10,0L0,5' }));
 
-  // Aurora stroke gradient (peach → orchidee) — reserve aux mails self-sent
+  // Aurora stroke gradient (peach → orchid) — reserved for self-sent emails
   const auroraGrad = createEl('linearGradient', {
     id: 'aurora-stroke-gradient',
     x1: '0%',
@@ -368,30 +368,31 @@ function linkAnchor(node, side) {
   return { x: node.x + LINK_END_OFFSET, y: cy };
 }
 
-// Orthogonal routing : pour chaque lien, on detecte les noeuds intermediaires
-// (ceux dont la bbox croise le segment AB en X). Si aucun → courbe Bezier classique.
-// Si presents → vrai path orthogonal (90° angles, lignes droites, coins arrondis) :
+// Orthogonal routing: for each link we detect the intermediate nodes (those
+// whose bbox crosses segment AB in X). If none → classic Bezier curve.
+// If some → a real orthogonal path (90° angles, straight lines, rounded
+// corners):
 //
 //   ●━━╮                                 ╭━━●
 //      ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 //
-// 5 segments + 4 coins arrondis :
-//   1. horizontal short (sortie source)
-//   2. vertical (monte/descend au routeY)
-//   3. horizontal au routeY (longue traversee)
-//   4. vertical (descend/monte vers cible)
-//   5. horizontal short (entree cible)
+// 5 segments + 4 rounded corners:
+//   1. horizontal short (source exit)
+//   2. vertical (rises/drops to routeY)
+//   3. horizontal at routeY (long traversal)
+//   4. vertical (drops/rises towards the target)
+//   5. horizontal short (target entry)
 const ROUTE_CLEARANCE = 24;
-const ROUTE_SIDE_PAD = 28; // distance horizontale source/cible avant le coude
-const ROUTE_CORNER_R = 10; // rayon des coins arrondis
+const ROUTE_SIDE_PAD = 28; // horizontal distance from source/target to the elbow
+const ROUTE_CORNER_R = 10; // rounded corner radius
 
 function findIntermediates(source, target, a, b) {
   if (!Array.isArray(positionedNodes)) return [];
   const xLow = Math.min(a.x, b.x);
   const xHigh = Math.max(a.x, b.x);
-  // Range Y reel de la trajectoire : on n'eleve la courbe que si un noeud croise
-  // realement la zone source→cible (un noeud lane -1 ne bloque pas un lien lane 0
-  // → lane 0 par exemple, donc inutile de monter au-dessus).
+  // Real Y range of the trajectory: we only lift the curve if a node actually
+  // crosses the source→target zone (a lane -1 node does not block a lane 0 →
+  // lane 0 link, for example, so there is no point rising above it).
   const linkYMin = Math.min(a.y, b.y);
   const linkYMax = Math.max(a.y, b.y);
   const out = [];
@@ -402,7 +403,7 @@ function findIntermediates(source, target, a, b) {
     if (nRight < xLow + 8 || nLeft > xHigh - 8) continue;
     const nTop = n.y;
     const nBottom = n.y + nodeHeightFor(n);
-    // Le noeud doit aussi croiser la trajectoire en Y pour etre un vrai obstacle
+    // The node must also cross the trajectory in Y to be a real obstacle
     if (nBottom < linkYMin - 4 || nTop > linkYMax + 4) continue;
     out.push(n);
   }
@@ -416,26 +417,28 @@ function createFluidCurve(source, target) {
 
   const intermediates = findIntermediates(source, target, a, b);
 
-  // Pas d'obstacle : Bezier classique lisse (= comportement de la 1ere version)
+  // No obstacle: smooth classic Bezier (= behaviour of the first version)
   if (intermediates.length === 0) {
     const cp1X = a.x + deltaX * CURVE_CONTROL_FACTOR_1;
     const cp2X = b.x - deltaX * CURVE_CONTROL_FACTOR_2;
     return `M${a.x},${a.y} C${cp1X},${a.y} ${cp2X},${b.y} ${b.x},${b.y}`;
   }
 
-  // Avec obstacle : on contourne par le haut OU par le bas selon ou sont les endpoints
+  // With an obstacle: we route above OR below depending on where the
+  // endpoints are
   const interTop = Math.min(...intermediates.map((n) => n.y));
   const interBottom = Math.max(...intermediates.map((n) => n.y + nodeHeightFor(n)));
   const interCenter = (interTop + interBottom) / 2;
   const endpointAvgY = (a.y + b.y) / 2;
   const routeAbove = endpointAvgY < interCenter;
-  // Optimisation : si la cible est DEJA au-dela de la zone obstaclee (par exemple
-  // cible lane -1 + obstacles lane 0 → cible plus haute que les obstacles), on
-  // route DIRECTEMENT au niveau cible. Pas besoin de detour UP-HORIZONTAL-UP_again.
+  // Optimisation: if the target is ALREADY beyond the obstructed zone (for
+  // example target lane -1 + obstacles lane 0 → target higher than the
+  // obstacles), we route DIRECTLY at the target level. No need for an
+  // UP-HORIZONTAL-UP_again detour.
   let routeY;
   if (routeAbove) {
     const safeAboveAll = interTop - ROUTE_CLEARANCE;
-    // routeY le plus proche de target tout en restant au-dessus des obstacles
+    // routeY as close to the target as possible while staying above the obstacles
     routeY = Math.min(safeAboveAll, b.y);
   } else {
     const safeBelowAll = interBottom + ROUTE_CLEARANCE;
@@ -444,7 +447,7 @@ function createFluidCurve(source, target) {
 
   const x1 = a.x + ROUTE_SIDE_PAD;
   const x2 = b.x - ROUTE_SIDE_PAD;
-  // Fallback Bezier si pas assez de place pour 2 turns
+  // Bezier fallback if there is not enough room for 2 turns
   if (x2 <= x1 + 2 * ROUTE_CORNER_R) {
     const cp1X = a.x + deltaX * CURVE_CONTROL_FACTOR_1;
     const cp2X = b.x - deltaX * CURVE_CONTROL_FACTOR_2;
@@ -452,7 +455,8 @@ function createFluidCurve(source, target) {
   }
 
   const r = ROUTE_CORNER_R;
-  // Cas degeneres : routeY au niveau d'un endpoint → pas de verticale necessaire de ce cote
+  // Degenerate cases: routeY level with an endpoint → no vertical needed on
+  // that side
   const flatStart = Math.abs(routeY - a.y) < r;
   const flatEnd = Math.abs(routeY - b.y) < r;
   const dy1 = Math.sign(routeY - a.y) || 1;
@@ -461,7 +465,7 @@ function createFluidCurve(source, target) {
   const segments = [`M ${a.x},${a.y}`];
 
   if (flatStart) {
-    // Source deja au routeY : ligne droite jusqu'au debut de la traversee
+    // Source already at routeY: straight line to the start of the traversal
     segments.push(`L ${x1},${routeY}`);
   } else {
     segments.push(`L ${x1 - r},${a.y}`);
@@ -470,7 +474,7 @@ function createFluidCurve(source, target) {
     segments.push(`Q ${x1},${routeY} ${x1 + r},${routeY}`);
   }
 
-  // Horizontale traversee
+  // Horizontal traversal
   if (flatEnd) {
     segments.push(`L ${b.x},${b.y}`);
   } else {
@@ -510,7 +514,7 @@ function buildAvatar(g, d, h) {
   const initial = (name || email || '?').trim().charAt(0).toUpperCase() || '?';
 
   const avatarG = createEl('g', { class: 'node-avatar' });
-  const cx = 14 + 11; // padding gauche 14 + radius 11
+  const cx = 14 + 11; // left padding 14 + radius 11
   const cy = h / 2 + 2;
 
   const circle = createEl('circle', {
@@ -535,7 +539,7 @@ function buildAvatar(g, d, h) {
 }
 
 function attachmentIconPath() {
-  // Paperclip simplifie — viewBox 0 0 16 16, stroke icon
+  // Simplified paperclip — viewBox 0 0 16 16, stroke icon
   return 'M11 5l-5 5a2 2 0 1 0 2.83 2.83L13 8a3.5 3.5 0 1 0-4.95-4.95L3 8.05';
 }
 
@@ -627,13 +631,13 @@ function buildNodes(parent, nodes, userEmail) {
       })
     );
 
-    // === Ligne 1 — Sujet ===
+    // === Line 1 — Subject ===
     const subj =
       d.subject && String(d.subject).trim()
         ? d.subject
         : d.bodyText
           ? String(d.bodyText).split('\n')[0]
-          : '(sans sujet)';
+          : '(no subject)';
     const subjectText = createEl('text', {
       class: 'node-text-primary',
       x: 14,
@@ -642,7 +646,7 @@ function buildNodes(parent, nodes, userEmail) {
     subjectText.textContent = truncateText(subj, 38);
     g.appendChild(subjectText);
 
-    // === Ligne 2 — Avatar + nom du sender ===
+    // === Line 2 — Avatar + sender name ===
     const { avatarRightX } = buildAvatar(g, d, h);
     const senderName = extractDisplayName(d.from);
     const senderText = createEl('text', {
@@ -653,7 +657,7 @@ function buildNodes(parent, nodes, userEmail) {
     senderText.textContent = truncateText(senderName, 22);
     g.appendChild(senderText);
 
-    // === Ligne 3 — Date relative + badges ===
+    // === Line 3 — Relative date + badges ===
     const metaY = h - 14;
     const dateText = createEl('text', {
       class: 'node-text-meta',
@@ -685,8 +689,8 @@ function buildNodes(parent, nodes, userEmail) {
 // ========================================
 
 function buildTimeline(linesGroup, nodes, height) {
-  // Construire l'index dateString → premier noeud (lu en O(1) par updateTimelines).
-  // On preserve la semantique du .find() precedent : premiere occurrence par date.
+  // Build the dateString → first node index (read in O(1) by updateTimelines).
+  // We preserve the semantics of the previous .find(): first occurrence per date.
   timelineNodeByDate = new Map();
   const uniqueDates = [];
   for (const d of nodes) {
@@ -715,7 +719,7 @@ function buildTimeline(linesGroup, nodes, height) {
       'data-date': dateStr,
     });
     const date = new Date(dateStr);
-    label.textContent = date.toLocaleDateString('fr-FR', {
+    label.textContent = date.toLocaleDateString('en-GB', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -924,9 +928,9 @@ function setupTooltips(svg, nodes) {
 
     el.addEventListener('mouseenter', (e) => {
       const tt = ensureTooltip();
-      tt.querySelector('.tree-tooltip-subject').textContent = d.subject || '(sans sujet)';
+      tt.querySelector('.tree-tooltip-subject').textContent = d.subject || '(no subject)';
       tt.querySelector('.tree-tooltip-meta').textContent =
-        `${d.from || 'Inconnu'} • ${formatFullDate(d.date)}`;
+        `${d.from || 'Unknown'} • ${formatFullDate(d.date)}`;
       tt.querySelector('.tree-tooltip-body').textContent = (d.bodyText || '').slice(0, 280);
       tt.classList.add('visible');
       positionTooltip(e);
@@ -1013,9 +1017,9 @@ function renderEmptyStateHTML() {
         <circle cx="56" cy="36" r="2.5"></circle>
         <circle cx="32" cy="6" r="2.5"></circle>
       </svg>
-      <h3 class="tree-empty-state-title">Pas encore de fil de reponses</h3>
+      <h3 class="tree-empty-state-title">No replies yet</h3>
       <p class="tree-empty-state-body">
-        Cette conversation n'a qu'un mail. L'arbre apparaitra des qu'il y aura une reponse.
+        This subject has only one email. The tree will appear as soon as there is a reply.
       </p>
     </div>
   `;
@@ -1041,7 +1045,7 @@ function renderSkeletonHTML() {
 }
 
 // ========================================
-// RENDU PRINCIPAL
+// MAIN RENDER
 // ========================================
 
 function renderTree(containerId) {
@@ -1051,7 +1055,7 @@ function renderTree(containerId) {
   const treeData = treeDataStore.get(containerId);
   if (!treeData || !treeData.nodes || treeData.nodes.length === 0) return;
 
-  // Cas 1 nœud unique → empty state (pas d'arbre a afficher)
+  // Single-node case → empty state (no tree to display)
   if (treeData.nodes.length === 1) {
     container.innerHTML = renderEmptyStateHTML();
     return;
@@ -1107,7 +1111,7 @@ function renderTree(containerId) {
 }
 
 // ========================================
-// INTERFACE COMPATIBLE
+// COMPATIBILITY INTERFACE
 // ========================================
 
 function createCompleteVisualization(tree, _options = {}) {
@@ -1132,13 +1136,13 @@ function createCompleteVisualization(tree, _options = {}) {
     </div>
   `;
 
-  // Purge des donnees d'arbre precedentes : un seul arbre est affiche a la fois,
-  // les anciens conteneurs ont ete retires du DOM. Evite la fuite memoire.
+  // Purge the previous tree data: only one tree is displayed at a time and the
+  // old containers have been removed from the DOM. Avoids the memory leak.
   treeDataStore.clear();
   treeDataStore.set(containerId, tree);
 
-  // Compteur d'abandon : si le conteneur reste a 0×0 (onglet cache, parent
-  // display:none, etc.), on ne boucle pas indefiniment sur requestAnimationFrame.
+  // Abort counter: if the container stays at 0×0 (hidden tab, parent with
+  // display:none, etc.), we do not loop forever on requestAnimationFrame.
   let renderAttempts = 0;
   const MAX_RENDER_ATTEMPTS = 60;
   function tryRender() {
@@ -1150,7 +1154,7 @@ function createCompleteVisualization(tree, _options = {}) {
     }
     if (++renderAttempts >= MAX_RENDER_ATTEMPTS) {
       console.warn(
-        `⚠️ Rendu de l'arbre abandonné : conteneur ${containerId} toujours 0×0 après ${MAX_RENDER_ATTEMPTS} frames`
+        `⚠️ Tree render abandoned: container ${containerId} still 0×0 after ${MAX_RENDER_ATTEMPTS} frames`
       );
       return;
     }

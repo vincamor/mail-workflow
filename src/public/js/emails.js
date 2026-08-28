@@ -1,5 +1,5 @@
 /**
- * Module de gestion du téléchargement des emails
+ * Email download management module
  */
 
 import { getCurrentFolderHandle } from './folders.js';
@@ -30,8 +30,8 @@ function updateInlineProgress(received, total, filtered = 0) {
   if (!fill || !text) return;
   const pct = total > 0 ? Math.round((received / total) * 100) : 0;
   fill.style.width = `${pct}%`;
-  const filteredText = filtered > 0 ? ` (${filtered} filtrés)` : '';
-  text.textContent = `Téléchargement : ${received}/${total} emails${filteredText} (${pct}%)`;
+  const filteredText = filtered > 0 ? ` (${filtered} filtered)` : '';
+  text.textContent = `Download: ${received}/${total} emails${filteredText} (${pct}%)`;
 }
 
 function hideInlineProgress() {
@@ -46,38 +46,38 @@ function getHtmlFileName(provider) {
   return provider === 'gmail' ? 'gmail_emails_html.jsonl' : 'outlook_emails_html.jsonl';
 }
 
-// ─── Comparaison de filtres (insensible à l'ordre des arrays) ────────────────
+// ─── Filter comparison (order-insensitive for arrays) ────────────────────────
 
 /**
- * Normalise un objet filtres pour comparaison stable :
- * - Trie les arrays (blacklistedSenders, blacklistedKeywords)
- * - Retire les champs qui ont leur valeur par défaut et qui n'existaient pas avant
- *   (backward compat : évite un re-download quand on ajoute un nouveau champ)
+ * Normalises a filters object for stable comparison:
+ * - Sorts the arrays (blacklistedSenders, blacklistedKeywords)
+ * - Removes fields that have their default value and did not exist before
+ *   (backward compat: avoids a re-download when a new field is added)
  */
 function normalizeFiltersForComparison(filters) {
   if (!filters) return null;
   const copy = { ...filters };
-  // Trier les arrays pour que l'ordre n'impacte pas la comparaison
+  // Sort the arrays so their order does not affect the comparison
   if (copy.blacklistedSenders) copy.blacklistedSenders = [...copy.blacklistedSenders].sort();
   if (copy.blacklistedKeywords) copy.blacklistedKeywords = [...copy.blacklistedKeywords].sort();
   if (copy.notificationKeywords) copy.notificationKeywords = [...copy.notificationKeywords].sort();
   if (copy.promotionalKeywords) copy.promotionalKeywords = [...copy.promotionalKeywords].sort();
-  // Retirer les champs qui n'impactent pas le contenu téléchargé
-  // (autoExcludeRepetitive n'affecte que le filtrage en cours, pas le résultat d'un re-download)
+  // Remove fields that do not affect the downloaded content
+  // (autoExcludeRepetitive only affects the current filtering, not the result of a re-download)
   delete copy.autoExcludeRepetitive;
   delete copy.blacklistedSubjects;
-  // customAfterDate : un changement de date doit bien déclencher un re-download
-  // useCustomAfterDate : idem
+  // customAfterDate: a date change should indeed trigger a re-download
+  // useCustomAfterDate: same
   return copy;
 }
 
-// ─── Metadata de sync ────────────────────────────────────────────────────────
+// ─── Sync metadata ────────────────────────────────────────────────────────
 
 /**
- * Lit le fichier de metadata de sync depuis le dossier utilisateur.
- * Retourne null si le fichier n'existe pas (= premier téléchargement).
- * @param {FileSystemDirectoryHandle} userFolderHandle - Dossier EmailWorkflow/{userId}/
- * @param {string} provider - "gmail" ou "outlook"
+ * Reads the sync metadata file from the user folder.
+ * Returns null if the file does not exist (= first download).
+ * @param {FileSystemDirectoryHandle} userFolderHandle - EmailWorkflow/{userId}/ folder
+ * @param {string} provider - "gmail" or "outlook"
  * @returns {Object|null}
  */
 export async function readSyncMetadata(userFolderHandle, provider) {
@@ -93,10 +93,10 @@ export async function readSyncMetadata(userFolderHandle, provider) {
 }
 
 /**
- * Écrit (ou écrase) le fichier de metadata de sync.
- * @param {FileSystemDirectoryHandle} userFolderHandle - Dossier EmailWorkflow/{userId}/
- * @param {string} provider - "gmail" ou "outlook"
- * @param {Object} metadata - Données à stocker
+ * Writes (or overwrites) the sync metadata file.
+ * @param {FileSystemDirectoryHandle} userFolderHandle - EmailWorkflow/{userId}/ folder
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {Object} metadata - Data to store
  */
 export async function writeSyncMetadata(userFolderHandle, provider, metadata) {
   const metaFileName = `${provider}_sync_metadata.json`;
@@ -105,23 +105,23 @@ export async function writeSyncMetadata(userFolderHandle, provider, metadata) {
     const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(metadata, null, 2));
     await writable.close();
-    console.log(`✅ Metadata sync écrite dans ${metaFileName}`);
+    console.log(`✅ Sync metadata written to ${metaFileName}`);
   } catch (e) {
-    console.error(`❌ Erreur écriture metadata sync:`, e);
+    console.error(`❌ Error writing sync metadata:`, e);
   }
 }
 
-// ─── Téléchargement des emails ────────────────────────────────────────────────
+// ─── Email download ────────────────────────────────────────────────────────
 
 /**
- * Télécharge une liste d'emails et les écrit dans le fichier JSONL.
- * @param {Array} availableMessageIds - IDs des messages à télécharger
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
+ * Downloads a list of emails and writes them to the JSONL file.
+ * @param {Array} availableMessageIds - IDs of the messages to download
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
  * @param {Object} options
- * @param {boolean} options.appendMode - true = ajout aux emails existants, false = réécriture complète
- * @param {boolean} options.silent - true = pas de dialog de confirmation (sync automatique)
- * @param {number} options.existingEmailCount - Nombre d'emails déjà présents (pour le total dans la metadata)
+ * @param {boolean} options.appendMode - true = append to existing emails, false = full rewrite
+ * @param {boolean} options.silent - true = no confirmation dialog (automatic sync)
+ * @param {number} options.existingEmailCount - Number of emails already present (for the total in the metadata)
  */
 export async function downloadEmails(availableMessageIds, provider, userId, options = {}) {
   const {
@@ -133,52 +133,52 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
   } = options;
 
   if (!availableMessageIds.length) {
-    if (!silent) toastInfo('Aucun nouvel email \u00e0 t\u00e9l\u00e9charger.');
+    if (!silent) toastInfo('No new emails to download.');
     return;
   }
 
   const currentFolderHandle = getCurrentFolderHandle();
   if (!currentFolderHandle) {
-    if (!silent) toastWarning('Veuillez d\u2019abord choisir un dossier de sauvegarde.');
+    if (!silent) toastWarning('Please choose a save folder first.');
     return;
   }
 
   if (!silent) {
     const confirmed = await showConfirmModal({
-      title: appendMode ? 'Ajouter des emails' : 'T\u00e9l\u00e9charger les emails',
+      title: appendMode ? 'Add emails' : 'Download emails',
       message: appendMode
-        ? `Ajouter <strong>${availableMessageIds.length}</strong> nouveaux emails \u00e0 votre collection\u00a0?<br><br>Les emails existants seront conserv\u00e9s.`
-        : `T\u00e9l\u00e9charger <strong>${availableMessageIds.length}</strong> emails en tranches de 500\u00a0?<br><br>Cette op\u00e9ration peut prendre plusieurs minutes.`,
+        ? `Add <strong>${availableMessageIds.length}</strong> new emails to your collection?<br><br>Existing emails will be kept.`
+        : `Download <strong>${availableMessageIds.length}</strong> emails in batches of 500?<br><br>This operation may take several minutes.`,
       html: true,
       type: 'info',
-      confirmText: appendMode ? 'Ajouter' : 'T\u00e9l\u00e9charger',
+      confirmText: appendMode ? 'Add' : 'Download',
     });
     if (!confirmed) return;
   }
 
-  // Declares hors du try pour rester accessibles dans le catch (fermeture des
-  // writables sur chemin d'erreur — sinon `writable` fuyait sur certains chemins
-  // alors que `htmlWritable` etait ferme).
+  // Declared outside the try so they stay accessible in the catch (closing
+  // the writables on the error path — otherwise `writable` leaked on some
+  // paths while `htmlWritable` was closed).
   let writable = null;
   let htmlWritable = null;
 
   try {
-    // Récupérer les filtres actuels
+    // Get the current filters
     const filters = getCurrentFilters();
 
-    // Afficher l'animation de téléchargement avec emails volants
+    // Show the download animation with flying emails
     showEmailDownloadAnimation(availableMessageIds.length);
     showInlineProgress();
 
-    // Afficher le statut de téléchargement
+    // Show the download status
     const statusDiv = document.getElementById('status');
-    statusDiv.textContent = `📦 Téléchargement de ${availableMessageIds.length} emails en cours...`;
+    statusDiv.textContent = `📦 Downloading ${availableMessageIds.length} emails...`;
 
-    // Initialiser le compteur à 0
+    // Initialise the counter at 0
     updateEmailDownloadCounter(0, availableMessageIds.length);
 
-    // Utiliser fetch pour envoyer les données (POST) et recevoir le stream SSE
-    // URL dynamique selon le provider — ne pas hardcoder /gmail/download-chunks
+    // Use fetch to send the data (POST) and receive the SSE stream
+    // Dynamic URL based on the provider — do not hardcode /gmail/download-chunks
     console.log(`📡 Download chunks — provider: ${provider}, URL: /${provider}/download-chunks`);
     const response = await fetch(`/${provider}/download-chunks`, {
       method: 'POST',
@@ -193,40 +193,40 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
     });
 
     if (!response.ok) {
-      throw new Error(`Erreur HTTP: ${response.status}`);
+      throw new Error(`HTTP error: ${response.status}`);
     }
 
-    // Résolution tolérante du dossier de données (crée la structure par défaut si absente).
+    // Tolerant resolution of the data folder (creates the default structure if missing).
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: true,
     });
 
-    // Déterminer le nom du fichier selon le provider
+    // Determine the file name based on the provider
     let fileName = 'emails.jsonl';
     if (provider === 'gmail') fileName = 'gmail_emails.jsonl';
     else if (provider === 'outlook') fileName = 'outlook_emails.jsonl';
 
-    // Préparer l'écriture selon le mode (writable est declare plus haut)
+    // Prepare the write based on the mode (writable is declared above)
     let tempFileHandle = null;
     const tempFileName = `${fileName}.temp`;
 
     if (appendMode) {
-      // Mode append : ouvrir le fichier existant et se positionner à la fin
+      // Append mode: open the existing file and seek to the end
       const finalFileHandle = await userFolderHandle.getFileHandle(fileName, { create: true });
       const existingFile = await finalFileHandle.getFile();
       writable = await finalFileHandle.createWritable({ keepExistingData: true });
       await writable.seek(existingFile.size);
       console.log(
-        `📎 Mode append: positionnement à la fin du fichier (${existingFile.size} octets existants)`
+        `📎 Append mode: seeking to the end of the file (${existingFile.size} existing bytes)`
       );
     } else {
-      // Mode overwrite : écrire dans un fichier temporaire puis remplacer
+      // Overwrite mode: write to a temp file then swap it in
       tempFileHandle = await userFolderHandle.getFileHandle(tempFileName, { create: true });
       writable = await tempFileHandle.createWritable();
     }
 
     // HTML companion file — same mode (append or overwrite) as main file
-    // (htmlWritable est declare plus haut pour etre accessible dans le catch)
+    // (htmlWritable is declared above so it is accessible in the catch)
     let tempHtmlFileHandle = null;
     const htmlFileName = getHtmlFileName(provider);
     const tempHtmlFileName = `${htmlFileName}.temp`;
@@ -241,13 +241,13 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       htmlWritable = await tempHtmlFileHandle.createWritable();
     }
 
-    // Lire le stream SSE et écrire directement chunk par chunk
+    // Read the SSE stream and write directly chunk by chunk
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
     let downloadResult = null;
     let emailsWritten = 0;
-    let maxInternalDate = null; // Pour la metadata de sync
+    let maxInternalDate = null; // For the sync metadata
     const accumulatedEmails = [];
     let lastMilestoneCount = 0;
 
@@ -259,7 +259,7 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
 
         buffer += decoder.decode(value, { stream: true });
 
-        // Traiter les événements SSE
+        // Process the SSE events
         const lines = buffer.split('\n');
         buffer = lines.pop();
 
@@ -268,9 +268,9 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
             const data = JSON.parse(line.substring(6));
 
             if (data.type === 'start') {
-              console.log(`🚀 Démarrage: ${data.totalEmails} emails en ${data.totalChunks} chunks`);
+              console.log(`🚀 Starting: ${data.totalEmails} emails in ${data.totalChunks} chunks`);
             } else if (data.type === 'emails') {
-              // Écrire directement chunk par chunk sans accumuler en mémoire
+              // Write directly chunk by chunk without accumulating in memory
               for (const email of data.emails) {
                 // Write bodyHtml to companion file
                 if (email.bodyHtml) {
@@ -288,14 +288,14 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                 } = email;
                 await writable.write(JSON.stringify(emailWithoutHtml) + '\n');
                 emailsWritten++;
-                // Suivre la date max pour la metadata de sync
+                // Track the max date for the sync metadata
                 if (email.internalDate) {
                   const ts = parseInt(email.internalDate);
                   if (!maxInternalDate || ts > maxInternalDate) maxInternalDate = ts;
                 }
               }
               console.log(
-                `💾 ${data.emails.length} emails écrits sur disque (total: ${emailsWritten} écrits)`
+                `💾 ${data.emails.length} emails written to disk (total: ${emailsWritten} written)`
               );
 
               // Accumulate for progressive analysis
@@ -312,31 +312,29 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                       totalRequested: availableMessageIds.length,
                     });
                   } catch (e) {
-                    console.warn('⚠️ Erreur dans onMilestone:', e);
+                    console.warn('⚠️ Error in onMilestone:', e);
                   }
                 }
               }
 
-              // Mise à jour visuelle immédiate pendant l'écriture
+              // Immediate visual update while writing
               const progress = (emailsWritten / availableMessageIds.length) * 100;
-              updateLoadingOverlay(
-                `Écriture sur disque... ${emailsWritten} emails sauvegardés`,
-                progress
-              );
+              updateLoadingOverlay(`Writing to disk... ${emailsWritten} emails saved`, progress);
             } else if (data.type === 'progress') {
-              // Mise à jour en temps réel à chaque chunk
+              // Real-time update on each chunk
               const chunkInfo = `Chunk ${data.chunkIndex}/${data.totalChunks}`;
 
-              // Mise à jour de l'overlay avec compteur animé
+              // Update the overlay with the animated counter
               updateEmailDownloadCounter(data.totalRetrieved, data.totalRequested, chunkInfo);
 
-              // Mise à jour du status avec info filtres
-              const filteredInfo = data.totalFiltered > 0 ? ` (${data.totalFiltered} filtrés)` : '';
+              // Update the status with filter info
+              const filteredInfo =
+                data.totalFiltered > 0 ? ` (${data.totalFiltered} filtered)` : '';
               statusDiv.textContent = `📦 ${data.totalRetrieved} / ${data.totalRequested} emails${filteredInfo} - ${chunkInfo}`;
 
-              // Log pour debug
+              // Debug log
               console.log(
-                `📊 Progression: ${data.totalRetrieved}/${data.totalRequested} (${data.percentage}%) - ${chunkInfo}${filteredInfo}`
+                `📊 Progress: ${data.totalRetrieved}/${data.totalRequested} (${data.percentage}%) - ${chunkInfo}${filteredInfo}`
               );
               updateInlineProgress(data.totalRetrieved, data.totalRequested, data.totalFiltered);
             } else if (data.type === 'complete') {
@@ -350,18 +348,18 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                     totalRequested: availableMessageIds.length,
                   });
                 } catch (e) {
-                  console.warn('⚠️ Erreur dans onMilestone (final):', e);
+                  console.warn('⚠️ Error in onMilestone (final):', e);
                 }
               }
-              console.log(`\n📊 ═══ BILAN TÉLÉCHARGEMENT ═══`);
-              console.log(`   Emails demandés: ${data.totalRequested}`);
-              console.log(`   Emails gardés: ${data.totalRetrieved}`);
+              console.log(`\n📊 ═══ DOWNLOAD SUMMARY ═══`);
+              console.log(`   Emails requested: ${data.totalRequested}`);
+              console.log(`   Emails kept: ${data.totalRetrieved}`);
               console.log(
-                `   Emails filtrés (règles): ${data.totalFiltered - (data.totalAutoExcluded || 0)}`
+                `   Emails filtered (rules): ${data.totalFiltered - (data.totalAutoExcluded || 0)}`
               );
-              console.log(`   Emails auto-exclus: ${data.totalAutoExcluded || 0}`);
+              console.log(`   Emails auto-excluded: ${data.totalAutoExcluded || 0}`);
               if (data.autoExcludedSenders && data.autoExcludedSenders.length > 0) {
-                console.log(`   Senders auto-exclus:`);
+                console.log(`   Auto-excluded senders:`);
                 data.autoExcludedSenders.forEach((s) => console.log(`     → ${s}`));
               }
               if (data.topSenders && data.topSenders.length > 0) {
@@ -371,16 +369,16 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                     `     ${s.status.padEnd(12)} | ${String(s.count).padStart(3)} mails | ${s.sender}`
                   );
                   if (s.normalized) {
-                    console.log(`       sujets originaux: ${JSON.stringify(s.subjects)}`);
-                    console.log(`       sujets normalises: ${JSON.stringify(s.normalized)}`);
+                    console.log(`       original subjects: ${JSON.stringify(s.subjects)}`);
+                    console.log(`       normalised subjects: ${JSON.stringify(s.normalized)}`);
                     console.log(
-                      `       match: ${s.maxMatch}/5 | body moy: ${s.avgBody} | body lengths: [${s.bodyLengths}]`
+                      `       match: ${s.maxMatch}/5 | avg body: ${s.avgBody} | body lengths: [${s.bodyLengths}]`
                     );
                   }
                 });
               }
               console.log(`═══════════════════════════════\n`);
-              // Persister les senders auto-exclus dans la blacklist
+              // Persist the auto-excluded senders to the blocklist
               if (data.autoExcludedSenders && data.autoExcludedSenders.length > 0) {
                 try {
                   const liveFilters = getCurrentFilters();
@@ -400,14 +398,14 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
                       const { saveFilters } = await import('./emailFilters.js');
                       const { updateCurrentFilters } = await import('./filterUI.js');
                       await saveFilters(liveFilters);
-                      updateCurrentFilters(liveFilters); // sync en mémoire
+                      updateCurrentFilters(liveFilters); // sync in memory
                       console.log(
-                        `✅ ${added} sender(s) ajoutés à la blacklist pour les prochains téléchargements`
+                        `✅ ${added} sender(s) added to the blocklist for future downloads`
                       );
                     }
                   }
                 } catch (e) {
-                  console.warn('⚠️ Impossible de persister les senders auto-exclus:', e);
+                  console.warn('⚠️ Unable to persist the auto-excluded senders:', e);
                 }
               }
             } else if (data.type === 'error') {
@@ -419,30 +417,30 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
     } finally {
       await writable.close();
       if (htmlWritable) await htmlWritable.close();
-      console.log(`💾 Fichier fermé: ${emailsWritten} emails écrits`);
+      console.log(`💾 File closed: ${emailsWritten} emails written`);
     }
 
     if (!downloadResult || !downloadResult.success) {
-      throw new Error(downloadResult?.message || 'Erreur de téléchargement');
+      throw new Error(downloadResult?.message || 'Download error');
     }
 
     const filteredText =
-      downloadResult.totalFiltered > 0 ? ` (${downloadResult.totalFiltered} filtrés)` : '';
+      downloadResult.totalFiltered > 0 ? ` (${downloadResult.totalFiltered} filtered)` : '';
     const autoText =
       downloadResult.totalAutoExcluded > 0
-        ? ` (${downloadResult.totalAutoExcluded} auto-exclus)`
+        ? ` (${downloadResult.totalAutoExcluded} auto-excluded)`
         : '';
-    statusDiv.textContent = `✅ ${downloadResult.totalRetrieved} emails téléchargés${filteredText}${autoText}`;
+    statusDiv.textContent = `✅ ${downloadResult.totalRetrieved} emails downloaded${filteredText}${autoText}`;
 
     if (!appendMode) {
-      // Mode overwrite : copier le temp vers le fichier final puis supprimer le temp
-      console.log(`📧 ${emailsWritten} emails écrits dans ${tempFileName}`);
+      // Overwrite mode: copy the temp file to the final file then delete the temp file
+      console.log(`📧 ${emailsWritten} emails written to ${tempFileName}`);
 
       try {
         await userFolderHandle.removeEntry(fileName);
-        console.log(`🗑️ Ancien fichier ${fileName} supprimé`);
+        console.log(`🗑️ Old file ${fileName} deleted`);
       } catch (e) {
-        console.log(`Aucun ancien fichier à supprimer`);
+        console.log(`No old file to delete`);
       }
 
       const finalFileHandle = await userFolderHandle.getFileHandle(fileName, { create: true });
@@ -458,16 +456,16 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       }
 
       await finalWritable.close();
-      console.log(`✅ ${emailsWritten} emails copiés dans ${fileName}`);
+      console.log(`✅ ${emailsWritten} emails copied to ${fileName}`);
 
       try {
         await userFolderHandle.removeEntry(tempFileName);
-        console.log(`🗑️ Fichier temporaire ${tempFileName} supprimé`);
+        console.log(`🗑️ Temp file ${tempFileName} deleted`);
       } catch (e) {
-        console.log(`Impossible de supprimer ${tempFileName}`);
+        console.log(`Unable to delete ${tempFileName}`);
       }
     } else {
-      console.log(`✅ ${emailsWritten} emails ajoutés dans ${fileName} (mode append)`);
+      console.log(`✅ ${emailsWritten} emails added to ${fileName} (append mode)`);
     }
 
     // Also swap HTML companion file in overwrite mode
@@ -475,7 +473,7 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       try {
         await userFolderHandle.removeEntry(htmlFileName);
       } catch (e) {
-        console.log('Aucun ancien fichier HTML à supprimer');
+        console.log('No old HTML file to delete');
       }
 
       const finalHtmlHandle = await userFolderHandle.getFileHandle(htmlFileName, { create: true });
@@ -494,11 +492,11 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       try {
         await userFolderHandle.removeEntry(tempHtmlFileName);
       } catch (e) {
-        console.log('Impossible de supprimer le fichier HTML temporaire');
+        console.log('Unable to delete the temp HTML file');
       }
     }
 
-    // Écrire la metadata de sync
+    // Write the sync metadata
     const filtersToSave = getCurrentFilters();
     const metadataToWrite = {
       lastSyncDate: new Date().toISOString(),
@@ -508,20 +506,20 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       provider: provider,
     };
     await writeSyncMetadata(userFolderHandle, provider, metadataToWrite);
-    console.log(`💾 Metadata sync écrite:`);
+    console.log(`💾 Sync metadata written:`);
     console.log(`   ├─ lastSyncDate: ${metadataToWrite.lastSyncDate}`);
     console.log(`   ├─ totalEmails: ${metadataToWrite.totalEmails}`);
     console.log(
-      `   ├─ blacklistedSenders dans metadata: ${(filtersToSave?.blacklistedSenders || []).length} entrées`
+      `   ├─ blacklistedSenders in metadata: ${(filtersToSave?.blacklistedSenders || []).length} entries`
     );
     console.log(`   └─ autoExcludeRepetitive: ${filtersToSave?.autoExcludeRepetitive}`);
 
-    // Afficher l'animation de succès
+    // Show the success animation
     showDownloadSuccessAnimation(emailsWritten);
 
-    const actionText = appendMode ? 'ajoutés' : 'sauvegardés';
+    const actionText = appendMode ? 'added' : 'saved';
     const finalMessage =
-      `${emailsWritten} emails ${actionText} dans\n` +
+      `${emailsWritten} emails ${actionText} to\n` +
       `${currentFolderHandle.name}/EmailWorkflow/${userId}/${fileName}`;
 
     setTimeout(() => {
@@ -531,8 +529,8 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
       if (!silent) toastSuccess(finalMessage, 6000);
     }, 2000);
   } catch (e) {
-    // Fermer les deux writables si encore ouverts (close() sur un writable deja
-    // ferme rejette → chaque close est isole dans son propre try/catch).
+    // Close both writables if still open (close() on an already-closed
+    // writable rejects → each close is isolated in its own try/catch).
     try {
       if (writable) await writable.close();
     } catch (_) {}
@@ -542,22 +540,22 @@ export async function downloadEmails(availableMessageIds, provider, userId, opti
     hideInlineProgress();
     restoreStandardLoadingOverlay();
     hideLoadingOverlay();
-    if (!silent) toastError('Erreur lors de la sauvegarde : ' + e.message);
-    else console.error('Erreur téléchargement (mode silencieux):', e.message);
+    if (!silent) toastError('Error while saving: ' + e.message);
+    else console.error('Download error (silent mode):', e.message);
   }
 }
 
-// ─── Sync incrémentale ────────────────────────────────────────────────────────
+// ─── Incremental sync ────────────────────────────────────────────────────────
 
 /**
- * Crée le fichier gmail_sync_metadata.json depuis un JSONL déjà existant,
- * sans avoir besoin de re-télécharger les emails.
- * Appelé automatiquement par syncEmails() si le JSONL existe mais pas la metadata.
+ * Creates the gmail_sync_metadata.json file from an already existing JSONL,
+ * without needing to re-download the emails.
+ * Called automatically by syncEmails() if the JSONL exists but the metadata does not.
  *
- * @param {FileSystemDirectoryHandle} userFolderHandle - Dossier EmailWorkflow/{userId}/
- * @param {string} provider - "gmail" ou "outlook"
- * @param {Object} currentFilters - Filtres actuellement actifs
- * @returns {boolean} true si le bootstrap a réussi, false si le JSONL n'existe pas
+ * @param {FileSystemDirectoryHandle} userFolderHandle - EmailWorkflow/{userId}/ folder
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {Object} currentFilters - Currently active filters
+ * @returns {boolean} true if the bootstrap succeeded, false if the JSONL does not exist
  */
 async function bootstrapSyncMetadata(userFolderHandle, provider, currentFilters) {
   const fileName = provider === 'gmail' ? 'gmail_emails.jsonl' : 'outlook_emails.jsonl';
@@ -570,7 +568,7 @@ async function bootstrapSyncMetadata(userFolderHandle, provider, currentFilters)
 
     console.log(`🔧 Bootstrap metadata depuis ${fileName} (${Math.round(file.size / 1024)} Ko)...`);
 
-    // Lire le fichier en streaming pour trouver le max internalDate sans tout charger
+    // Read the file in streaming mode to find the max internalDate without loading it all
     const stream = file.stream();
     const textDecoder = new TextDecoder();
     let buffer = '';
@@ -592,12 +590,12 @@ async function bootstrapSyncMetadata(userFolderHandle, provider, currentFilters)
             if (!maxInternalDate || ts > maxInternalDate) maxInternalDate = ts;
           }
         } catch (e) {
-          // Ligne malformée, ignorée
+          // Malformed line, ignored
         }
       }
     }
 
-    // Traiter la dernière ligne
+    // Process the last line
     if (buffer.trim()) {
       try {
         const email = JSON.parse(buffer);
@@ -611,69 +609,69 @@ async function bootstrapSyncMetadata(userFolderHandle, provider, currentFilters)
 
     if (totalEmails === 0) return false;
 
-    // Écrire la metadata
+    // Write the metadata
     await writeSyncMetadata(userFolderHandle, provider, {
       lastSyncDate: new Date().toISOString(),
       lastInternalDate: maxInternalDate ? String(maxInternalDate) : null,
       totalEmails: totalEmails,
       filtersUsed: currentFilters,
       provider: provider,
-      bootstrapped: true, // Marqueur pour savoir que la metadata a été créée depuis un JSONL existant
+      bootstrapped: true, // Marker to know the metadata was created from an existing JSONL
     });
 
     console.log(
-      `✅ Bootstrap terminé: ${totalEmails} emails indexés, dernier email: ${maxInternalDate ? new Date(maxInternalDate).toISOString() : 'inconnu'}`
+      `✅ Bootstrap complete: ${totalEmails} emails indexed, last email: ${maxInternalDate ? new Date(maxInternalDate).toISOString() : 'unknown'}`
     );
     return true;
   } catch (e) {
-    // Le fichier JSONL n'existe pas
+    // The JSONL file does not exist
     return false;
   }
 }
 
 /**
- * Orchestre la synchronisation incrémentale des emails.
- * - Si aucune metadata : premier téléchargement (comportement existant).
- * - Si filtres changés  : re-téléchargement complet (mode strict).
- * - Sinon              : téléchargement uniquement des emails plus récents + déduplication.
+ * Orchestrates the incremental sync of emails.
+ * - If no metadata: first download (existing behaviour).
+ * - If filters changed: full re-download (strict mode).
+ * - Otherwise: download only the more recent emails + deduplication.
  *
- * Appelée automatiquement au chargement de la page ET par le bouton "Mettre à jour".
+ * Called automatically on page load AND by the "Update" button.
  *
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId   - Email de l'utilisateur
- * @returns {boolean} true si une sync a été effectuée, false si rien à faire
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId   - User email
+ * @returns {boolean} true if a sync was performed, false if there was nothing to do
  */
 export async function syncEmails(provider, userId) {
   const currentFolderHandle = getCurrentFolderHandle();
   if (!currentFolderHandle) {
-    console.log('📁 Aucun dossier sélectionné, sync annulée');
+    console.log('📁 No folder selected, sync cancelled');
     return false;
   }
 
   try {
-    // Résolution tolérante du dossier de données.
+    // Tolerant resolution of the data folder.
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: false,
     });
     if (!userFolderHandle) {
-      // Le dossier n'existe pas encore : premier téléchargement manuel requis
-      console.log('📁 Dossier de données inexistant — premier téléchargement requis');
+      // The folder does not exist yet: a manual first download is required
+      console.log('📁 Data folder does not exist — first download required');
       return false;
     }
 
-    // Lire la metadata de la dernière sync
+    // Read the metadata from the last sync
     let metadata = await readSyncMetadata(userFolderHandle, provider);
     const currentFilters = getCurrentFilters();
 
-    // Aucune metadata mais un fichier JSONL existe déjà → bootstrap automatique
+    // No metadata but a JSONL file already exists → automatic bootstrap
     if (!metadata) {
       const bootstrapped = await bootstrapSyncMetadata(userFolderHandle, provider, currentFilters);
       if (bootstrapped) {
         metadata = await readSyncMetadata(userFolderHandle, provider);
-        console.log('🔧 Metadata créée depuis le JSONL existant — sync incrémentale activée');
+        console.log('🔧 Metadata created from the existing JSONL — incremental sync enabled');
       } else {
-        // Ni metadata ni fichier JSONL : premier téléchargement requis manuellement
-        console.log('📋 Aucun fichier email trouvé — premier téléchargement requis');
+        // Neither metadata nor JSONL file: a manual first download is required
+        console.log('📋 No email file found — first download required');
         return false;
       }
     }
@@ -682,12 +680,12 @@ export async function syncEmails(provider, userId) {
     const normalizedCurrent = normalizeFiltersForComparison(currentFilters);
     const filtersChanged = JSON.stringify(normalizedSaved) !== JSON.stringify(normalizedCurrent);
 
-    console.log(`🔍 Comparaison filtres pour sync:`);
+    console.log(`🔍 Comparing filters for sync:`);
     console.log(
-      `   ├─ blacklistedSenders (metadata): ${(metadata.filtersUsed?.blacklistedSenders || []).length} entrées`
+      `   ├─ blacklistedSenders (metadata): ${(metadata.filtersUsed?.blacklistedSenders || []).length} entries`
     );
     console.log(
-      `   ├─ blacklistedSenders (actuels): ${(currentFilters?.blacklistedSenders || []).length} entrées`
+      `   ├─ blacklistedSenders (current): ${(currentFilters?.blacklistedSenders || []).length} entries`
     );
     console.log(`   └─ filtersChanged: ${filtersChanged}`);
 
@@ -695,29 +693,29 @@ export async function syncEmails(provider, userId) {
     let appendMode = false;
 
     if (filtersChanged) {
-      console.log('🔄 Filtres modifiés depuis la dernière sync → re-téléchargement complet');
+      console.log('🔄 Filters changed since the last sync → full re-download');
       afterDate = null;
       appendMode = false;
     } else {
       afterDate = metadata.lastInternalDate;
       appendMode = true;
       if (afterDate) {
-        console.log(`📅 Sync incrémentale depuis: ${new Date(parseInt(afterDate)).toISOString()}`);
+        console.log(`📅 Incremental sync since: ${new Date(parseInt(afterDate)).toISOString()}`);
       }
     }
 
-    // Si une date personnalisée est définie et qu'on n'a pas de date plus récente,
-    // l'utiliser comme borne inférieure
+    // If a custom date is set and we do not have a more recent date,
+    // use it as the lower bound
     if (currentFilters && currentFilters.useCustomAfterDate && currentFilters.customAfterDate) {
       const customMs = String(new Date(currentFilters.customAfterDate).getTime());
       if (!afterDate || parseInt(customMs) > parseInt(afterDate)) {
         afterDate = customMs;
-        console.log(`📅 Date personnalisée appliquée: ${currentFilters.customAfterDate}`);
+        console.log(`📅 Custom date applied: ${currentFilters.customAfterDate}`);
       }
     }
 
-    // Récupérer les IDs depuis le bon provider (avec filtre de date si incrémental)
-    // URL dynamique — ne pas hardcoder /gmail/emails
+    // Get the IDs from the right provider (with a date filter if incremental)
+    // Dynamic URL — do not hardcode /gmail/emails
     const params = new URLSearchParams();
     if (currentFilters) params.set('filters', JSON.stringify(currentFilters));
     if (afterDate) params.set('afterDate', afterDate);
@@ -728,21 +726,21 @@ export async function syncEmails(provider, userId) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (errorData.requiresLogout) {
-        console.warn('⚠️ Token expiré — sync annulée');
+        console.warn('⚠️ Expired token — sync cancelled');
         return false;
       }
-      throw new Error(`Erreur récupération IDs: ${response.status}`);
+      throw new Error(`Error retrieving IDs: ${response.status}`);
     }
 
     const emailData = await response.json();
     let messageIds = emailData.messageIds || [];
 
     if (messageIds.length === 0) {
-      console.log('✅ Aucun nouvel email — collection à jour');
+      console.log('✅ No new emails — collection up to date');
       return false;
     }
 
-    // Déduplication : retirer les IDs déjà présents dans le JSONL
+    // Deduplication: remove IDs already present in the JSONL
     if (appendMode) {
       const fileName = provider === 'gmail' ? 'gmail_emails.jsonl' : 'outlook_emails.jsonl';
       let existingIds = new Set();
@@ -751,24 +749,24 @@ export async function syncEmails(provider, userId) {
         const fileHandle = await userFolderHandle.getFileHandle(fileName);
         const fileInfo = await analyzeEmailFile(fileHandle);
         existingIds = fileInfo.emailIds || new Set();
-        console.log(`📊 ${existingIds.size} emails existants dans le fichier`);
+        console.log(`📊 ${existingIds.size} existing emails in the file`);
       } catch (e) {
-        // Fichier JSONL absent : tous les IDs sont nouveaux
+        // JSONL file missing: all IDs are new
       }
 
       const countBefore = messageIds.length;
       messageIds = messageIds.filter((m) => !existingIds.has(m.id));
       console.log(
-        `🔍 Déduplication: ${countBefore} IDs récupérés → ${messageIds.length} véritablement nouveaux`
+        `🔍 Deduplication: ${countBefore} IDs retrieved → ${messageIds.length} genuinely new`
       );
 
       if (messageIds.length === 0) {
-        console.log('✅ Tous les emails récents sont déjà synchronisés');
+        console.log('✅ All recent emails are already synced');
         return false;
       }
     }
 
-    // Lancer le téléchargement (silencieux, en mode append ou overwrite)
+    // Start the download (silent, append or overwrite mode)
     await downloadEmails(messageIds, provider, userId, {
       appendMode: appendMode,
       silent: true,
@@ -777,45 +775,45 @@ export async function syncEmails(provider, userId) {
 
     return true;
   } catch (error) {
-    console.error('❌ Erreur sync emails:', error);
+    console.error('❌ Error syncing emails:', error);
     return false;
   }
 }
 
-// ─── Polling léger (badge "nouveaux emails") ──────────────────────────────────
+// ─── Lightweight polling ("new emails" badge) ─────────────────────────────────
 
 let _pollingInterval = null;
 
 /**
- * Vérifie silencieusement le nombre de nouveaux emails disponibles
- * et met à jour le badge du bouton "Mettre à jour".
- * N'effectue aucun téléchargement.
+ * Silently checks the number of new emails available
+ * and updates the "Update" button badge.
+ * Performs no download.
  *
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId   - Email de l'utilisateur
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId   - User email
  */
 export async function checkForNewEmails(provider, userId) {
   const currentFolderHandle = getCurrentFolderHandle();
   if (!currentFolderHandle) return;
 
   try {
-    // Accéder au dossier utilisateur
+    // Access the user folder
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: false,
     });
-    if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+    if (!userFolderHandle) throw new Error('Data folder not found');
 
     const metadata = await readSyncMetadata(userFolderHandle, provider);
     if (!metadata || !metadata.lastInternalDate) return;
 
-    // Appel léger : juste un comptage, pas de contenu
+    // Lightweight call: just a count, no content
     const params = new URLSearchParams({ afterDate: metadata.lastInternalDate });
     if (metadata.filtersUsed) params.set('filters', JSON.stringify(metadata.filtersUsed));
 
     const response = await fetch(`/${provider}/count?${params.toString()}`);
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (err.requiresLogout) console.warn('⚠️ Token expiré — polling annulé');
+      if (err.requiresLogout) console.warn('⚠️ Expired token — polling cancelled');
       return;
     }
 
@@ -823,16 +821,16 @@ export async function checkForNewEmails(provider, userId) {
     updateNewEmailsBadge(newCount);
 
     if (newCount > 0) {
-      console.log(`📬 ${newCount} nouveaux emails disponibles`);
+      console.log(`📬 ${newCount} new emails available`);
     }
   } catch (e) {
-    // Silencieux : dossier inexistant, pas de metadata, etc.
+    // Silent: folder missing, no metadata, etc.
   }
 }
 
 /**
- * Met à jour le badge du bouton "Mettre à jour".
- * @param {number} count - Nombre de nouveaux emails (0 = aucun)
+ * Updates the "Update" button badge.
+ * @param {number} count - Number of new emails (0 = none)
  */
 export function updateNewEmailsBadge(count) {
   const btn = document.getElementById('updateEmailsBtn');
@@ -843,7 +841,7 @@ export function updateNewEmailsBadge(count) {
 
   if (count > 0) {
     btn.classList.add('has-updates');
-    btn.title = `${count} nouveaux emails disponibles`;
+    btn.title = `${count} new emails available`;
   } else {
     btn.classList.remove('has-updates');
     btn.title = '';
@@ -851,25 +849,25 @@ export function updateNewEmailsBadge(count) {
 }
 
 /**
- * Démarre le polling toutes les `intervalMs` ms (défaut : 5 min).
- * Lance un premier check immédiatement.
+ * Starts polling every `intervalMs` ms (default: 5 min).
+ * Runs a first check immediately.
  *
  * @param {string} provider
  * @param {string} userId
- * @param {number} intervalMs - Intervalle en millisecondes (défaut : 300 000 = 5 min)
+ * @param {number} intervalMs - Interval in milliseconds (default: 300,000 = 5 min)
  */
 export function startEmailPolling(provider, userId, intervalMs = 5 * 60 * 1000) {
   stopEmailPolling();
 
-  // Premier check immédiat au démarrage
+  // First check immediately on start
   checkForNewEmails(provider, userId);
 
   _pollingInterval = setInterval(() => checkForNewEmails(provider, userId), intervalMs);
-  console.log(`🔄 Polling démarré (toutes les ${intervalMs / 1000}s)`);
+  console.log(`🔄 Polling started (every ${intervalMs / 1000}s)`);
 }
 
 /**
- * Arrête le polling en cours.
+ * Stops the current polling.
  */
 export function stopEmailPolling() {
   if (_pollingInterval) {
@@ -879,21 +877,21 @@ export function stopEmailPolling() {
 }
 
 /**
- * Supprime du fichier JSONL tous les emails dont le sujet (nettoyé) correspond.
- * Réécriture atomique : lecture → filtre → écriture dans un temp → swap.
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
- * @param {string} subjectToRemove - Sujet à supprimer (déjà nettoyé, sans Re:/Fwd:)
+ * Removes from the JSONL file every email whose (cleaned) subject matches.
+ * Atomic rewrite: read → filter → write to a temp file → swap.
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
+ * @param {string} subjectToRemove - Subject to remove (already cleaned, without Re:/Fwd:)
  * @returns {Promise<{removed: number, kept: number}>}
  */
 export async function cleanupExcludedSubjectFromJSONL(provider, userId, subjectToRemove) {
   const currentFolderHandle = getCurrentFolderHandle();
-  if (!currentFolderHandle) throw new Error('Aucun dossier sélectionné');
+  if (!currentFolderHandle) throw new Error('No folder selected');
 
   const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
     create: false,
   });
-  if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+  if (!userFolderHandle) throw new Error('Data folder not found');
 
   const fileName = provider === 'gmail' ? 'gmail_emails.jsonl' : 'outlook_emails.jsonl';
   const tempFileName = `${fileName}.cleanup.temp`;
@@ -963,7 +961,7 @@ export async function cleanupExcludedSubjectFromJSONL(provider, userId, subjectT
   try {
     await userFolderHandle.removeEntry(fileName);
   } catch (e) {
-    console.warn("⚠️ Impossible de supprimer l'ancien fichier:", e);
+    console.warn('⚠️ Unable to delete the old file:', e);
   }
 
   // Copy temp to final (rename not available in File System Access API)
@@ -984,7 +982,7 @@ export async function cleanupExcludedSubjectFromJSONL(provider, userId, subjectT
   try {
     await userFolderHandle.removeEntry(tempFileName);
   } catch (e) {
-    console.log('Impossible de supprimer le fichier temporaire');
+    console.log('Unable to delete the temp file');
   }
 
   // Also clean HTML companion file
@@ -1049,9 +1047,9 @@ export async function cleanupExcludedSubjectFromJSONL(provider, userId, subjectT
       try {
         await userFolderHandle.removeEntry(tempHtmlName);
       } catch (e) {}
-      console.log(`🗑️ Fichier HTML nettoyé: ${removedIds.size} entrées supprimées`);
+      console.log(`🗑️ HTML file cleaned: ${removedIds.size} entries removed`);
     } catch (e) {
-      console.log('ℹ️ Pas de fichier HTML companion à nettoyer');
+      console.log('ℹ️ No HTML companion file to clean');
     }
   }
 
@@ -1063,20 +1061,20 @@ export async function cleanupExcludedSubjectFromJSONL(provider, userId, subjectT
   }
 
   console.log(
-    `🗑️ Nettoyage JSONL: ${removed} emails supprimés, ${kept} conservés pour le sujet "${subjectToRemove}"`
+    `🗑️ JSONL clean-up: ${removed} emails removed, ${kept} kept for the subject "${subjectToRemove}"`
   );
   return { removed, kept };
 }
 
 /**
- * Version batch : supprime plusieurs sujets du JSONL (et de son HTML companion)
- * en UNE SEULE passe sur chaque fichier. Beaucoup plus rapide que d'appeler
- * cleanupExcludedSubjectFromJSONL en boucle pour N sujets (qui lirait le fichier
- * N fois).
+ * Batch version: removes several subjects from the JSONL (and its HTML companion)
+ * in A SINGLE pass over each file. Much faster than calling
+ * cleanupExcludedSubjectFromJSONL in a loop for N subjects (which would read the
+ * file N times).
  *
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
- * @param {string[]} subjectsToRemove - Sujets a supprimer (deja nettoyes, sans Re:/Fwd:)
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
+ * @param {string[]} subjectsToRemove - Subjects to remove (already cleaned, without Re:/Fwd:)
  * @returns {Promise<{removed: number, kept: number}>}
  */
 export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subjectsToRemove) {
@@ -1085,13 +1083,13 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
   }
 
   const currentFolderHandle = getCurrentFolderHandle();
-  if (!currentFolderHandle) throw new Error('Aucun dossier sélectionné');
+  if (!currentFolderHandle) throw new Error('No folder selected');
 
   const excludeSet = new Set(subjectsToRemove);
   const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
     create: false,
   });
-  if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+  if (!userFolderHandle) throw new Error('Data folder not found');
 
   const fileName = provider === 'gmail' ? 'gmail_emails.jsonl' : 'outlook_emails.jsonl';
   const tempFileName = `${fileName}.cleanup.temp`;
@@ -1137,11 +1135,11 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
 
   await writable.close();
 
-  // Atomic swap JSONL principal
+  // Atomic swap of the main JSONL
   try {
     await userFolderHandle.removeEntry(fileName);
   } catch (e) {
-    console.warn("⚠️ Impossible de supprimer l'ancien fichier:", e);
+    console.warn('⚠️ Unable to delete the old file:', e);
   }
 
   const finalFileHandle = await userFolderHandle.getFileHandle(fileName, { create: true });
@@ -1159,7 +1157,7 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
     await userFolderHandle.removeEntry(tempFileName);
   } catch (e) {}
 
-  // HTML companion — UNE SEULE passe aussi
+  // HTML companion — also A SINGLE pass
   if (removedIds.size > 0) {
     const htmlFileName = getHtmlFileName(provider);
     try {
@@ -1211,9 +1209,9 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
       try {
         await userFolderHandle.removeEntry(tempHtmlName);
       } catch (e) {}
-      console.log(`🗑️ HTML companion nettoye: ${removedIds.size} entrees supprimees`);
+      console.log(`🗑️ HTML companion cleaned: ${removedIds.size} entries removed`);
     } catch (e) {
-      console.log('ℹ️ Pas de fichier HTML companion a nettoyer');
+      console.log('ℹ️ No HTML companion file to clean');
     }
   }
 
@@ -1225,22 +1223,22 @@ export async function cleanupExcludedSubjectsFromJSONL(provider, userId, subject
   }
 
   console.log(
-    `🗑️ Nettoyage JSONL batch: ${removed} emails supprimes (${subjectsToRemove.length} sujets), ${kept} conserves`
+    `🗑️ Batch JSONL clean-up: ${removed} emails removed (${subjectsToRemove.length} subjects), ${kept} kept`
   );
   return { removed, kept };
 }
 
 /**
- * Charge le bodyHtml d'un email depuis le fichier HTML companion.
- * Lecture en streaming — s'arrête dès que l'ID est trouvé.
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
- * @param {string} emailId - ID de l'email à charger
- * @returns {Promise<string|null>} bodyHtml ou null si non trouvé
+ * Loads the bodyHtml of an email from the HTML companion file.
+ * Streaming read — stops as soon as the ID is found.
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
+ * @param {string} emailId - ID of the email to load
+ * @returns {Promise<string|null>} bodyHtml or null if not found
  */
 export async function loadBodyHtmlForEmail(provider, userId, emailId) {
-  // Mode demo : le companion HTML est un asset embarque, lu via le meme faux
-  // handle que le JSONL principal — la logique de scan ci-dessous est partagee.
+  // Demo mode: the HTML companion is an embedded asset, read through the same fake
+  // handle as the main JSONL — the scan logic below is shared.
   if (isDemoMode()) {
     const demoHandle = await getDemoHtmlFileHandle(provider);
     if (!demoHandle) return null;
@@ -1254,21 +1252,21 @@ export async function loadBodyHtmlForEmail(provider, userId, emailId) {
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: false,
     });
-    if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+    if (!userFolderHandle) throw new Error('Data folder not found');
     const htmlFileName = getHtmlFileName(provider);
 
     const fileHandle = await userFolderHandle.getFileHandle(htmlFileName);
     return await scanHtmlCompanionForEmail(fileHandle, emailId);
   } catch (e) {
-    console.warn('⚠️ Impossible de charger bodyHtml:', e.message);
+    console.warn('⚠️ Unable to load bodyHtml:', e.message);
     return null;
   }
 }
 
 /**
- * Scanne un fichier companion HTML ligne par ligne et retourne le bodyHtml de l'ID.
- * Lecture en streaming — s'arrête dès que l'ID est trouvé.
- * @param {FileSystemFileHandle} fileHandle - Handle (reel ou duck-type) du companion
+ * Scans an HTML companion file line by line and returns the bodyHtml for the ID.
+ * Streaming read — stops as soon as the ID is found.
+ * @param {FileSystemFileHandle} fileHandle - Handle (real or duck-typed) of the companion
  * @param {string} emailId
  * @returns {Promise<string|null>}
  */
@@ -1307,18 +1305,18 @@ async function scanHtmlCompanionForEmail(fileHandle, emailId) {
 
     return null;
   } catch (e) {
-    console.warn('⚠️ Impossible de charger bodyHtml:', e.message);
+    console.warn('⚠️ Unable to load bodyHtml:', e.message);
     return null;
   }
 }
 
 /**
- * Re-télécharge les emails manquants du JSONL (sans filtre de date).
- * Utilisé après rétablissement d'un sujet exclu : fetch tous les IDs depuis l'API,
- * déduplique contre le JSONL existant, télécharge les manquants en mode append.
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
- * @returns {Promise<boolean>} true si des emails ont été téléchargés
+ * Re-downloads emails missing from the JSONL (without a date filter).
+ * Used after restoring an excluded subject: fetches all IDs from the API,
+ * deduplicates against the existing JSONL, downloads the missing ones in append mode.
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
+ * @returns {Promise<boolean>} true if emails were downloaded
  */
 export async function redownloadMissingEmails(provider, userId) {
   const currentFolderHandle = getCurrentFolderHandle();
@@ -1328,7 +1326,7 @@ export async function redownloadMissingEmails(provider, userId) {
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: false,
     });
-    if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+    if (!userFolderHandle) throw new Error('Data folder not found');
 
     const filters = getCurrentFilters();
 
@@ -1337,15 +1335,15 @@ export async function redownloadMissingEmails(provider, userId) {
     if (filters) params.set('filters', JSON.stringify(filters));
     // Explicitly NO afterDate parameter
 
-    console.log(`🔄 Re-téléchargement: récupération de tous les IDs depuis ${provider}...`);
+    console.log(`🔄 Re-download: retrieving all IDs from ${provider}...`);
     const response = await fetch(`/${provider}/emails?${params.toString()}`);
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       if (err.requiresLogout) {
-        console.warn('⚠️ Token expiré — re-téléchargement annulé');
+        console.warn('⚠️ Expired token — re-download cancelled');
         return false;
       }
-      throw new Error(`Erreur récupération IDs: ${response.status}`);
+      throw new Error(`Error retrieving IDs: ${response.status}`);
     }
 
     const emailData = await response.json();
@@ -1366,10 +1364,10 @@ export async function redownloadMissingEmails(provider, userId) {
 
     const countBefore = messageIds.length;
     messageIds = messageIds.filter((m) => !existingIds.has(m.id));
-    console.log(`🔍 Déduplication: ${countBefore} IDs → ${messageIds.length} manquants`);
+    console.log(`🔍 Deduplication: ${countBefore} IDs → ${messageIds.length} missing`);
 
     if (messageIds.length === 0) {
-      console.log('✅ Aucun email manquant à re-télécharger');
+      console.log('✅ No missing emails to re-download');
       return false;
     }
 
@@ -1381,20 +1379,20 @@ export async function redownloadMissingEmails(provider, userId) {
       existingEmailCount: metadata?.totalEmails || existingIds.size,
     });
 
-    console.log(`✅ ${messageIds.length} emails re-téléchargés`);
+    console.log(`✅ ${messageIds.length} emails re-downloaded`);
     return true;
   } catch (e) {
-    console.error('❌ Erreur re-téléchargement:', e);
+    console.error('❌ Error re-downloading:', e);
     return false;
   }
 }
 
 /**
- * Migre un JSONL ancien format (avec bodyHtml) vers le nouveau format split.
- * Détecte automatiquement si la migration est nécessaire en lisant la première ligne.
- * @param {string} provider - "gmail" ou "outlook"
- * @param {string} userId - Email de l'utilisateur
- * @returns {Promise<boolean>} true si migration effectuée
+ * Migrates an old-format JSONL (with bodyHtml) to the new split format.
+ * Automatically detects whether migration is needed by reading the first line.
+ * @param {string} provider - "gmail" or "outlook"
+ * @param {string} userId - User email
+ * @returns {Promise<boolean>} true if migration was performed
  */
 export async function migrateJsonlIfNeeded(provider, userId) {
   const currentFolderHandle = getCurrentFolderHandle();
@@ -1404,7 +1402,7 @@ export async function migrateJsonlIfNeeded(provider, userId) {
     const userFolderHandle = await resolveUserFolderHandle(currentFolderHandle, userId, {
       create: false,
     });
-    if (!userFolderHandle) throw new Error('Dossier de données introuvable');
+    if (!userFolderHandle) throw new Error('Data folder not found');
 
     const fileName = provider === 'gmail' ? 'gmail_emails.jsonl' : 'outlook_emails.jsonl';
     const htmlFileName = getHtmlFileName(provider);
@@ -1445,7 +1443,7 @@ export async function migrateJsonlIfNeeded(provider, userId) {
     }
 
     // Migration needed
-    console.log('🔄 Migration JSONL détectée — extraction de bodyHtml vers fichier séparé...');
+    console.log('🔄 JSONL migration detected — extracting bodyHtml to a separate file...');
 
     const tempMainName = `${fileName}.migrate.temp`;
     const tempMainHandle = await userFolderHandle.getFileHandle(tempMainName, { create: true });
@@ -1532,11 +1530,11 @@ export async function migrateJsonlIfNeeded(provider, userId) {
     } catch (e) {}
 
     console.log(
-      `✅ Migration terminée: ${migrated} emails migrés, bodyHtml extrait vers ${htmlFileName}`
+      `✅ Migration complete: ${migrated} emails migrated, bodyHtml extracted to ${htmlFileName}`
     );
     return true;
   } catch (e) {
-    console.warn('⚠️ Migration JSONL échouée:', e.message);
+    console.warn('⚠️ JSONL migration failed:', e.message);
     return false;
   }
 }

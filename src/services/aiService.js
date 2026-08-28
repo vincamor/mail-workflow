@@ -1,6 +1,6 @@
 /**
  * aiService.js — Multi-provider LLM request building + Ollama API key validation
- * + validation anti-SSRF des baseUrl fournies par le client.
+ * + anti-SSRF validation of baseUrls provided by the client.
  */
 
 const dns = require('dns').promises;
@@ -9,27 +9,27 @@ const net = require('net');
 const OPENAI_COMPATIBLE_PROVIDERS = new Set(['openai', 'ollama', 'custom']);
 
 // ─────────────────────────────────────────────
-//  Anti-SSRF : validation des baseUrl client
+//  Anti-SSRF: validation of client baseUrls
 //
-//  Défense en couches :
-//  - Les routes /api/ai/* exigent une session authentifiée (requireAuth) : le
-//    proxy n'est PAS exposé anonymement à Internet.
-//  - openai / anthropic : allowlist stricte de domaines officiels (https only).
-//  - ollama : les hosts loopback (localhost:11434 etc.) ne sont acceptés que si
-//    ALLOW_LOCAL_AI=true dans l'env (allowlist host:port, surchargeable via
+//  Layered defense:
+//  - Routes /api/ai/* require an authenticated session (requireAuth): the
+//    proxy is NOT exposed anonymously to the Internet.
+//  - openai / anthropic: strict allowlist of official domains (https only).
+//  - ollama: loopback hosts (localhost:11434 etc.) are accepted only if
+//    ALLOW_LOCAL_AI=true in the env (host:port allowlist, overridable via
 //    LOCAL_AI_ALLOWED_HOSTS="host:port,host:port").
-//  - ollama distant / custom : le hostname est résolu via DNS et TOUTES les
-//    adresses retournées doivent être publiques (rejet loopback, RFC1918,
+//  - ollama remote / custom: the hostname is resolved via DNS and ALL
+//    returned addresses must be public (rejects loopback, RFC1918,
 //    link-local/metadata 169.254.0.0/16, CGNAT, ::1, ::, fc00::/7, fe80::/10,
-//    multicast, ET les formes IPv6 IPv4-mapped/compat/NAT64 quelle que soit
-//    leur sérialisation — cf. isPrivateIPv6/ipv6ToBigInt).
-//  - Les redirections sortantes sont refusées (redirect: 'manual' +
-//    rejet des 3xx dans fetchWithTimeout) : un provider public ne peut pas
-//    rediriger vers une IP privée/metadata non re-validée.
-//  Résiduel accepté : un DNS rebinding (TOCTOU entre résolution et fetch) reste
-//  théoriquement possible, mais seulement pour un utilisateur DÉJÀ authentifié
-//  ciblant l'app self-hosted à laquelle il est connecté — risque très réduit vs
-//  un open proxy anonyme. Mitigation complète = pin de l'IP validée (non fait).
+//    multicast, AND IPv6 forms IPv4-mapped/compat/NAT64 regardless of
+//    their serialization — see isPrivateIPv6/ipv6ToBigInt).
+//  - Outbound redirects are refused (redirect: 'manual' +
+//    3xx rejection in fetchWithTimeout): a public provider cannot
+//    redirect to a private/metadata IP without re-validation.
+//  Accepted residual: a DNS rebinding (TOCTOU between resolution and fetch) remains
+//  theoretically possible, but only for an ALREADY authenticated user
+//  targeting the self-hosted app they are connected to — greatly reduced risk vs
+//  an open anonymous proxy. Full mitigation = pinning the validated IP (not done).
 // ─────────────────────────────────────────────
 
 const PUBLIC_PROVIDER_HOSTS = {
@@ -37,7 +37,7 @@ const PUBLIC_PROVIDER_HOSTS = {
   anthropic: new Set(['api.anthropic.com']),
 };
 
-// Hostnames metadata cloud connus, bloqués explicitement (défense en profondeur)
+// Known cloud metadata hostnames, explicitly blocked (defense in depth)
 const BLOCKED_HOSTNAMES = new Set(['metadata.google.internal', 'metadata', 'instance-data']);
 
 function isPrivateIPv4(ip) {
@@ -53,16 +53,16 @@ function isPrivateIPv4(ip) {
   return false;
 }
 
-// Convertit une adresse IPv6 (toute forme : compressée, IPv4-mapped, -compat,
-// NAT64, avec quad-pointé embarqué) en BigInt 128 bits. null si non parsable.
-// NB : new URL() sérialise TOUJOURS les IPv4-mapped en hexa compressé
-// (::ffff:127.0.0.1 -> ::ffff:7f00:1) — l'ancienne regex dotted les ratait.
+// Converts an IPv6 address (any form: compressed, IPv4-mapped, -compat,
+// NAT64, with embedded quad-dotted) to 128-bit BigInt. null if unparsable.
+// NB: new URL() ALWAYS serializes IPv4-mapped as compressed hex
+// (::ffff:127.0.0.1 -> ::ffff:7f00:1) — old dotted regex missed them.
 function ipv6ToBigInt(ip) {
   let s = String(ip)
     .toLowerCase()
     .replace(/^\[|\]$/g, '')
     .split('%')[0];
-  // quad-pointé embarqué en fin d'adresse -> convertir en deux hextets
+  // embedded quad-dotted at end of address -> convert to two hextets
   const dotted = s.match(/^(.*:)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
   if (dotted) {
     const v4 = dotted[2].split('.').map(Number);
@@ -94,15 +94,15 @@ function ipv6ToBigInt(ip) {
 
 function isPrivateIPv6(ip) {
   const n = ipv6ToBigInt(ip);
-  if (n === null) return true; // non parsable → refus
-  if (n === 0n || n === 1n) return true; // :: et ::1
+  if (n === null) return true; // unparsable → reject
+  if (n === 0n || n === 1n) return true; // :: and ::1
   const high96 = n >> 32n;
   const embeddedV4 = () => {
     const v = Number(n & 0xffffffffn);
     return [(v >>> 24) & 0xff, (v >>> 16) & 0xff, (v >>> 8) & 0xff, v & 0xff].join('.');
   };
-  // IPv4-mapped ::ffff:0:0/96, IPv4-compat ::/96, NAT64 64:ff9b::/96 → tester le v4
-  const NAT64_PREFIX = 0x0064ff9bn << 64n; // 64:ff9b::/96 (96 bits de poids fort)
+  // IPv4-mapped ::ffff:0:0/96, IPv4-compat ::/96, NAT64 64:ff9b::/96 → test the v4
+  const NAT64_PREFIX = 0x0064ff9bn << 64n; // 64:ff9b::/96 (96 high bits)
   if (high96 === 0xffffn || high96 === 0n || high96 === NAT64_PREFIX) {
     return isPrivateIPv4(embeddedV4());
   }
@@ -119,7 +119,7 @@ function isPrivateIp(ip) {
     .replace(/^\[|\]$/g, '');
   if (net.isIPv4(bare)) return isPrivateIPv4(bare);
   if (net.isIPv6(bare)) return isPrivateIPv6(bare);
-  return true; // forme inconnue → prudence
+  return true; // unknown form → safety first
 }
 
 function isLoopbackHostname(hostname) {
@@ -141,10 +141,10 @@ function getLocalAiAllowlist() {
 }
 
 /**
- * Valide une baseUrl fournie par le client avant tout fetch côté serveur.
+ * Validates a baseUrl provided by the client before any server-side fetch.
  * @param {string} provider - 'openai' | 'anthropic' | 'ollama' | 'custom'
  * @param {string} baseUrl
- * @throws {Error} avec statusCode 400 si l'URL est refusée
+ * @throws {Error} with statusCode 400 if URL is rejected
  */
 async function assertSafeProviderUrl(provider, baseUrl) {
   const reject = (msg) => {
@@ -157,31 +157,31 @@ async function assertSafeProviderUrl(provider, baseUrl) {
   try {
     url = new URL(baseUrl);
   } catch {
-    reject('baseUrl invalide');
+    reject('invalid baseUrl');
   }
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    reject('baseUrl doit utiliser http ou https');
+    reject('baseUrl must use http or https');
   }
 
   const hostname = url.hostname.toLowerCase();
-  // hostname IPv6 dans une URL est entre crochets — URL.hostname les retire déjà,
-  // sauf le format [::1] qu'on normalise pour la comparaison allowlist
+  // IPv6 hostname in a URL is in brackets — URL.hostname removes them already,
+  // except [::1] format which we normalize for allowlist comparison
   const bareHost = hostname.replace(/^\[|\]$/g, '');
 
   if (BLOCKED_HOSTNAMES.has(bareHost)) {
-    reject('baseUrl refusée (endpoint interne)');
+    reject('baseUrl rejected (internal endpoint)');
   }
 
-  // Providers publics : allowlist stricte de domaines officiels
+  // Public providers: strict allowlist of official domains
   if (provider === 'openai' || provider === 'anthropic') {
     if (url.protocol !== 'https:' || !PUBLIC_PROVIDER_HOSTS[provider].has(bareHost)) {
-      reject(`baseUrl non autorisée pour le provider ${provider} (domaine officiel requis)`);
+      reject(`baseUrl not authorised for provider ${provider} (official domain required)`);
     }
     return;
   }
 
-  // Ollama local : uniquement via allowlist explicite + flag env
+  // Local Ollama: only via explicit allowlist + env flag
   const port = url.port || (url.protocol === 'https:' ? '443' : '80');
   const hostPort = `${url.hostname}:${port}`.toLowerCase();
   if (isLoopbackHostname(bareHost)) {
@@ -189,11 +189,11 @@ async function assertSafeProviderUrl(provider, baseUrl) {
       return;
     }
     reject(
-      'baseUrl locale refusée — définir ALLOW_LOCAL_AI=true pour autoriser Ollama local (127.0.0.1:11434)'
+      'local baseUrl rejected — set ALLOW_LOCAL_AI=true to allow local Ollama (127.0.0.1:11434)'
     );
   }
 
-  // ollama distant / custom : résolution DNS + rejet des adresses privées
+  // remote ollama / custom: DNS resolution + rejection of private addresses
   let addresses;
   if (net.isIP(bareHost)) {
     addresses = [{ address: bareHost }];
@@ -201,40 +201,40 @@ async function assertSafeProviderUrl(provider, baseUrl) {
     try {
       addresses = await dns.lookup(bareHost, { all: true, verbatim: true });
     } catch {
-      reject('baseUrl irrésoluble (DNS)');
+      reject('baseUrl unresolvable (DNS)');
     }
   }
   if (!addresses || addresses.length === 0) {
-    reject('baseUrl irrésoluble (DNS)');
+    reject('baseUrl unresolvable (DNS)');
   }
   for (const { address } of addresses) {
     if (isPrivateIp(address)) {
-      reject('baseUrl refusée (résout vers une adresse privée/loopback/link-local)');
+      reject('baseUrl rejected (resolves to a private/loopback/link-local address)');
     }
   }
 }
 
 // ─────────────────────────────────────────────
-//  Fetch sortant avec timeout (AbortController)
+//  Outbound fetch with timeout (AbortController)
 // ─────────────────────────────────────────────
 
 const OUTBOUND_TIMEOUT_MS = 30000;
 
 /**
- * fetch avec timeout de 30s jusqu'à la réception des headers.
- * Le timer est annulé une fois la réponse reçue : le streaming du body
- * (chat SSE) n'est volontairement pas limité en durée.
+ * fetch with 30s timeout until header reception.
+ * Timer is cancelled once response is received: body streaming
+ * (chat SSE) is intentionally not time-limited.
  */
 async function fetchWithTimeout(url, options = {}, timeoutMs = OUTBOUND_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    // redirect: 'manual' — anti-SSRF : ne jamais suivre une redirection (un
-    // provider public pourrait rediriger vers une IP privée/metadata que la
-    // validation baseUrl n'a pas vue). Un caller peut surcharger via options.
+    // redirect: 'manual' — anti-SSRF: never follow a redirect (a
+    // public provider could redirect to a private/metadata IP that
+    // baseUrl validation did not see). A caller can override via options.
     const res = await fetch(url, { redirect: 'manual', ...options, signal: controller.signal });
     if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
-      const err = new Error('Redirection du provider refusée (anti-SSRF)');
+      const err = new Error('Provider redirect rejected (anti-SSRF)');
       err.statusCode = 502;
       throw err;
     }
@@ -256,9 +256,9 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = OUTBOUND_TIMEOUT_
  * @returns {{ url: string, headers: Object, body: Object, method: string }}
  */
 function buildProviderRequest({ provider, apiKey, model, baseUrl, messages, stream }) {
-  if (!apiKey) throw new Error('Cle API requise');
-  if (!model) throw new Error('Modele requis');
-  if (!baseUrl) throw new Error('URL du provider requise');
+  if (!apiKey) throw new Error('API key required');
+  if (!model) throw new Error('Model required');
+  if (!baseUrl) throw new Error('Provider URL required');
 
   const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
 
@@ -305,7 +305,7 @@ function buildProviderRequest({ provider, apiKey, model, baseUrl, messages, stre
     };
   }
 
-  throw new Error('Provider non supporte');
+  throw new Error('Unsupported provider');
 }
 
 /**

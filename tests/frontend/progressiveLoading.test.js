@@ -4,13 +4,13 @@ const { describe, it, expect } = require('@jest/globals');
 // (ES module can't be required directly in Jest/Node)
 
 function extractSubject(email) {
-  let subject = email.subject || 'Sans sujet';
+  let subject = email.subject || 'No subject';
   subject = subject.replace(/^(Re:|Fwd:|FW:|RE:|FWD:)\s*/i, '');
   return subject.trim();
 }
 
 function extractFrom(email) {
-  return email.from || 'Inconnu';
+  return email.from || 'Unknown';
 }
 
 function extractDate(email) {

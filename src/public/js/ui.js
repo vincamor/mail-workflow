@@ -1,6 +1,6 @@
 /**
- * Module de gestion de l'interface utilisateur
- * Tiroirs, overlays, affichage
+ * User interface management module
+ * Drawers, overlays, display
  */
 
 import { renderTree, autoFit, toggleTimelines, getCurrentContainerId } from './treeRenderer.js';
@@ -8,9 +8,9 @@ import { handleDisconnect } from './auth.js';
 import { resetPanelSizes } from './panels.js';
 import { toggleFavoritesFilter, toggleMyConversationsFilter } from './analysis.js';
 
-// === GESTION DE L'OVERLAY DE CHARGEMENT ===
+// === LOADING OVERLAY MANAGEMENT ===
 
-export function showLoadingOverlay(text = 'Chargement en cours...', progress = 0) {
+export function showLoadingOverlay(text = 'Loading...', progress = 0) {
   const overlay = document.getElementById('loadingOverlay');
   const textElement = document.getElementById('loadingOverlayText');
   const progressBar = document.getElementById('loadingOverlayProgress');
@@ -41,11 +41,11 @@ export function hideLoadingOverlay() {
   }
 }
 
-// === ANIMATION TÉLÉCHARGEMENT D'EMAILS ===
+// === EMAIL DOWNLOAD ANIMATION ===
 
 /**
- * Affiche l'overlay avec animation d'emails et compteur
- * @param {number} totalEmails - Nombre total d'emails à télécharger
+ * Shows the overlay with email animation and counter
+ * @param {number} totalEmails - Total number of emails to download
  */
 export function showEmailDownloadAnimation(_totalEmails) {
   const overlay = document.getElementById('loadingOverlay');
@@ -53,7 +53,7 @@ export function showEmailDownloadAnimation(_totalEmails) {
 
   if (!content) return;
 
-  // Créer le contenu animé
+  // Create the animated content
   content.innerHTML = `
     <div class="email-animation-container">
       <div class="flying-email"><span class="icon icon-email icon-xl" aria-hidden="true"></span></div>
@@ -63,11 +63,11 @@ export function showEmailDownloadAnimation(_totalEmails) {
     
     <div class="email-counter">
       <div class="email-counter-number" id="emailDownloadCounter">0</div>
-      <div class="email-counter-label">Emails téléchargés</div>
+      <div class="email-counter-label">Emails downloaded</div>
     </div>
-    
+
     <div class="loading-overlay-text" id="loadingOverlayText">
-      Téléchargement en cours...
+      Downloading...
     </div>
     
     <div class="loading-overlay-progress">
@@ -82,10 +82,10 @@ export function showEmailDownloadAnimation(_totalEmails) {
 }
 
 /**
- * Met à jour le compteur d'emails téléchargés
- * @param {number} current - Nombre actuel d'emails téléchargés
- * @param {number} total - Nombre total d'emails
- * @param {string} extraInfo - Information additionnelle (ex: chunk en cours)
+ * Updates the downloaded email counter
+ * @param {number} current - Current number of emails downloaded
+ * @param {number} total - Total number of emails
+ * @param {string} extraInfo - Additional information (e.g. current chunk)
  */
 export function updateEmailDownloadCounter(current, total, extraInfo = '') {
   const counter = document.getElementById('emailDownloadCounter');
@@ -94,7 +94,7 @@ export function updateEmailDownloadCounter(current, total, extraInfo = '') {
   const percentage = document.getElementById('loadingOverlayPercentage');
 
   if (counter) {
-    // Animation du compteur
+    // Counter animation
     counter.style.animation = 'none';
     setTimeout(() => {
       counter.style.animation = 'pulse 0.5s ease';
@@ -105,7 +105,7 @@ export function updateEmailDownloadCounter(current, total, extraInfo = '') {
   const progress = total > 0 ? (current / total) * 100 : 0;
 
   if (textElement) {
-    const baseText = `Téléchargement en cours... ${current} / ${total}`;
+    const baseText = `Downloading... ${current} / ${total}`;
     textElement.textContent = extraInfo ? `${baseText} - ${extraInfo}` : baseText;
   }
 
@@ -119,8 +119,8 @@ export function updateEmailDownloadCounter(current, total, extraInfo = '') {
 }
 
 /**
- * Affiche l'animation de succès à la fin du téléchargement
- * @param {number} totalDownloaded - Nombre total d'emails téléchargés
+ * Shows the success animation at the end of the download
+ * @param {number} totalDownloaded - Total number of emails downloaded
  */
 export function showDownloadSuccessAnimation(totalDownloaded) {
   const overlay = document.getElementById('loadingOverlay');
@@ -132,18 +132,18 @@ export function showDownloadSuccessAnimation(totalDownloaded) {
     <div class="success-animation">
       <div class="success-icon"><span class="icon icon-check icon-xl" aria-hidden="true"></span></div>
       <div class="loading-overlay-text">
-        Téléchargement terminé !
+        Download complete!
       </div>
       <div class="email-counter">
         <div class="email-counter-number">${totalDownloaded}</div>
-        <div class="email-counter-label">Emails sauvegardés</div>
+        <div class="email-counter-label">Emails saved</div>
       </div>
     </div>
   `;
 }
 
 /**
- * Restaure l'overlay de chargement standard
+ * Restores the standard loading overlay
  */
 export function restoreStandardLoadingOverlay() {
   const overlay = document.getElementById('loadingOverlay');
@@ -154,7 +154,7 @@ export function restoreStandardLoadingOverlay() {
   content.innerHTML = `
     <div class="loading-spinner"></div>
     <div class="loading-overlay-text" id="loadingOverlayText">
-      Chargement en cours...
+      Loading...
     </div>
     <div class="loading-overlay-progress">
       <div class="loading-overlay-bar">
@@ -165,7 +165,7 @@ export function restoreStandardLoadingOverlay() {
   `;
 }
 
-// === GESTION DES TIROIRS ACCORDÉON ===
+// === ACCORDION DRAWER MANAGEMENT ===
 
 export function toggleDrawer(drawerId) {
   const drawer = document.getElementById(drawerId);
@@ -203,10 +203,10 @@ export function toggleUserDropdown() {
 }
 
 /**
- * Rend un élément (div/span utilisé comme bouton) activable au clavier :
- * Entrée et Espace déclenchent le même handler que le clic.
- * Ne modifie pas les attributs ARIA (posés statiquement dans index.html) —
- * se contente de câbler le comportement clavier attendu pour role="button".
+ * Makes an element (div/span used as a button) keyboard-activatable:
+ * Enter and Space trigger the same handler as a click.
+ * Does not modify ARIA attributes (set statically in index.html) —
+ * just wires up the expected keyboard behaviour for role="button".
  */
 function bindActivate(el, handler) {
   if (!el) return;
@@ -219,40 +219,40 @@ function bindActivate(el, handler) {
   });
 }
 
-// === GESTION DE L'INTERFACE CONNECTÉE ===
+// === SIGNED-IN INTERFACE MANAGEMENT ===
 
 export function showConnectedInterface(provider, email) {
-  // Basculer vers l'interface 3 panneaux
+  // Switch to the 3-panel interface
   document.getElementById('loginInterface').style.display = 'none';
   document.getElementById('appInterface').style.display = 'block';
 
-  // Afficher la section dossier dans le panneau droit
+  // Show the folder section in the right panel
   document.getElementById('folderSection').style.display = 'block';
 
-  // Afficher les sections du panneau droit
+  // Show the right panel sections
   document.getElementById('statisticsSection').style.display = 'block';
   document.getElementById('actionsSection').style.display = 'block';
   document.getElementById('aiSection').style.display = 'block';
 
-  // Afficher et mettre à jour la section utilisateur
+  // Show and update the user section
   const userSection = document.getElementById('userSection');
   userSection.style.display = 'block';
 
-  // Créer les initiales de l'email (2 premières lettres)
+  // Build initials from the email (first 2 letters)
   const initials = email.substring(0, 2).toUpperCase();
   document.getElementById('userAvatarBubble').textContent = initials;
 
-  // Mettre à jour les informations affichées
+  // Update the displayed information
   document.getElementById('avatarEmail').textContent = email;
   document.getElementById('avatarProvider').textContent = `via ${
     provider.charAt(0).toUpperCase() + provider.slice(1)
   }`;
 
-  // Afficher le compteur d'emails (sera mis à jour par la récupération des emails)
+  // Show the email counter (will be updated once emails are fetched)
   document.getElementById('emailCountInfo').style.display = 'block';
   document.getElementById('emailCount').textContent = '...';
 
-  // Masquer la vue par défaut
+  // Hide the default view
   document.getElementById('defaultView').style.display = 'none';
 }
 
@@ -260,12 +260,12 @@ export function showLoginInterface() {
   document.getElementById('loginInterface').style.display = 'block';
   document.getElementById('appInterface').style.display = 'none';
 
-  // Message de statut sur la page de connexion
+  // Status message on the sign-in page
   document.getElementById('loginStatus').innerHTML =
-    '<div class="login-info"><span class="icon icon-link icon-inline" aria-hidden="true"></span>Connectez-vous pour accéder à l\'analyse de vos emails</div>';
+    '<div class="login-info"><span class="icon icon-link icon-inline" aria-hidden="true"></span>Sign in to access your email analysis</div>';
 }
 
-// === FONCTIONS CONTRÔLE ARBRE (appelées depuis le HTML ou par JS) ===
+// === TREE CONTROL FUNCTIONS (called from HTML or JS) ===
 
 export function reloadCurrentTree() {
   const containerId = getCurrentContainerId();
@@ -281,36 +281,36 @@ export function toggleCurrentTreeTimelines() {
   if (containerId) toggleTimelines(containerId);
 }
 
-// === INITIALISATION DES ÉVÉNEMENTS UI (compatible CSP stricte) ===
+// === UI EVENT INITIALISATION (strict-CSP compatible) ===
 
 export function initUIEvents() {
-  // Tiroir dossier
+  // Folder drawer
   const folderHeader = document.querySelector('#folderSection .drawer-header');
   bindActivate(folderHeader, () => toggleDrawer('folderDrawer'));
 
-  // Tiroir statistiques
+  // Statistics drawer
   const statsHeader = document.querySelector('#statisticsSection .drawer-header');
   bindActivate(statsHeader, () => toggleDrawer('statisticsDrawer'));
 
-  // Tiroir actions
+  // Actions drawer
   const actionsHeader = document.querySelector('#actionsSection .drawer-header');
   bindActivate(actionsHeader, () => toggleDrawer('actionsDrawer'));
 
-  // Tiroir Assistant IA
+  // AI assistant drawer
   const aiHeader = document.querySelector('#aiSection .drawer-header');
   bindActivate(aiHeader, () => toggleDrawer('aiDrawer'));
 
-  // Filtre favoris
+  // Favourites filter
   const favoritesBtn = document.getElementById('favoritesFilterBtn');
   if (favoritesBtn) {
     favoritesBtn.addEventListener('click', () => toggleFavoritesFilter());
   }
 
-  // Filtre "Mes conversations"
+  // "My conversations" filter
   const myConvBtn = document.getElementById('myConversationsBtn');
   if (myConvBtn) myConvBtn.addEventListener('click', toggleMyConversationsFilter);
 
-  // Contrôles de la vue de l'arbre (barre d'outils flottante sur le canvas)
+  // Tree view controls (floating toolbar on the canvas)
   const autoFitTreeBtn = document.getElementById('autoFitTreeBtn');
   if (autoFitTreeBtn) {
     autoFitTreeBtn.addEventListener('click', () => autoFitCurrentTree());
@@ -326,7 +326,7 @@ export function initUIEvents() {
     resetPanelsBtn.addEventListener('click', () => resetPanelSizes());
   }
 
-  // Section utilisateur
+  // User section
   const userAvatar = document.querySelector('.user-avatar-container');
   bindActivate(userAvatar, () => toggleUserDropdown());
 

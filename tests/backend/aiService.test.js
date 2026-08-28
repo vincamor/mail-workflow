@@ -81,21 +81,21 @@ describe('buildProviderRequest', () => {
 
   it('rejects unknown provider', () => {
     expect(() => buildProviderRequest({ ...baseArgs, provider: 'gemini' })).toThrow(
-      'Provider non supporte'
+      'Unsupported provider'
     );
   });
 
   it('rejects empty apiKey', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, apiKey: '' })).toThrow('Cle API requise');
+    expect(() => buildProviderRequest({ ...baseArgs, apiKey: '' })).toThrow('API key required');
   });
 
   it('rejects empty model', () => {
-    expect(() => buildProviderRequest({ ...baseArgs, model: '' })).toThrow('Modele requis');
+    expect(() => buildProviderRequest({ ...baseArgs, model: '' })).toThrow('Model required');
   });
 
   it('rejects empty baseUrl', () => {
     expect(() => buildProviderRequest({ ...baseArgs, baseUrl: '' })).toThrow(
-      'URL du provider requise'
+      'Provider URL required'
     );
   });
 
@@ -165,51 +165,51 @@ describe('validateOllamaApiKey', () => {
 });
 
 // ─────────────────────────────────────────────
-//  assertSafeProviderUrl — anti-SSRF (régression des bypass prouvés en revue)
-//  Ces cas verrouillent notamment les formes IPv6 IPv4-mapped sérialisées en
-//  hexa par new URL() (::ffff:127.0.0.1 -> ::ffff:7f00:1), qui échappaient à
-//  l'ancienne regex dotted.
+//  assertSafeProviderUrl — anti-SSRF (regression of proven bypasses in review)
+//  These cases lock in particular the IPv6 IPv4-mapped forms serialized in
+//  hex by new URL() (::ffff:127.0.0.1 -> ::ffff:7f00:1), which escaped the
+//  old dotted regex.
 // ─────────────────────────────────────────────
 
 describe('assertSafeProviderUrl (anti-SSRF)', () => {
   const blocked = [
     ['custom', 'http://[::ffff:127.0.0.1]:11434/', 'IPv6-mapped loopback'],
     ['custom', 'http://[::ffff:169.254.169.254]/', 'IPv6-mapped metadata cloud'],
-    ['custom', 'http://[::ffff:a9fe:a9fe]/', 'IPv6-mapped metadata (hexa direct)'],
-    ['ollama', 'http://[::ffff:127.0.0.1]:11434/', 'gate ALLOW_LOCAL_AI non contournable'],
+    ['custom', 'http://[::ffff:a9fe:a9fe]/', 'IPv6-mapped metadata (hex direct)'],
+    ['ollama', 'http://[::ffff:127.0.0.1]:11434/', 'ALLOW_LOCAL_AI gate cannot be bypassed'],
     ['custom', 'http://[64:ff9b::7f00:1]/', 'NAT64 loopback'],
     ['custom', 'http://[::1]/', 'IPv6 loopback'],
     ['custom', 'http://[fe80::1]/', 'IPv6 link-local'],
     ['custom', 'http://[fc00::1]/', 'IPv6 ULA'],
-    ['custom', 'http://2130706433/', 'IPv4 en décimal (127.0.0.1)'],
-    ['custom', 'http://0x7f000001/', 'IPv4 en hexa (127.0.0.1)'],
-    ['custom', 'http://api.openai.com@169.254.169.254/', 'userinfo trompeur'],
-    ['custom', 'ftp://8.8.8.8/', 'protocole non http(s)'],
-    ['openai', 'https://evil.example.com/', 'openai hors allowlist'],
-    ['anthropic', 'http://api.anthropic.com/', 'anthropic sans https'],
+    ['custom', 'http://2130706433/', 'IPv4 in decimal (127.0.0.1)'],
+    ['custom', 'http://0x7f000001/', 'IPv4 in hex (127.0.0.1)'],
+    ['custom', 'http://api.openai.com@169.254.169.254/', 'deceptive userinfo'],
+    ['custom', 'ftp://8.8.8.8/', 'non-http(s) protocol'],
+    ['openai', 'https://evil.example.com/', 'openai outside allowlist'],
+    ['anthropic', 'http://api.anthropic.com/', 'anthropic without https'],
   ];
 
   for (const [provider, url, label] of blocked) {
-    it(`bloque : ${label}`, async () => {
+    it(`blocks: ${label}`, async () => {
       await expect(assertSafeProviderUrl(provider, url)).rejects.toThrow();
     });
   }
 
   const allowed = [
-    ['custom', 'http://8.8.8.8/', 'IP publique littérale'],
-    ['custom', 'http://[::ffff:8.8.8.8]/', 'IPv6-mapped vers IP publique'],
-    ['custom', 'http://[2606:4700:4700::1111]/', 'IPv6 public'],
-    ['openai', 'https://api.openai.com', 'openai domaine officiel'],
-    ['anthropic', 'https://api.anthropic.com', 'anthropic domaine officiel'],
+    ['custom', 'http://8.8.8.8/', 'literal public IP'],
+    ['custom', 'http://[::ffff:8.8.8.8]/', 'IPv6-mapped to public IP'],
+    ['custom', 'http://[2606:4700:4700::1111]/', 'public IPv6'],
+    ['openai', 'https://api.openai.com', 'openai official domain'],
+    ['anthropic', 'https://api.anthropic.com', 'anthropic official domain'],
   ];
 
   for (const [provider, url, label] of allowed) {
-    it(`autorise : ${label}`, async () => {
+    it(`allows: ${label}`, async () => {
       await expect(assertSafeProviderUrl(provider, url)).resolves.toBeUndefined();
     });
   }
 
-  it('autorise Ollama local uniquement si ALLOW_LOCAL_AI=true', async () => {
+  it('allows Ollama local only if ALLOW_LOCAL_AI=true', async () => {
     const prev = process.env.ALLOW_LOCAL_AI;
     process.env.ALLOW_LOCAL_AI = 'true';
     await expect(

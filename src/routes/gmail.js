@@ -4,44 +4,44 @@ const router = express.Router();
 const gmailService = require('../services/gmailService');
 const { requireAuth } = require('../middleware/authMiddleware');
 
-// Limiteurs (plan SaaS 1.4)
+// Rate limiters (SaaS plan 1.4)
 const oauthLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
-  message: { error: 'Trop de requêtes OAuth. Réessayez dans une minute.' },
+  message: { error: 'Too many OAuth requests. Try again in a minute.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const downloadLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 3,
-  message: { error: 'Trop de téléchargements. Réessayez dans une minute.' },
+  message: { error: 'Too many downloads. Try again in a minute.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const pollingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  message: { error: 'Trop de requêtes de polling.' },
+  message: { error: 'Too many polling requests.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Initie OAuth Gmail
+// Initializes Gmail OAuth
 router.get('/', oauthLimiter, gmailService.initAuth);
-// Callback OAuth Gmail
+// Gmail OAuth callback
 router.get('/callback', oauthLimiter, gmailService.handleCallback);
 
-// Récupère les emails pour l'utilisateur authentifié (tokens en session)
+// Retrieves emails for authenticated user (tokens in session)
 router.get('/emails', requireAuth, gmailService.getEmails);
 
-// Retourne uniquement le nombre de nouveaux messages (polling léger)
+// Returns only the count of new messages (light polling)
 router.get('/count', pollingLimiter, requireAuth, gmailService.getEmailCount);
 
-// Télécharge les emails par tranches
+// Downloads emails in chunks
 router.post('/download-chunks', downloadLimiter, requireAuth, gmailService.downloadEmailsInChunks);
 
-// Envoie une réponse à un email dans un thread existant
+// Sends a reply to an email in an existing thread
 router.post('/reply', requireAuth, gmailService.sendReply);
 
 module.exports = router;

@@ -1,15 +1,15 @@
 /**
- * Middleware d'authentification
- * Vérifie la présence des tokens en session
+ * Authentication middleware
+ * Verifies the presence of tokens in session
  */
 
 /**
- * Vérifie que l'utilisateur est authentifié
+ * Verifies that the user is authenticated
  */
 function requireAuth(req, res, next) {
   if (!req.session || !req.session.tokens) {
     return res.status(401).json({
-      error: 'Non authentifié',
+      error: 'Not authenticated',
       requiresLogout: true,
     });
   }

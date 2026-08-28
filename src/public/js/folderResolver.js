@@ -1,42 +1,42 @@
 /**
- * folderResolver.js — Résolution tolérante du dossier de données.
+ * folderResolver.js — Tolerant resolution of the data folder.
  *
- * L'app stocke les données sous <racine>/EmailWorkflow/<userId>/ (fichiers
+ * The app stores data under <root>/EmailWorkflow/<userId>/ (files
  * <provider>_emails.jsonl, _groups.json, _sync_metadata.json, companion HTML).
- * Historiquement, l'utilisateur DEVAIT sélectionner la racine exacte, sinon
- * rien ne se lisait — piège de niveau récurrent.
+ * Historically, the user HAD to select the exact root, otherwise nothing
+ * would load — a recurring gotcha.
  *
- * Ce module accepte les trois niveaux plausibles et renvoie toujours LE MÊME
- * dossier de données, pour que lecture, téléchargement, sync et nettoyage
- * soient cohérents (pas de structure imbriquée accidentelle) :
+ * This module accepts the three plausible levels and always returns THE SAME
+ * data folder, so that reading, downloading, syncing and cleaning up stay
+ * consistent (no accidental nested structure):
  *
- *   1) racine sélectionnée        → <root>/EmailWorkflow/<userId>
- *   2) dossier EmailWorkflow choisi → <root>/<userId>
- *   3) dossier compte choisi direct → <root> lui-même
- *        (son nom == userId, ou il contient déjà un *_emails.jsonl)
- *   4) rien trouvé + create:true    → crée <root>/EmailWorkflow/<userId>
- *        (structure par défaut, rétro-compatible pour un premier téléchargement)
+ *   1) root selected                 → <root>/EmailWorkflow/<userId>
+ *   2) EmailWorkflow folder selected  → <root>/<userId>
+ *   3) account folder selected directly → <root> itself
+ *        (its name == userId, or it already contains a *_emails.jsonl)
+ *   4) nothing found + create:true    → creates <root>/EmailWorkflow/<userId>
+ *        (default structure, backward-compatible for a first download)
  *
- * Fonction PURE (le handle racine est passé en paramètre) → testable sans DOM.
+ * PURE function (the root handle is passed as a parameter) → testable without a DOM.
  */
 
-/** Vrai si le dossier contient directement un fichier *_emails.jsonl. */
+/** True if the folder directly contains a *_emails.jsonl file. */
 async function folderHasEmailsJsonl(dirHandle) {
   try {
     for await (const [name, handle] of dirHandle.entries()) {
       if (handle.kind === 'file' && /_emails\.jsonl$/i.test(name)) return true;
     }
   } catch (e) {
-    // entries() peut échouer sans permission de lecture — on reste prudent.
+    // entries() can fail without read permission — stay cautious.
   }
   return false;
 }
 
 /**
- * @param {FileSystemDirectoryHandle|null} rootHandle - dossier choisi par l'utilisateur
- * @param {string} userId - email de l'utilisateur (= nom du dossier compte)
- * @param {{ create?: boolean }} [opts] - create:true pour créer la structure si absente
- * @returns {Promise<FileSystemDirectoryHandle|null>} le dossier de données, ou null
+ * @param {FileSystemDirectoryHandle|null} rootHandle - folder chosen by the user
+ * @param {string} userId - user's email (= account folder name)
+ * @param {{ create?: boolean }} [opts] - create:true to create the structure if missing
+ * @returns {Promise<FileSystemDirectoryHandle|null>} the data folder, or null
  */
 export async function resolveUserFolderHandle(rootHandle, userId, { create = false } = {}) {
   if (!rootHandle) return null;
@@ -49,23 +49,23 @@ export async function resolveUserFolderHandle(rootHandle, userId, { create = fal
     }
   };
 
-  // 1) racine : <root>/EmailWorkflow/<userId>
+  // 1) root: <root>/EmailWorkflow/<userId>
   const emailWorkflow = await tryDir(rootHandle, 'EmailWorkflow');
   if (emailWorkflow) {
     const user = await tryDir(emailWorkflow, userId);
     if (user) return user;
   }
 
-  // 2) dossier EmailWorkflow sélectionné : <root>/<userId>
+  // 2) EmailWorkflow folder selected: <root>/<userId>
   const directUser = await tryDir(rootHandle, userId);
   if (directUser) return directUser;
 
-  // 3) dossier compte sélectionné directement
+  // 3) account folder selected directly
   if (rootHandle.name === userId || (await folderHasEmailsJsonl(rootHandle))) {
     return rootHandle;
   }
 
-  // 4) rien trouvé : créer la structure par défaut si demandé
+  // 4) nothing found: create the default structure if requested
   if (create) {
     const ew = await rootHandle.getDirectoryHandle('EmailWorkflow', { create: true });
     return await ew.getDirectoryHandle(userId, { create: true });

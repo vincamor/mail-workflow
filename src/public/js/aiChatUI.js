@@ -1,9 +1,9 @@
 /**
- * UI du chat IA en split vertical du panneau droit.
- * - Drawers en haut (scroll vertical)
- * - Diviseur draggable (resize vertical)
- * - Chat en bas (pliable via bouton fermer)
- * - Auto-switch de sujet : changer de sujet dans la sidebar = bascule chat
+ * AI chat UI as a vertical split of the right panel.
+ * - Drawers at the top (vertical scroll)
+ * - Draggable divider (vertical resize)
+ * - Chat at the bottom (collapsible via close button)
+ * - Auto-switch subject: switching subject in the sidebar switches the chat
  */
 
 import { sendMessage, regenerateLastMessage, resetConversation } from './aiChat.js';
@@ -22,7 +22,7 @@ const MIN_HEIGHT_PX = 200;
 const STORAGE_KEY = 'mailproject-chat-panel-height';
 
 /**
- * Initialise le module et enregistre le getter d'emails + callback brouillon.
+ * Initialises the module and registers the email getter + draft callback.
  */
 export function initChatUI({ getEmailsForSubject, onUseDraft }) {
   getEmailsForSubjectFn = getEmailsForSubject;
@@ -31,8 +31,8 @@ export function initChatUI({ getEmailsForSubject, onUseDraft }) {
   wireStaticHandlers();
   wireDivider();
 
-  // Auto-switch : quand l'utilisateur change de sujet dans la sidebar,
-  // basculer le chat sur le nouveau sujet si le chat est ouvert.
+  // Auto-switch: when the user changes subject in the sidebar,
+  // switch the chat to the new subject if the chat is open.
   import('./analysis.js').then(({ onSubjectSelected }) => {
     onSubjectSelected(async (subjectKey, subjectInfo) => {
       if (!isOpen) return;
@@ -47,9 +47,9 @@ function injectPanelIfMissing() {
   const rightPanel = document.querySelector('.right-panel');
   if (!rightPanel) return;
 
-  // Le panneau droit devient une colonne flex bornee :
-  // le scroll vertical est delegue au wrapper drawers, pas au panel entier.
-  // Le padding-bottom compense le footer fixe (app-footer) qui overlay le bas.
+  // The right panel becomes a bounded flex column:
+  // vertical scroll is delegated to the drawers wrapper, not the whole panel.
+  // The padding-bottom compensates for the fixed footer (app-footer) that overlays the bottom.
   rightPanel.style.display = 'flex';
   rightPanel.style.flexDirection = 'column';
   rightPanel.style.minHeight = '0';
@@ -57,7 +57,7 @@ function injectPanelIfMissing() {
   rightPanel.style.boxSizing = 'border-box';
   rightPanel.style.paddingBottom = '36px';
 
-  // Wrapper des drawers existants (cree une fois, englobe tous les enfants actuels)
+  // Wrapper for the existing drawers (created once, wraps all current children)
   let drawersWrapper = document.getElementById('rightPanelDrawers');
   if (!drawersWrapper) {
     drawersWrapper = document.createElement('div');
@@ -71,31 +71,31 @@ function injectPanelIfMissing() {
 
   if (document.getElementById('aiChatPanel')) return;
 
-  // Diviseur draggable
+  // Draggable divider
   const divider = document.createElement('div');
   divider.id = 'aiChatDivider';
-  divider.title = 'Glisser pour redimensionner';
+  divider.title = 'Drag to resize';
   rightPanel.appendChild(divider);
 
-  // Panneau chat
+  // Chat panel
   const panel = document.createElement('div');
   panel.id = 'aiChatPanel';
   panel.innerHTML = `
     <div class="ai-chat-header">
       <h3 id="aiChatTitle"><span class="icon icon-chat icon-inline" aria-hidden="true"></span>Chat</h3>
-      <button id="aiChatExit" title="Fermer le chat" aria-label="Fermer le chat"><span class="icon icon-close icon-sm" aria-hidden="true"></span></button>
+      <button id="aiChatExit" title="Close the chat" aria-label="Close the chat"><span class="icon icon-close icon-sm" aria-hidden="true"></span></button>
     </div>
     <div id="aiChatMessages" class="ai-chat-messages"></div>
     <div class="ai-chat-stats" id="aiChatStats">0 messages • 0 tokens</div>
     <div class="ai-chat-input">
-      <button id="aiChatNewConv" title="Nouvelle conversation" aria-label="Nouvelle conversation"><span class="icon icon-refresh icon-sm" aria-hidden="true"></span></button>
-      <textarea id="aiChatInput" placeholder="Pose une question ou demande une redaction..."></textarea>
-      <button id="aiChatSend"><span class="icon icon-send icon-sm" aria-hidden="true"></span>Envoyer</button>
+      <button id="aiChatNewConv" title="New conversation" aria-label="New conversation"><span class="icon icon-refresh icon-sm" aria-hidden="true"></span></button>
+      <textarea id="aiChatInput" placeholder="Ask a question or request a draft..."></textarea>
+      <button id="aiChatSend"><span class="icon icon-send icon-sm" aria-hidden="true"></span>Send</button>
     </div>
   `;
   rightPanel.appendChild(panel);
 
-  // Hauteur restauree depuis localStorage
+  // Height restored from localStorage
   const saved = parseInt(localStorage.getItem(STORAGE_KEY) || '', 10);
   const initial = Number.isFinite(saved) && saved >= MIN_HEIGHT_PX ? saved : DEFAULT_HEIGHT_PX;
   panel.style.height = `${initial}px`;
@@ -138,7 +138,7 @@ function wireDivider() {
   document.addEventListener('mousemove', (e) => {
     if (!dragging) return;
     const rect = rightPanel.getBoundingClientRect();
-    // hauteur du panel chat = distance entre la souris et le bas du right panel
+    // chat panel height = distance between the mouse and the bottom of the right panel
     const newHeight = Math.round(rect.bottom - e.clientY);
     const maxHeight = Math.max(MIN_HEIGHT_PX, Math.floor(rect.height * 0.8));
     const clamped = Math.max(MIN_HEIGHT_PX, Math.min(maxHeight, newHeight));
@@ -156,8 +156,8 @@ function wireDivider() {
 }
 
 /**
- * Ouvre le panneau chat (split vertical) et charge le sujet.
- * Remplace l'ancien enterChatMode.
+ * Opens the chat panel (vertical split) and loads the subject.
+ * Replaces the old enterChatMode.
  */
 export async function openChatPanel(subjectKey, subjectInfo) {
   if (!subjectKey) return;
@@ -170,7 +170,7 @@ export async function openChatPanel(subjectKey, subjectInfo) {
 }
 
 /**
- * Ferme le panneau chat — les drawers reprennent toute la hauteur.
+ * Closes the chat panel — the drawers regain the full height.
  */
 export function closeChatPanel() {
   isOpen = false;
@@ -182,7 +182,7 @@ export function closeChatPanel() {
   currentSubjectInfo = null;
 }
 
-// Alias pour compat avec aiPanel.js existant
+// Alias for compatibility with the existing aiPanel.js
 export const enterChatMode = openChatPanel;
 export const exitChatMode = closeChatPanel;
 
@@ -220,9 +220,7 @@ function renderMessages(messages) {
       icon.className = 'icon icon-attachment icon-inline';
       icon.setAttribute('aria-hidden', 'true');
       bubble.appendChild(icon);
-      bubble.appendChild(
-        document.createTextNode(`Contexte du thread injecte (${mailCount} mails)`)
-      );
+      bubble.appendChild(document.createTextNode(`Subject context injected (${mailCount} mails)`));
     } else if (msg.role === 'user') {
       bubble.classList.add('ai-chat-message-user');
       bubble.textContent = msg.content;
@@ -235,7 +233,7 @@ function renderMessages(messages) {
       actions.className = 'ai-chat-message-actions';
       const draftBtn = document.createElement('button');
       draftBtn.innerHTML =
-        '<span class="icon icon-edit icon-sm" aria-hidden="true"></span>Utiliser comme brouillon';
+        '<span class="icon icon-edit icon-sm" aria-hidden="true"></span>Use as draft';
       draftBtn.addEventListener('click', () => {
         if (useDraftCallback) useDraftCallback(msg.content);
       });
@@ -243,7 +241,7 @@ function renderMessages(messages) {
       if (isLast) {
         const regenBtn = document.createElement('button');
         regenBtn.innerHTML =
-          '<span class="icon icon-refresh icon-sm" aria-hidden="true"></span>Regenerer';
+          '<span class="icon icon-refresh icon-sm" aria-hidden="true"></span>Regenerate';
         regenBtn.addEventListener('click', handleRegenerate);
         actions.appendChild(regenBtn);
       }
@@ -295,8 +293,8 @@ async function handleSend() {
     },
     onError: (err) => {
       assistantBubble.bubble.classList.remove('ai-chat-streaming-cursor');
-      assistantBubble.textNode.textContent = `Erreur : ${err}`;
-      toastError(`Chat IA : ${err}`);
+      assistantBubble.textNode.textContent = `Error: ${err}`;
+      toastError(`AI chat: ${err}`);
       isSending = false;
       setInputsDisabled(false);
     },
@@ -333,7 +331,7 @@ async function handleRegenerate() {
     },
     onError: (err) => {
       assistantBubble.bubble.classList.remove('ai-chat-streaming-cursor');
-      toastError(`Regeneration : ${err}`);
+      toastError(`Regeneration: ${err}`);
       isSending = false;
       setInputsDisabled(false);
     },
@@ -343,10 +341,10 @@ async function handleRegenerate() {
 async function handleNewConv() {
   if (isSending || !currentSubjectKey) return;
   const ok = await showConfirmModal({
-    title: 'Nouvelle conversation',
-    message: "Effacer l'historique du chat pour ce sujet ?",
+    title: 'New conversation',
+    message: 'Clear the chat history for this subject?',
     type: 'warning',
-    confirmText: 'Effacer',
+    confirmText: 'Clear',
   });
   if (!ok) return;
   await resetConversation(currentSubjectKey);

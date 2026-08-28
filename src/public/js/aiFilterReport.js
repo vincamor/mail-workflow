@@ -1,6 +1,6 @@
 /**
- * Module de rendu du rapport de filtrage IA
- * Affiche les resultats dans le panneau central avec 3 sections colorees
+ * Module for rendering the AI clean-up report
+ * Displays the results in the central panel with 3 coloured sections
  */
 
 import { getCurrentFilters, updateCurrentFilters } from './filterUI.js';
@@ -8,11 +8,11 @@ import { cleanupExcludedSubjectsFromJSONL } from './emails.js';
 import { refreshSubjectsDisplay } from './analysis.js';
 import { getFilterStats } from './aiFilter.js';
 
-// Etat courant du rapport (mutable pour les deplacements entre sections)
+// Current report state (mutable for moves between sections)
 let currentResults = null;
 
 /**
- * Affiche la barre de progression pendant l'analyse IA
+ * Shows the progress bar during AI analysis
  * @param {{ percent: number, message?: string }} progress
  */
 export function renderProgress(progress) {
@@ -20,11 +20,11 @@ export function renderProgress(progress) {
   container.style.display = 'block';
 
   const pct = Math.round(progress.percent || 0);
-  const msg = progress.message || 'Analyse en cours...';
+  const msg = progress.message || 'Analysis in progress...';
 
   container.innerHTML = `
     <div style="max-width: 480px; margin: 120px auto; text-align: center; font-family: var(--font-sans, Inter, sans-serif);">
-      <h2 style="color: var(--text-primary, #EDE7F3); margin-bottom: 24px;">Analyse IA des sujets</h2>
+      <h2 style="color: var(--text-primary, #EDE7F3); margin-bottom: 24px;">AI subject analysis</h2>
       <div style="background: var(--bg-tertiary, #2A1740); border-radius: 8px; height: 12px; overflow: hidden; margin-bottom: 12px;">
         <div style="height: 100%; width: ${pct}%; background: var(--aurora-gradient, linear-gradient(135deg, #F2A07B, #B44AE6)); border-radius: 8px; transition: width 300ms ease-out;"></div>
       </div>
@@ -36,7 +36,7 @@ export function renderProgress(progress) {
 }
 
 /**
- * Affiche le rapport de filtrage IA
+ * Displays the AI clean-up report
  * @param {{ exclure: string[], garder: string[], incertain: string[] }} results
  */
 export function renderFilterReport(results) {
@@ -55,7 +55,7 @@ export function renderFilterReport(results) {
 }
 
 /**
- * Ferme le rapport et restaure l'affichage precedent
+ * Closes the report and restores the previous view
  */
 export function closeReport() {
   const container = document.getElementById('aiFilterReport');
@@ -66,7 +66,7 @@ export function closeReport() {
   const treeEl = document.getElementById('treeVisualization');
   const defaultView = document.getElementById('defaultView');
 
-  // Si l'arbre a du contenu SVG, on le montre ; sinon on montre le defaultView
+  // If the tree has SVG content, show it; otherwise show the defaultView
   if (treeEl && treeEl.querySelector('svg')) {
     treeEl.style.display = 'block';
     if (defaultView) defaultView.style.display = 'none';
@@ -125,20 +125,20 @@ function buildReportHTML(results) {
 
   return `
     <div style="max-width: 700px; margin: 0 auto; font-family: var(--font-sans, Inter, sans-serif);">
-      <h2 style="color: var(--text-primary, #EDE7F3); margin-bottom: 8px;">Rapport de filtrage IA</h2>
+      <h2 style="color: var(--text-primary, #EDE7F3); margin-bottom: 8px;">AI clean-up report</h2>
       <p style="color: var(--text-secondary, #B8A9C8); font-size: 13px; margin-bottom: 16px;">
-        Deplacez les sujets entre les sections si necessaire, puis cliquez sur Appliquer.
-        Les sujets en rouge seront exclus. Les sujets en jaune seront conserves.
+        Move subjects between sections if needed, then click Apply.
+        Subjects in red will be excluded. Subjects in yellow will be kept.
       </p>
       <div style="display: flex; gap: 16px; margin-bottom: 20px; padding: 10px 14px; background: var(--bg-tertiary, #2A1740); border-radius: 6px; font-size: 12px; color: var(--text-tertiary, #7A6B8A);">
-        <span>${getFilterStats().totalRequests} requetes IA</span>
-        <span>~${Math.round(getFilterStats().totalTokensEstimated / 1000)}k tokens estimes</span>
-        <span>${totalExclude + totalKeep + totalUncertain} sujets analyses</span>
+        <span>${getFilterStats().totalRequests} AI requests</span>
+        <span>~${Math.round(getFilterStats().totalTokensEstimated / 1000)}k tokens estimated</span>
+        <span>${totalExclude + totalKeep + totalUncertain} subjects analysed</span>
       </div>
 
       ${buildSection(
         'exclure',
-        '&#128308; Exclure',
+        '&#128308; Exclude',
         totalExclude,
         results.exclure,
         'rgba(220,38,38,0.12)',
@@ -151,7 +151,7 @@ function buildReportHTML(results) {
 
       ${buildSection(
         'garder',
-        '&#128994; Garder',
+        '&#128994; Keep',
         totalKeep,
         results.garder,
         'rgba(34,197,94,0.12)',
@@ -164,7 +164,7 @@ function buildReportHTML(results) {
 
       ${buildSection(
         'incertain',
-        '&#128992; Incertain',
+        '&#128992; Unsure',
         totalUncertain,
         results.incertain,
         'rgba(234,179,8,0.12)',
@@ -177,15 +177,29 @@ function buildReportHTML(results) {
 
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-bottom: 32px;">
         <button id="aiFilterCancel" style="padding: 8px 20px; border-radius: 6px; border: 1px solid var(--border-medium, rgba(255,255,255,0.25)); background: transparent; color: var(--text-primary, #EDE7F3); cursor: pointer; font-size: 14px;">
-          Annuler
+          Cancel
         </button>
         <button id="aiFilterApply" style="padding: 8px 20px; border-radius: 6px; border: none; background: var(--aurora-gradient, linear-gradient(135deg, #F2A07B, #B44AE6)); color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;">
-          Appliquer (${totalExclude} exclusion${totalExclude !== 1 ? 's' : ''})
+          Apply (${totalExclude} exclusion${totalExclude !== 1 ? 's' : ''})
         </button>
       </div>
     </div>
   `;
 }
+
+// The three section keys — exclure / garder / incertain — are the JSON keys the
+// AI prompt asks the model to emit (see aiFilter.js). They are an internal
+// protocol, deliberately kept in French so both sides stay in sync; renaming
+// them would break the prompt, this report, and users' saved filters at once.
+//
+// This map is the ONE place they are turned into user-facing text. Without it
+// the move-button tooltip read "Move to exclure", leaking the internal key into
+// the interface.
+const SECTION_LABELS = {
+  exclure: 'Exclude',
+  garder: 'Keep',
+  incertain: 'Unsure',
+};
 
 function buildSection(key, title, count, subjects, bgColor, borderColor, moveButtons) {
   const isOpen = subjects.length > 0;
@@ -200,7 +214,7 @@ function buildSection(key, title, count, subjects, bgColor, borderColor, moveBut
       <div class="ai-section-body" data-section="${key}" style="display: ${isOpen ? 'block' : 'none'}; padding: 0 8px 8px;">
         ${
           subjects.length === 0
-            ? `<p style="color: var(--text-muted, #7A6B8A); font-size: 13px; padding: 8px; margin: 0;">Aucun sujet</p>`
+            ? `<p style="color: var(--text-muted, #7A6B8A); font-size: 13px; padding: 8px; margin: 0;">No subjects</p>`
             : subjects
                 .map(
                   (subject) => `
@@ -211,7 +225,7 @@ function buildSection(key, title, count, subjects, bgColor, borderColor, moveBut
                   (btn) => `
                 <button class="ai-move-btn" data-from="${key}" data-to="${btn.target}" data-subject="${escapeAttr(subject)}"
                   style="background: none; border: 1px solid var(--border-light, rgba(255,255,255,0.15)); border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; color: var(--text-secondary, #B8A9C8); white-space: nowrap;"
-                  title="Deplacer vers ${btn.target}">${btn.label}</button>
+                  title="Move to ${SECTION_LABELS[btn.target] || btn.target}">${btn.label}</button>
               `
                 )
                 .join('')}
@@ -289,14 +303,14 @@ async function applyExclusions() {
   try {
     const filters = getCurrentFilters();
     if (!filters) {
-      console.error('🧹 [Apply] getCurrentFilters() a retourne null — filtres non initialises');
-      toastWarning("Impossible d'appliquer : filtres non charges");
+      console.error('🧹 [Apply] getCurrentFilters() returned null — filters not initialised');
+      toastWarning('Cannot apply: filters not loaded');
       return;
     }
 
     if (!filters.blacklistedSubjects) filters.blacklistedSubjects = [];
 
-    // Ajouter les sujets qui ne sont pas deja exclus
+    // Add the subjects that are not already excluded
     const before = filters.blacklistedSubjects.length;
     for (const subject of toExclude) {
       if (!filters.blacklistedSubjects.includes(subject)) {
@@ -305,16 +319,16 @@ async function applyExclusions() {
     }
     const added = filters.blacklistedSubjects.length - before;
     console.log(
-      `🧹 [Apply] ${added}/${toExclude.length} sujets ajoutes a blacklistedSubjects (total: ${filters.blacklistedSubjects.length})`
+      `🧹 [Apply] ${added}/${toExclude.length} subjects added to blacklistedSubjects (total: ${filters.blacklistedSubjects.length})`
     );
 
-    // Sauvegarder les filtres (import dynamique pour eviter les imports circulaires)
+    // Save the filters (dynamic import to avoid circular imports)
     const { saveFilters } = await import('./emailFilters.js');
     await saveFilters(filters);
     updateCurrentFilters(filters);
     refreshSubjectsDisplay();
 
-    // Nettoyage JSONL en UNE SEULE passe pour tous les sujets (version batch)
+    // JSONL cleanup in a SINGLE pass for all subjects (batch version)
     const params = new URLSearchParams(window.location.search);
     const provider = params.get('provider') || 'gmail';
     const email = params.get('email');
@@ -323,21 +337,19 @@ async function applyExclusions() {
       try {
         const result = await cleanupExcludedSubjectsFromJSONL(provider, email, toExclude);
         console.log(
-          `🧹 [Apply] JSONL nettoye en une passe : ${result.removed} emails supprimes (${toExclude.length} sujets)`
+          `🧹 [Apply] JSONL cleaned in one pass: ${result.removed} emails removed (${toExclude.length} subjects)`
         );
       } catch (err) {
-        console.warn('🧹 [Apply] Erreur nettoyage JSONL:', err);
+        console.warn('🧹 [Apply] JSONL cleanup error:', err);
       }
     } else {
-      console.warn('🧹 [Apply] Param URL "email" absent, nettoyage JSONL skippe');
+      console.warn('🧹 [Apply] URL param "email" missing, JSONL cleanup skipped');
     }
 
     closeReport();
-    toastSuccess(
-      `${toExclude.length} sujet${toExclude.length > 1 ? 's' : ''} exclu${toExclude.length > 1 ? 's' : ''}`
-    );
+    toastSuccess(`${toExclude.length} subject${toExclude.length > 1 ? 's' : ''} excluded`);
   } catch (err) {
-    console.error('🧹 [Apply] Erreur inattendue:', err);
-    toastWarning("Erreur pendant l'application : " + (err.message || err));
+    console.error('🧹 [Apply] Unexpected error:', err);
+    toastWarning('Error while applying: ' + (err.message || err));
   }
 }

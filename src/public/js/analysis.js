@@ -1,5 +1,5 @@
 /**
- * Module d'analyse des conversations
+ * Conversation analysis module
  */
 
 import { getEmailFileHandle } from './folders.js';
@@ -19,13 +19,13 @@ import {
   isGroupFavorite,
 } from './groups.js';
 
-// Callback pour sélectionner un sujet (injecté par app.js pour éviter l'import circulaire)
+// Callback to select a subject (injected by app.js to avoid the circular import)
 let _selectSubjectHandler = null;
 export function setSelectSubjectHandler(fn) {
   _selectSubjectHandler = fn;
 }
 
-// Callbacks notifiés quand un sujet devient actif (sélectionné dans la sidebar)
+// Callbacks notified when a subject becomes active (selected in the sidebar)
 const subjectSelectedCallbacks = [];
 
 export function onSubjectSelected(callback) {
@@ -42,25 +42,25 @@ function notifySubjectSelected(subjectKey, subjectInfo) {
   }
 }
 
-// Variables globales pour l'état de l'analyse
+// Global variables for analysis state
 let currentSubjects = [];
 let currentOpenSubject = null;
 let currentTreeContainerId = null;
-const currentEmailsMap = new Map(); // Map pour stocker les emails complets par ID
+const currentEmailsMap = new Map(); // Map storing full emails by ID
 
-// Variables pour les groupes (chargées après chaque analyse)
+// Variables for groups (loaded after each analysis)
 let currentGroupsData = null;
 let groupsProvider = 'gmail';
 let groupsUserId = null;
 
-// Filtre favoris actif ou non
+// Whether the favourites filter is active
 let currentFavoritesOnly = false;
 let currentMyConversationsOnly = false;
 
-// Affichage complet de la liste (declenche par l'indicateur "+N conversations").
-// Sans ca, les sujets 11..N sont inatteignables (l'indicateur n'etait pas cliquable).
+// Full list display (triggered by the "+N conversations" indicator).
+// Without this, subjects 11..N are unreachable (the indicator was not clickable).
 let showAllSubjects = false;
-// Dernier jeu de sujets passe a displaySubjects (pour re-rendre "tout" a l'identique).
+// Last set of subjects passed to displaySubjects (so "show all" re-renders identically).
 let lastDisplayedSubjects = [];
 
 // State for progressive/incremental analysis
@@ -83,7 +83,7 @@ export function getEmailById(emailId) {
   return currentEmailsMap.get(emailId);
 }
 
-// ─── Exports pour la gestion des groupes (utilisés par le menu contextuel) ───
+// ─── Exports for group management (used by the context menu) ─────────────────
 
 export function getCurrentGroupsData() {
   return currentGroupsData;
@@ -101,7 +101,7 @@ export function refreshSubjectsDisplay() {
 
 export function toggleFavoritesFilter() {
   currentFavoritesOnly = !currentFavoritesOnly;
-  // Mettre à jour le bouton dans le header
+  // Update the button in the header
   const btn = document.getElementById('favoritesFilterBtn');
   if (btn) btn.classList.toggle('active', currentFavoritesOnly);
   displaySubjects(currentSubjects);
@@ -127,7 +127,7 @@ function notifyNewEmailsForSubject(count) {
 
   pendingNewEmailsCount = count;
   if (count > 0) {
-    text.textContent = `${count} nouveau${count > 1 ? 'x' : ''} email${count > 1 ? 's' : ''} pour ce sujet`;
+    text.textContent = `${count} new email${count > 1 ? 's' : ''} for this subject`;
     banner.style.display = 'flex';
   } else {
     banner.style.display = 'none';
@@ -155,7 +155,7 @@ export function incrementalAnalyze(emailAnalyzer, rawEmails, options = {}) {
   const userEmail = new URLSearchParams(window.location.search).get('email') || '';
   const validSubjects = emailAnalyzer.getSubjectsWithMinEmails(emailsClean, 3, userEmail);
 
-  // Check if the selected subject got new emails
+  // Check whether the selected subject got new emails
   if (currentSelectedSubject) {
     const prevSubject = currentSubjects.find((s) => s.subject === currentSelectedSubject);
     const newSubject = validSubjects.find((s) => s.subject === currentSelectedSubject);
@@ -173,7 +173,7 @@ export function incrementalAnalyze(emailAnalyzer, rawEmails, options = {}) {
   const subjectsList = document.getElementById('subjectsList');
   const scrollTop = subjectsList ? subjectsList.scrollTop : 0;
 
-  // Show subjects list and navigation if first meaningful update
+  // Show the subjects list and navigation on the first meaningful update
   const loadingAnalysis = document.getElementById('loadingAnalysis');
   const searchSection = document.getElementById('searchSection');
   const subjectNavigationBar = document.getElementById('subjectNavigationBar');
@@ -190,7 +190,7 @@ export function incrementalAnalyze(emailAnalyzer, rawEmails, options = {}) {
   // Re-render subjects
   displaySubjects(currentSubjects);
 
-  // Restore scroll position
+  // Restore the scroll position
   if (subjectsList) subjectsList.scrollTop = scrollTop;
 
   // Re-activate the selected subject drawer if it exists
@@ -205,7 +205,7 @@ export function incrementalAnalyze(emailAnalyzer, rawEmails, options = {}) {
     }
   }
 
-  // Setup search handler
+  // Set up the search handler
   const searchInput = document.getElementById('subjectSearch');
   if (searchInput) {
     searchInput.removeEventListener('input', filterSubjects);
@@ -213,7 +213,7 @@ export function incrementalAnalyze(emailAnalyzer, rawEmails, options = {}) {
   }
 
   console.log(
-    `📊 Analyse incrémentale${isFinal ? ' (finale)' : ''}: ${validSubjects.length} sujets (${rawEmails.length} emails)`
+    `📊 Incremental analysis${isFinal ? ' (final)' : ''}: ${validSubjects.length} subjects (${rawEmails.length} emails)`
   );
 }
 
@@ -237,71 +237,71 @@ export function initTreeNotificationBanner(onRefresh) {
   }
 }
 
-// Fonction d'analyse automatique des conversations
+// Automatic conversation analysis function
 export async function autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email) {
-  console.log('🔍 DEBUG autoAnalyze - Démarrage');
+  console.log('🔍 DEBUG autoAnalyze - Starting');
 
   try {
     const currentProvider = provider || 'gmail';
     const currentEmail = email;
 
     if (!currentEmail) {
-      console.log('❌ Aucun utilisateur connecté');
+      console.log('❌ No user signed in');
       return;
     }
 
-    // Mettre à jour l'overlay
-    updateLoadingOverlay('Analyse des conversations en cours...', 50);
+    // Update the overlay
+    updateLoadingOverlay('Analysing conversations...', 50);
 
-    // Changer le texte de la barre de chargement pour l'analyse
+    // Change the loading bar text for the analysis
     const loadingAnalysis = document.getElementById('loadingAnalysis');
     const searchSection = document.getElementById('searchSection');
     const loadingTextSpan = document.querySelector('#loadingAnalysis .loading-text');
 
     if (loadingTextSpan) {
-      loadingTextSpan.innerHTML = '<span id="loadingPercentage">0%</span> - Analyse en cours...';
+      loadingTextSpan.innerHTML = '<span id="loadingPercentage">0%</span> - Analysing...';
     }
     document.getElementById('loadingPercentage').textContent = '0%';
     document.getElementById('loadingProgress').style.width = '0%';
 
-    // Afficher la barre de chargement
+    // Show the loading bar
     loadingAnalysis.style.display = 'block';
     searchSection.style.display = 'none';
 
-    // Récupère le handle du fichier JSONL
+    // Get the JSONL file handle
     const fileInfo = await getEmailFileHandle(currentEmail, currentProvider);
 
     if (!fileInfo || !fileInfo.exists) {
       loadingAnalysis.style.display = 'none';
       hideLoadingOverlay();
       const fileName = fileInfo?.fileName || `${currentProvider}_emails.jsonl`;
-      console.log(`⚠️ Fichier ${fileName} non trouvé.`);
+      console.log(`⚠️ File ${fileName} not found.`);
 
-      // Afficher un guide à l'utilisateur
+      // Show a guide to the user
       showGuideModal({
-        title: 'Aucun fichier d\u2019emails trouv\u00e9',
+        title: 'No email file found',
         icon: '\uD83D\uDCC1',
         type: 'warning',
         body: `
-          <p>Le fichier <code>${fileName}</code> n\u2019existe pas dans votre dossier.</p>
-          <p>Pour analyser vos conversations, vous devez d\u2019abord :</p>
+          <p>The file <code>${fileName}</code> does not exist in your folder.</p>
+          <p>To analyse your conversations, you must first:</p>
           <ol class="guide-steps">
             <li class="guide-step-item">
               <span class="guide-step-badge">1</span>
-              <span class="guide-step-text">S\u00e9lectionner un dossier de sauvegarde</span>
+              <span class="guide-step-text">Select a backup folder</span>
             </li>
             <li class="guide-step-item">
               <span class="guide-step-badge">2</span>
-              <span class="guide-step-text">T\u00e9l\u00e9charger vos emails (bouton &laquo; T\u00e9l\u00e9charger les emails &raquo;)</span>
+              <span class="guide-step-text">Download your emails (the &laquo; Download emails &raquo; button)</span>
             </li>
             <li class="guide-step-item">
               <span class="guide-step-badge">3</span>
-              <span class="guide-step-text">Relancer l\u2019analyse des conversations</span>
+              <span class="guide-step-text">Run the conversation analysis again</span>
             </li>
           </ol>
-          <div class="guide-hint">\uD83D\uDCA1 Le t\u00e9l\u00e9chargement se fait par tranches de 500 emails avec filtres automatiques.</div>
+          <div class="guide-hint">\uD83D\uDCA1 Emails are downloaded in batches of 500 with automatic filters.</div>
         `,
-        buttonText: 'Compris',
+        buttonText: 'Got it',
       });
 
       return false;
@@ -310,13 +310,13 @@ export async function autoAnalyzeConversations(emailAnalyzer, treeVisualization,
     console.log('🔍 DEBUG userId:', currentEmail);
     console.log('🔍 DEBUG fileInfo:', fileInfo);
 
-    // Masquer la vue par défaut
+    // Hide the default view
     document.getElementById('defaultView').style.display = 'none';
 
     // Migrate old JSONL format if needed (extract bodyHtml to companion file)
     await migrateJsonlIfNeeded(currentProvider, currentEmail);
 
-    // Charger les sujets par chunks (version optimisée)
+    // Load subjects in chunks (optimised version)
     await loadSubjectsFromHandleChunkedOptimized(
       emailAnalyzer,
       fileInfo.fileHandle,
@@ -325,26 +325,26 @@ export async function autoAnalyzeConversations(emailAnalyzer, treeVisualization,
       currentEmail
     );
 
-    // Masquer la barre de chargement et afficher la recherche
+    // Hide the loading bar and show the search
     loadingAnalysis.style.display = 'none';
     searchSection.style.display = 'block';
 
-    // Afficher le titre "Sujet"
+    // Show the "Subject" title
     document.getElementById('subjectNavigationBar').style.display = 'flex';
 
-    // Masquer l'overlay après l'analyse complète
-    updateLoadingOverlay('Analyse terminée !', 100);
+    // Hide the overlay once the analysis is complete
+    updateLoadingOverlay('Analysis complete!', 100);
     setTimeout(() => hideLoadingOverlay(), 500);
     return true;
   } catch (e) {
     document.getElementById('loadingAnalysis').style.display = 'none';
     hideLoadingOverlay();
-    console.error("❌ Erreur lors de l'analyse automatique :", e.message);
+    console.error('❌ Error during automatic analysis:', e.message);
     return false;
   }
 }
 
-// Charger les sujets par chunks (version optimisée utilisant emailAnalyzer)
+// Load subjects in chunks (optimised version using emailAnalyzer)
 async function loadSubjectsFromHandleChunkedOptimized(
   emailAnalyzer,
   fileHandle,
@@ -357,59 +357,59 @@ async function loadSubjectsFromHandleChunkedOptimized(
   const loadingPercentage = document.getElementById('loadingPercentage');
 
   subjectsList.style.display = 'none';
-  subjectsList.innerHTML = '<p class="no-data">Chargement...</p>';
+  subjectsList.innerHTML = '<p class="no-data">Loading...</p>';
 
-  // Declare hors du try pour que le finally puisse toujours l'arreter, meme si
-  // loadEmailsFromHandle throw (sinon l'intervalle continue de tourner en fond).
+  // Declared outside the try so the finally block can always stop it, even if
+  // loadEmailsFromHandle throws (otherwise the interval keeps running in the background).
   let progressInterval = null;
 
   try {
-    // Simuler une progression (car emailAnalyzer charge tout d'un coup)
+    // Simulate progress (emailAnalyzer loads everything in one go)
     let progress = 0;
     progressInterval = setInterval(() => {
       progress += Math.random() * 15;
       if (progress > 90) progress = 90;
       loadingProgress.style.width = progress + '%';
       loadingPercentage.textContent = Math.round(progress) + '%';
-      // Mettre à jour l'overlay également
-      updateLoadingOverlay('Analyse des conversations en cours...', progress);
+      // Update the overlay too
+      updateLoadingOverlay('Analysing conversations...', progress);
     }, 200);
 
-    // Utiliser emailAnalyzer pour charger les emails par chunks
+    // Use emailAnalyzer to load emails in chunks
     const emails = await emailAnalyzer.loadEmailsFromHandle(fileHandle, chunkSize);
 
     clearInterval(progressInterval);
     loadingProgress.style.width = '100%';
     loadingPercentage.textContent = '100%';
-    updateLoadingOverlay("Finalisation de l'analyse...", 95);
+    updateLoadingOverlay('Finalising the analysis...', 95);
 
     if (emails.length === 0) {
-      subjectsList.innerHTML = '<p class="no-data">Aucun email trouvé</p>';
+      subjectsList.innerHTML = '<p class="no-data">No email found</p>';
       subjectsList.style.display = 'block';
       hideLoadingOverlay();
       return;
     }
 
-    // Nettoyer les emails avec emailAnalyzer
+    // Clean the emails with emailAnalyzer
     const emailsClean = emails.map(emailAnalyzer.cleanEmail);
 
-    // Libérer le tableau brut immédiatement : emailsClean est la seule copie nécessaire.
-    // Sans ça, les deux tableaux coexistent en mémoire le temps que le GC intervienne.
+    // Release the raw array immediately: emailsClean is the only copy needed.
+    // Without this, both arrays coexist in memory until the GC catches up.
     emails.length = 0;
 
-    // Libérer bodyText dans les emails nettoyés : getSubjectsWithMinEmails n'en a pas besoin
-    // (il n'utilise que subject, from, date et _chunkIndex).
-    // bodyText est rechargé à la demande lors de la sélection d'un sujet (getEmailsForSubjectOptimized).
+    // Release bodyText in the cleaned emails: getSubjectsWithMinEmails does not need it
+    // (it only uses subject, from, date and _chunkIndex).
+    // bodyText is reloaded on demand when a subject is selected (getEmailsForSubjectOptimized).
     emailsClean.forEach((e) => {
       e.bodyText = '';
     });
 
-    // Obtenir les sujets avec index des chunks
+    // Get the subjects along with the chunk index
     const validSubjects = emailAnalyzer.getSubjectsWithMinEmails(emailsClean, 3, userId);
 
     currentSubjects = validSubjects;
 
-    // Charger les groupes en mémoire avant l'affichage
+    // Load groups into memory before display
     groupsProvider = provider;
     groupsUserId = userId;
     const ugfh = await getUserFolderHandle(userId);
@@ -417,30 +417,28 @@ async function loadSubjectsFromHandleChunkedOptimized(
 
     displaySubjects(currentSubjects);
 
-    // Afficher la liste
+    // Show the list
     subjectsList.style.display = 'block';
 
-    // Ajouter l'événement de recherche (une seule fois)
+    // Add the search event listener (only once)
     const searchInput = document.getElementById('subjectSearch');
     searchInput.removeEventListener('input', filterSubjects);
     searchInput.addEventListener('input', filterSubjects);
 
-    console.log(
-      `✅ Analyse terminée : ${validSubjects.length} sujets trouvés avec index des chunks`
-    );
+    console.log(`✅ Analysis complete: ${validSubjects.length} subjects found with chunk index`);
   } catch (error) {
-    subjectsList.innerHTML = `<p class="no-data" style="color: var(--error);">❌ Erreur: ${escapeHtml(error.message)}</p>`;
+    subjectsList.innerHTML = `<p class="no-data" style="color: var(--error);">❌ Error: ${escapeHtml(error.message)}</p>`;
     subjectsList.style.display = 'block';
     hideLoadingOverlay();
   } finally {
-    // Toujours arreter l'intervalle de progression, y compris sur erreur.
+    // Always stop the progress interval, including on error.
     if (progressInterval) clearInterval(progressInterval);
   }
 }
 
-// ─── Utilitaires d'affichage ──────────────────────────────────────────────────
+// ─── Display utilities ─────────────────────────────────────────────────────
 
-/** Helpers locaux pour l'état favori (évitent de passer data en paramètre partout) */
+/** Local helpers for favourite state (avoid passing data as a parameter everywhere) */
 function isSubjectFav(subjectKey) {
   return currentGroupsData ? isSubjectFavorite(currentGroupsData, subjectKey) : false;
 }
@@ -448,13 +446,13 @@ function isGroupFav(groupId) {
   return currentGroupsData ? isGroupFavorite(currentGroupsData, groupId) : false;
 }
 
-/** Retourne un ID stable pour un sujet basé sur sa position dans currentSubjects */
+/** Returns a stable ID for a subject based on its position in currentSubjects */
 function getStableSubjectId(subjectKey) {
   const idx = currentSubjects.findIndex((s) => s.subject === subjectKey);
   return `subject-${idx >= 0 ? idx : 'u-' + subjectKey.substring(0, 12).replace(/\s+/g, '-')}`;
 }
 
-/** Échappe les caractères HTML dans une chaîne */
+/** Escapes HTML characters in a string */
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -463,12 +461,12 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-/** Génère le HTML d'un tiroir de sujet */
+/** Generates the HTML for a subject drawer */
 function renderSubjectItemHtml(subject, stableId, isGrouped = false) {
   const groupedClass = isGrouped ? ' subject-drawer--grouped' : '';
   const isFav = isSubjectFav(subject.subject);
   const starClass = isFav ? ' is-favorite' : '';
-  const starTitle = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+  const starTitle = isFav ? 'Remove from favourites' : 'Add to favourites';
   const starChar = isFav ? '★' : '☆';
   return `
     <div class="subject-drawer${groupedClass}" data-subject="${escapeHtml(subject.subject)}" data-subject-id="${stableId}">
@@ -476,7 +474,7 @@ function renderSubjectItemHtml(subject, stableId, isGrouped = false) {
         <div class="subject-drawer-content">
           <div class="subject-drawer-title">${escapeHtml(subject.subject)}</div>
           <div class="subject-drawer-meta">
-            ${subject.emailCount || subject.count || 0} emails${subject.userReplied ? '<span class="badge-replied" title="Vous avez participé">↩</span>' : ''}${subject.isNewsletter ? '<span class="badge-newsletter" title="Newsletter détectée">📰</span>' : ''}${subject.userInCcOnly ? '<span class="badge-cc" title="En copie uniquement">cc</span>' : ''}
+            ${subject.emailCount || subject.count || 0} emails${subject.userReplied ? '<span class="badge-replied" title="You took part">↩</span>' : ''}${subject.isNewsletter ? '<span class="badge-newsletter" title="Newsletter detected">📰</span>' : ''}${subject.userInCcOnly ? '<span class="badge-cc" title="CC only">cc</span>' : ''}
           </div>
         </div>
         <button class="star-btn${starClass}" data-star-subject="${escapeHtml(subject.subject)}" title="${starTitle}">${starChar}</button>
@@ -485,17 +483,17 @@ function renderSubjectItemHtml(subject, stableId, isGrouped = false) {
     </div>`;
 }
 
-/** Génère le HTML d'un indicateur "N sujets supplémentaires" */
+/** Generates the HTML for a "N more subjects" indicator */
 function renderMoreIndicatorHtml(remainingCount) {
   const plural = remainingCount > 1 ? 's' : '';
   return `
-    <div class="more-subjects-indicator" role="button" tabindex="0" data-more-subjects="1" aria-label="Afficher ${remainingCount} conversation${plural} supplémentaire${plural}">
+    <div class="more-subjects-indicator" role="button" tabindex="0" data-more-subjects="1" aria-label="Show ${remainingCount} more conversation${plural}">
       <div class="more-subjects-dots">•••</div>
       <div class="more-subjects-text">+${remainingCount} conversation${plural}</div>
     </div>`;
 }
 
-/** Attache le comportement d'expansion sur l'indicateur "+N conversations" */
+/** Attaches the expand behaviour to the "+N conversations" indicator */
 function attachMoreIndicator(container) {
   container.querySelectorAll('[data-more-subjects]').forEach((indicator) => {
     const activate = () => {
@@ -512,7 +510,7 @@ function attachMoreIndicator(container) {
   });
 }
 
-/** Génère récursivement le HTML d'un groupe et de son contenu */
+/** Recursively generates the HTML for a group and its content */
 function renderGroupItemHtml(
   group,
   subjectMap,
@@ -524,7 +522,7 @@ function renderGroupItemHtml(
 
   let contentHtml = '';
 
-  // Sous-groupes (uniquement au niveau racine, max 2 niveaux)
+  // Sub-groups (root level only, max 2 levels)
   if (!isNested) {
     const childGroups = getChildGroups(currentGroupsData, group.id);
     childGroups.forEach((child) => {
@@ -538,7 +536,7 @@ function renderGroupItemHtml(
     });
   }
 
-  // Sujets directement dans ce groupe
+  // Subjects directly in this group
   subjectKeysInGroup.forEach((key) => {
     const subject = subjectMap.get(key);
     if (!subject) return;
@@ -546,19 +544,19 @@ function renderGroupItemHtml(
     contentHtml += renderSubjectItemHtml(subject, getStableSubjectId(key), true);
   });
 
-  // Groupe vide
+  // Empty group
   if (!contentHtml) {
-    if (!showEmptyPlaceholder) return ''; // En mode favoris : masquer les groupes vides
+    if (!showEmptyPlaceholder) return ''; // In favourites mode: hide empty groups
     contentHtml =
-      '<div class="group-empty-placeholder">Aucun sujet — clic droit sur un sujet pour l\'ajouter</div>';
+      '<div class="group-empty-placeholder">No subject — right-click a subject to add it</div>';
   }
 
-  // Compte des sujets visibles dans ce groupe
+  // Count of subjects visible in this group
   const visibleCount = subjectKeysInGroup.filter((k) => subjectMap.has(k)).length;
   const nestClass = isNested ? ' group-item--nested' : '';
   const isFav = isGroupFav(group.id);
   const starClass = isFav ? ' is-favorite' : '';
-  const starTitle = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+  const starTitle = isFav ? 'Remove from favourites' : 'Add to favourites';
   const starChar = isFav ? '★' : '☆';
   const folderColor = group.color || '#94a3b8';
   const iconHtml = `<span class="group-folder-icon" style="color:${folderColor}"><svg width="15" height="13" viewBox="0 0 20 16" fill="currentColor" aria-hidden="true"><path d="M0 2C0 .9.9 0 2 0h5l2 2h9c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H2c-1.1 0-2-.9-2-2V2z"/></svg></span>`;
@@ -576,13 +574,13 @@ function renderGroupItemHtml(
     </div>`;
 }
 
-/** Attache les listeners sur tous les .subject-drawer d'un container */
+/** Attaches listeners to every .subject-drawer in a container */
 function attachSubjectListeners(container) {
   container.querySelectorAll('.subject-drawer').forEach((drawer) => {
     const header = drawer.querySelector('.subject-drawer-header');
     if (!header) return;
 
-    // Étoile favori — stopPropagation pour ne pas ouvrir le tiroir
+    // Favourite star — stopPropagation so it does not open the drawer
     const starBtn = header.querySelector('.star-btn[data-star-subject]');
     if (starBtn) {
       starBtn.addEventListener('click', async (e) => {
@@ -591,9 +589,9 @@ function attachSubjectListeners(container) {
         if (!currentGroupsData || !key) return;
         const isFav = toggleFavoriteSubject(currentGroupsData, key);
         starBtn.classList.toggle('is-favorite', isFav);
-        starBtn.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+        starBtn.title = isFav ? 'Remove from favourites' : 'Add to favourites';
         await saveGroupsData();
-        // Rafraîchir uniquement si le filtre favoris est actif
+        // Refresh only if the favourites filter is active
         if (currentFavoritesOnly) refreshSubjectsDisplay();
       });
     }
@@ -606,7 +604,7 @@ function attachSubjectListeners(container) {
       );
     });
 
-    // Clavier : Enter/Espace active le tiroir (sauf si le focus est sur l'etoile).
+    // Keyboard: Enter/Space activates the drawer (unless focus is on the star).
     header.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       if (e.target.closest('.star-btn')) return;
@@ -620,13 +618,13 @@ function attachSubjectListeners(container) {
   });
 }
 
-/** Attache les listeners de toggle sur tous les .group-header d'un container */
+/** Attaches toggle listeners to every .group-header in a container */
 function attachGroupListeners(container) {
   container.querySelectorAll('.group-item').forEach((groupItem) => {
     const header = groupItem.querySelector(':scope > .group-header');
     if (!header) return;
 
-    // Étoile favori du groupe
+    // Group's favourite star
     const starBtn = header.querySelector('.star-btn[data-star-group]');
     if (starBtn) {
       starBtn.addEventListener('click', async (e) => {
@@ -635,7 +633,7 @@ function attachGroupListeners(container) {
         if (!currentGroupsData || !groupId) return;
         const isFav = toggleFavoriteGroup(currentGroupsData, groupId);
         starBtn.classList.toggle('is-favorite', isFav);
-        starBtn.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+        starBtn.title = isFav ? 'Remove from favourites' : 'Add to favourites';
         await saveGroupsData();
         if (currentFavoritesOnly) refreshSubjectsDisplay();
       });
@@ -657,9 +655,9 @@ function attachGroupListeners(container) {
   });
 }
 
-// ─── Fonctions de rendu de la liste ───────────────────────────────────────────
+// ─── List rendering functions ──────────────────────────────────────────────
 
-/** Rendu plat (mode recherche ou aucun groupe) — max 10 sujets */
+/** Flat rendering (search mode or no groups) — max 10 subjects */
 function renderFlatSubjectsList(subjectsList, subjects) {
   const limit = showAllSubjects ? subjects.length : 10;
   const limited = subjects.slice(0, limit);
@@ -678,7 +676,7 @@ function renderFlatSubjectsList(subjectsList, subjects) {
   attachMoreIndicator(subjectsList);
 }
 
-/** Rendu groupé (mode normal avec groupes) */
+/** Grouped rendering (normal mode with groups) */
 function renderGroupedSubjectsList(subjectsList, subjects, hideEmptyGroups = false) {
   const subjectMap = new Map(subjects.map((s) => [s.subject, s]));
   const renderedKeys = new Set();
@@ -688,10 +686,10 @@ function renderGroupedSubjectsList(subjectsList, subjects, hideEmptyGroups = fal
     .map((group) => renderGroupItemHtml(group, subjectMap, renderedKeys, false, !hideEmptyGroups))
     .join('');
 
-  // Sujets non groupés
+  // Ungrouped subjects
   const ungrouped = subjects.filter((s) => !renderedKeys.has(s.subject));
   if (ungrouped.length > 0 && rootGroups.length > 0) {
-    html += `<div class="ungrouped-separator"><span>Non groupés</span></div>`;
+    html += `<div class="ungrouped-separator"><span>Ungrouped</span></div>`;
   }
 
   const ungroupedLimit = showAllSubjects ? ungrouped.length : 10;
@@ -711,17 +709,17 @@ function renderGroupedSubjectsList(subjectsList, subjects, hideEmptyGroups = fal
 }
 
 /**
- * Rendu recherche avec groupes.
- * - Groupes dont le NOM matche → affichés ouverts avec TOUS leurs sujets
- * - Groupes contenant des sujets qui matchent → affichés ouverts avec seulement les sujets matchants
- * - Sujets matchants non groupés → affichés dessous
+ * Search rendering with groups.
+ * - Groups whose NAME matches → shown open with ALL their subjects
+ * - Groups containing matching subjects → shown open with only the matching subjects
+ * - Matching ungrouped subjects → shown below
  */
 function renderSearchGroupedSubjectsList(subjectsList, subjects, searchTerm) {
   const lowerSearch = searchTerm.toLowerCase();
 
-  // Map des sujets matchant la recherche (filtrés par filterSubjects)
+  // Map of subjects matching the search (filtered by filterSubjects)
   const matchingMap = new Map(subjects.map((s) => [s.subject, s]));
-  // Map de TOUS les sujets (pour les groupes dont le nom matche)
+  // Map of ALL subjects (for groups whose name matches)
   const allMap = new Map(currentSubjects.map((s) => [s.subject, s]));
 
   const renderedKeys = new Set();
@@ -732,8 +730,8 @@ function renderSearchGroupedSubjectsList(subjectsList, subjects, searchTerm) {
     const nameMatches = group.name.toLowerCase().includes(lowerSearch);
     const mapToUse = nameMatches ? allMap : matchingMap;
 
-    // En mode recherche, ne montrer un groupe que si son nom matche
-    // OU s'il contient au moins un sujet/sous-groupe matchant
+    // In search mode, only show a group if its name matches
+    // OR it contains at least one matching subject/sub-group
     if (!nameMatches) {
       const directKeys = getSubjectsInGroup(currentGroupsData, group.id);
       const childGroups = getChildGroups(currentGroupsData, group.id);
@@ -748,15 +746,15 @@ function renderSearchGroupedSubjectsList(subjectsList, subjects, searchTerm) {
     html += renderGroupItemHtml(group, mapToUse, renderedKeys, false);
   });
 
-  // Sujets matchants non encore affichés dans un groupe
+  // Matching subjects not yet shown in a group
   const ungrouped = subjects.filter((s) => !renderedKeys.has(s.subject));
   if (ungrouped.length > 0 && html.length > 0) {
-    html += `<div class="ungrouped-separator"><span>Non groupés</span></div>`;
+    html += `<div class="ungrouped-separator"><span>Ungrouped</span></div>`;
   }
   html += ungrouped.map((s) => renderSubjectItemHtml(s, getStableSubjectId(s.subject))).join('');
 
   if (!html) {
-    subjectsList.innerHTML = '<p class="no-data">Aucun résultat</p>';
+    subjectsList.innerHTML = '<p class="no-data">No results</p>';
     return;
   }
 
@@ -764,7 +762,7 @@ function renderSearchGroupedSubjectsList(subjectsList, subjects, searchTerm) {
   attachSubjectListeners(subjectsList);
   attachGroupListeners(subjectsList);
   attachMoreIndicator(subjectsList);
-  // Auto-ouvrir tous les groupes en mode recherche pour que les résultats soient visibles
+  // Auto-open every group in search mode so results are visible
   subjectsList.querySelectorAll('.group-item').forEach((gi) => {
     gi.classList.add('open');
     const header = gi.querySelector(':scope > .group-header');
@@ -772,13 +770,13 @@ function renderSearchGroupedSubjectsList(subjectsList, subjects, searchTerm) {
   });
 }
 
-// ─── Fonction principale d'affichage ─────────────────────────────────────────
+// ─── Main display function ─────────────────────────────────────────────────
 
-// Afficher les sujets dans la liste (avec gestion des groupes et du filtre favoris)
+// Display subjects in the list (handling groups and the favourites filter)
 function displaySubjects(subjects) {
   const subjectsList = document.getElementById('subjectsList');
 
-  // Memoriser le jeu affiche pour permettre a l'indicateur "+N" de re-rendre tout.
+  // Remember the displayed set so the "+N" indicator can re-render everything.
   lastDisplayedSubjects = subjects;
 
   // Apply favorites filter
@@ -801,8 +799,8 @@ function displaySubjects(subjects) {
 
   if (baseSubjects.length === 0) {
     subjectsList.innerHTML = currentFavoritesOnly
-      ? '<p class="no-data">Aucun sujet favori</p>'
-      : '<p class="no-data">Aucun sujet trouvé</p>';
+      ? '<p class="no-data">No favourite subject</p>'
+      : '<p class="no-data">No subject found</p>';
     return;
   }
 
@@ -815,18 +813,18 @@ function displaySubjects(subjects) {
   } else if (isSearching) {
     renderSearchGroupedSubjectsList(subjectsList, baseSubjects, searchTerm);
   } else {
-    // En mode favoris, masquer les groupes sans favoris (pas de placeholder vide)
+    // In favourites mode, hide groups with no favourites (no empty placeholder)
     renderGroupedSubjectsList(subjectsList, baseSubjects, currentFavoritesOnly);
   }
 }
 
-// Toggle un tiroir de sujet
+// Toggle a subject drawer
 function toggleSubjectDrawer(drawer, subject, subjectId) {
   const chevron = drawer.querySelector('.subject-drawer-chevron');
 
   const header = drawer.querySelector('.subject-drawer-header');
 
-  // Si ce sujet est déjà ouvert, le fermer
+  // If this subject is already open, close it
   if (currentOpenSubject === subjectId) {
     drawer.classList.remove('active');
     if (header) header.setAttribute('aria-expanded', 'false');
@@ -838,7 +836,7 @@ function toggleSubjectDrawer(drawer, subject, subjectId) {
     return;
   }
 
-  // Fermer le sujet précédemment ouvert
+  // Close the previously open subject
   if (currentOpenSubject) {
     const previousDrawer = document.querySelector(`[data-subject-id="${currentOpenSubject}"]`);
     if (previousDrawer) {
@@ -849,7 +847,7 @@ function toggleSubjectDrawer(drawer, subject, subjectId) {
     }
   }
 
-  // Ouvrir le nouveau sujet
+  // Open the new subject
   drawer.classList.add('active');
   if (header) header.setAttribute('aria-expanded', 'true');
   chevron.textContent = '▼';
@@ -858,22 +856,22 @@ function toggleSubjectDrawer(drawer, subject, subjectId) {
   pendingNewEmailsCount = 0;
   clearTreeNotification();
 
-  // Notifier les abonnés (ex: bouton chat IA).
-  // `subject` ici est une string (data-subject attribute) — on cherche
-  // l'objet sujet complet dans currentSubjects pour le passer en subjectInfo.
+  // Notify subscribers (e.g. the AI chat button).
+  // `subject` here is a string (data-subject attribute) — we look up the
+  // full subject object in currentSubjects to pass it as subjectInfo.
   const subjectInfo = currentSubjects.find((s) => s.subject === subject);
   notifySubjectSelected(subject, subjectInfo || { subject });
 
-  // Charger l'arbre (callback injecté par app.js)
+  // Load the tree (callback injected by app.js)
   if (_selectSubjectHandler) {
     _selectSubjectHandler(subject);
   }
 }
 
-// Filtrer les sujets selon la recherche
+// Filter subjects based on the search
 function filterSubjects() {
-  // Nouvelle recherche → on repart de la liste tronquee (l'expansion "+N" est
-  // reinitialisee a chaque changement de terme).
+  // New search → we start again from the truncated list (the "+N" expansion
+  // is reset on every term change).
   showAllSubjects = false;
 
   const searchTerm = document.getElementById('subjectSearch').value.toLowerCase();
@@ -900,14 +898,14 @@ function filterSubjects() {
   triggerDeepSearch(searchTerm, filteredSubjects);
 }
 
-// ─── Recherche profonde (niveau 2 — body text) ─────────────────────────────
+// ─── Deep search (level 2 — body text) ─────────────────────────────────────
 
 let _deepSearchAbort = null;
 let _deepSearchTimeout = null;
 
 /**
- * Lance une recherche dans le body text du JSONL en streaming.
- * Débounce de 500ms pour éviter de lancer à chaque frappe.
+ * Runs a streaming search over the JSONL body text.
+ * 500ms debounce to avoid launching one on every keystroke.
  */
 function triggerDeepSearch(searchTerm, level1Results) {
   // Cancel previous deep search
@@ -995,7 +993,7 @@ async function performDeepSearch(searchTerm, level1Results) {
       displaySubjects(merged);
     }
   } catch (e) {
-    console.warn('Recherche profonde échouée:', e.message);
+    console.warn('Deep search failed:', e.message);
   } finally {
     if (!abort.abort) hideSearchingIndicator();
   }
@@ -1005,14 +1003,14 @@ function showSearchingIndicator() {
   const searchInput = document.getElementById('subjectSearch');
   if (searchInput) searchInput.classList.add('searching');
 
-  // Add loading indicator below subjects list
+  // Add a loading indicator below the subjects list
   const subjectsList = document.getElementById('subjectsList');
   if (subjectsList && !document.getElementById('deepSearchLoader')) {
     const loader = document.createElement('div');
     loader.id = 'deepSearchLoader';
     loader.className = 'deep-search-loader';
     loader.innerHTML =
-      '<div class="deep-search-spinner"></div><span>Recherche dans le contenu des emails...</span>';
+      '<div class="deep-search-spinner"></div><span>Searching email content...</span>';
     subjectsList.appendChild(loader);
   }
 }
@@ -1025,10 +1023,10 @@ function hideSearchingIndicator() {
   if (loader) loader.remove();
 }
 
-// Sélectionner un sujet et créer l'arbre
+// Select a subject and build the tree
 export async function selectSubject(emailAnalyzer, treeVisualization, subject, provider, email) {
   const treeContainer = document.getElementById('treeContainer');
-  treeContainer.innerHTML = "<p>⏳ Génération de l'arbre...</p>";
+  treeContainer.innerHTML = '<p>⏳ Building the tree...</p>';
   document.getElementById('treeVisualization').style.display = 'block';
   document.getElementById('defaultView').style.display = 'none';
 
@@ -1042,52 +1040,52 @@ export async function selectSubject(emailAnalyzer, treeVisualization, subject, p
       treeContainer.innerHTML = `
         <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
           <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
-          <h3 style="color: var(--error); margin-bottom: 1rem;">Fichier d'emails non trouvé</h3>
+          <h3 style="color: var(--error); margin-bottom: 1rem;">Email file not found</h3>
           <p style="margin-bottom: 1rem;">
-            Le fichier "${fileInfo?.fileName || `${currentProvider}_emails.jsonl`}" n'existe pas.
+            The file "${fileInfo?.fileName || `${currentProvider}_emails.jsonl`}" does not exist.
           </p>
           <p style="margin-bottom: 1.5rem;">
-            Veuillez d'abord télécharger vos emails depuis le panneau de gauche.
+            Please download your emails from the left-hand panel first.
           </p>
           <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; font-size: 0.9rem; text-align: left; max-width: 400px; margin: 0 auto;">
-            <strong>📝 Étapes à suivre :</strong><br/>
-            1️⃣ Choisir un dossier de sauvegarde<br/>
-            2️⃣ Cliquer sur "Télécharger les emails"<br/>
-            3️⃣ Attendre la fin du téléchargement<br/>
-            4️⃣ Relancer l'analyse des conversations
+            <strong>📝 Steps to follow:</strong><br/>
+            1️⃣ Choose a backup folder<br/>
+            2️⃣ Click "Download emails"<br/>
+            3️⃣ Wait for the download to finish<br/>
+            4️⃣ Run the conversation analysis again
           </div>
         </div>
       `;
       return;
     }
 
-    // Trouver les infos du sujet dans la liste actuelle
+    // Find the subject's info in the current list
     const subjectInfo = currentSubjects.find((s) => s.subject === subject);
 
     if (!subjectInfo) {
-      treeContainer.innerHTML = `<p style="color: var(--error);">❌ Sujet non trouvé dans la liste</p>`;
+      treeContainer.innerHTML = `<p style="color: var(--error);">❌ Subject not found in the list</p>`;
       return;
     }
 
-    // Récupérer les emails du sujet en utilisant l'index des chunks (optimisé)
+    // Get the subject's emails using the chunk index (optimised)
     console.log('🔍 DEBUG subjectInfo:', subjectInfo);
     const subjectEmails = await emailAnalyzer.getEmailsForSubjectOptimized(
       fileInfo.fileHandle,
       subjectInfo
     );
 
-    console.log('🔍 DEBUG subjectEmails trouvés:', subjectEmails.length);
+    console.log('🔍 DEBUG subjectEmails found:', subjectEmails.length);
 
     if (subjectEmails.length === 0) {
-      treeContainer.innerHTML = `<p style="color: var(--error);">❌ Aucun email trouvé pour ce sujet</p>`;
+      treeContainer.innerHTML = `<p style="color: var(--error);">❌ No email found for this subject</p>`;
       return;
     }
 
-    // Nettoyer les emails et créer l'arbre avec emailAnalyzer
+    // Clean the emails and build the tree with emailAnalyzer
     const emailsClean = subjectEmails.map(emailAnalyzer.cleanEmail);
 
-    // Stocker les emails complets dans la Map pour accès rapide
-    currentEmailsMap.clear(); // Vider la Map précédente
+    // Store the full emails in the Map for quick access
+    currentEmailsMap.clear(); // Clear the previous Map
     emailsClean.forEach((email) => {
       if (email.id) {
         currentEmailsMap.set(email.id, email);
@@ -1096,7 +1094,7 @@ export async function selectSubject(emailAnalyzer, treeVisualization, subject, p
 
     const tree = emailAnalyzer.createTemporalGroupTree(emailsClean, subject);
 
-    // Utiliser le nouveau module de visualisation
+    // Use the new visualisation module
     const treeHTML = treeVisualization.createCompleteVisualization(tree, {
       maxDepth: 4,
       showDetails: true,
@@ -1104,20 +1102,20 @@ export async function selectSubject(emailAnalyzer, treeVisualization, subject, p
 
     treeContainer.innerHTML = treeHTML;
 
-    // Extraire le containerId du HTML généré pour le stocker
+    // Extract the containerId from the generated HTML to store it
     const containerMatch = treeHTML.match(/id="(tree-container-[^"]+)"/);
     if (containerMatch) {
       currentTreeContainerId = containerMatch[1];
     }
 
-    // Mettre à jour les statistiques dans le tiroir
+    // Update the statistics in the drawer
     document.getElementById('totalEmails').textContent = tree.nodes.length;
     document.getElementById('totalConversations').textContent = tree.links.length;
 
-    // Afficher les sections Statistiques et Actions
+    // Show the Statistics and Actions sections
     document.getElementById('statisticsSection').style.display = 'block';
     document.getElementById('actionsSection').style.display = 'block';
   } catch (error) {
-    treeContainer.innerHTML = `<p style="color: var(--error);">❌ Erreur de génération: ${escapeHtml(error.message)}</p>`;
+    treeContainer.innerHTML = `<p style="color: var(--error);">❌ Generation error: ${escapeHtml(error.message)}</p>`;
   }
 }

@@ -1,6 +1,6 @@
 /**
- * Module du panneau de configuration IA
- * Connecte le HTML au module aiConfig.js
+ * AI configuration panel module
+ * Connects the HTML to the aiConfig.js module
  */
 
 import { getAIConfig, saveAIConfig, getProviderDefaults, testAIConnection } from './aiConfig.js';
@@ -27,7 +27,7 @@ export function initAIPanel() {
   apiKeyInput.value = config.apiKey;
   modelInput.value = config.model;
 
-  // Sous-drawer Configuration : repli par defaut si deja configure
+  // Configuration sub-drawer: collapsed by default if already configured
   const configSubdrawer = document.getElementById('aiConfigSubdrawer');
   const configSubdrawerHeader = document.getElementById('aiConfigSubdrawerHeader');
   if (configSubdrawer && configSubdrawerHeader) {
@@ -78,7 +78,7 @@ export function initAIPanel() {
       model: modelInput.value.trim(),
     };
     saveAIConfig(newConfig);
-    testResult.textContent = 'Configuration sauvegardee';
+    testResult.textContent = 'Configuration saved';
     testResult.className = 'ai-test-result ai-test-success';
     testResult.style.display = 'block';
     setTimeout(() => {
@@ -96,7 +96,7 @@ export function initAIPanel() {
     };
 
     testBtn.disabled = true;
-    testBtn.textContent = 'Test en cours...';
+    testBtn.textContent = 'Testing...';
     testResult.style.display = 'none';
 
     const result = await testAIConnection(currentConfig);
@@ -108,22 +108,22 @@ export function initAIPanel() {
     testResult.style.display = 'block';
 
     testBtn.disabled = false;
-    testBtn.textContent = 'Tester la connexion';
+    testBtn.textContent = 'Test connection';
   });
 
-  // Bouton "Faire le Menage"
+  // "Clean-up" button
   const filterBtn = document.getElementById('aiFilterBtn');
   if (filterBtn) {
     const syncFilterBtnState = () => {
       const key = apiKeyInput.value.trim();
       filterBtn.disabled = !key;
-      filterBtn.title = key ? '' : "Configurez d'abord votre provider IA";
+      filterBtn.title = key ? '' : 'Configure your AI provider first';
     };
 
-    // Etat initial base sur la config sauvegardee
+    // Initial state based on the saved config
     syncFilterBtnState();
 
-    // Mettre a jour l'etat du bouton quand la cle change (saisie, collage, changement de provider)
+    // Update the button's state when the key changes (typing, paste, provider change)
     apiKeyInput.addEventListener('input', syncFilterBtnState);
     saveBtn.addEventListener('click', syncFilterBtnState);
     providerSelect.addEventListener('change', syncFilterBtnState);
@@ -131,20 +131,20 @@ export function initAIPanel() {
     filterBtn.addEventListener('click', async () => {
       const subjects = getCurrentSubjects();
       if (!subjects || subjects.length === 0) {
-        testResult.textContent = "Aucun sujet a analyser. Telechargez d'abord vos emails.";
+        testResult.textContent = 'No subjects to analyse. Download your emails first.';
         testResult.className = 'ai-test-result ai-test-error';
         testResult.style.display = 'block';
         return;
       }
 
       filterBtn.disabled = true;
-      filterBtn.textContent = 'Analyse en cours...';
+      filterBtn.textContent = 'Analysis in progress...';
 
       try {
         const emailAnalyzer = (await import('/services/emailAnalyzer_browser.js')).default;
         const { getEmailFileHandle } = await import('./folders.js');
 
-        // Recuperer le provider et userId depuis l'URL
+        // Retrieve the provider and userId from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const provider = urlParams.get('provider') || 'gmail';
         const userId = urlParams.get('email');
@@ -158,7 +158,7 @@ export function initAIPanel() {
               subjectInfo
             );
           } catch (e) {
-            console.warn('Erreur chargement mails pour "' + subjectInfo.subject + '":', e);
+            console.warn('Error loading mails for "' + subjectInfo.subject + '":', e);
             return [];
           }
         };
@@ -170,17 +170,17 @@ export function initAIPanel() {
         renderFilterReport(results);
       } catch (err) {
         closeReport();
-        testResult.textContent = 'Erreur filtrage IA: ' + err.message;
+        testResult.textContent = 'AI clean-up error: ' + err.message;
         testResult.className = 'ai-test-result ai-test-error';
         testResult.style.display = 'block';
       } finally {
         filterBtn.disabled = false;
-        filterBtn.textContent = '\u{1F9F9} Faire le Menage';
+        filterBtn.textContent = '\u{1F9F9} Clean-up';
       }
     });
   }
 
-  // Bouton "Discuter du sujet"
+  // "Discuss subject" button
   const chatBtn = document.getElementById('aiChatBtn');
   let hasSelectedSubject = false;
 
@@ -190,10 +190,10 @@ export function initAIPanel() {
     if (chatBtn) {
       chatBtn.disabled = !enabled;
       chatBtn.title = enabled
-        ? 'Ouvrir le chat IA'
+        ? 'Open the AI chat'
         : !key
-          ? "Configurez d'abord le provider IA"
-          : "Selectionnez un sujet d'abord";
+          ? 'Configure the AI provider first'
+          : 'Select a subject first';
     }
   };
 

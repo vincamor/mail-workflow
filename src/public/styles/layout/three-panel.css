@@ -1,13 +1,13 @@
 /**
- * Layout 3 panneaux — Deep Cosmos
+ * 3-panel layout — Deep Cosmos
  * Glass panels, aurora accents, living surfaces
  */
 
 /* === MAIN CONTAINER === */
 .app-container {
   width: 100vw;
-  /* Le footer fixe (.app-footer) occupe --footer-height en bas de l'ecran ;
-     sans cette soustraction il recouvre le dernier segment des panneaux. */
+  /* Fixed footer (.app-footer) occupies --footer-height at bottom of screen;
+     without this subtraction it covers the last segment of panels. */
   height: calc(100vh - var(--footer-height, 34px));
   background: var(--bg-canvas);
   overflow: hidden;
@@ -25,24 +25,24 @@
   grid-template-columns: 260px 1px 1fr 1px 280px;
   gap: 0;
   overflow: hidden;
-  /* Transition discrete sur le pliage des panneaux */
+  /* Smooth transition on panel folding */
   transition: grid-template-columns 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Pendant un drag de resizer, la largeur est ecrite en continu (JS) — la
-   transition CSS fait alors trainer le panneau derriere le curseur. */
+/* During a resizer drag, width is written continuously (JS) — the
+   CSS transition then makes the panel lag behind the cursor. */
 .three-panel-layout.resizing-active {
   transition: none;
 }
 
-/* Resizer inactif quand le panneau correspondant est replie */
+/* Resizer inactive when the corresponding panel is collapsed */
 .three-panel-layout.left-collapsed .resizer-left,
 .three-panel-layout.right-collapsed .resizer-right {
   pointer-events: none;
   opacity: 0;
 }
 
-/* Cacher les bordures glow des panneaux replies (sinon ligne 1px residuelle) */
+/* Hide glow borders of collapsed panels (otherwise residual 1px line) */
 .three-panel-layout.left-collapsed .left-panel,
 .three-panel-layout.right-collapsed .right-panel {
   border: none;
@@ -64,7 +64,7 @@
   position: relative;
 }
 
-/* Subtle left-edge glow */
+/* Subtle right-edge glow */
 .left-panel::after {
   content: '';
   position: absolute;
@@ -297,7 +297,7 @@
   width: 100%;
 }
 
-/* Étiquettes de colonne (pas des titres de document) : style eyebrow discret. */
+/* Column labels (not document titles): discrete eyebrow style. */
 .navigation-title,
 .right-panel-title {
   font-family: var(--font-family);
@@ -315,7 +315,7 @@
   text-shadow: none !important;
 }
 
-/* Respiration en haut du panneau droit (remplace les anciens spacers vides). */
+/* Breathing room at top of right panel (replaces old empty spacers). */
 .right-panel-navigation-bar {
   padding-top: var(--space-3);
 }
@@ -345,7 +345,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  position: relative; /* ancre la barre d'outils flottante (.tree-toolbar) */
+  position: relative; /* anchors the floating toolbar (.tree-toolbar) */
 }
 
 .tree-container {
@@ -356,8 +356,8 @@
   width: 100%;
   height: 100%;
   display: block;
-  /* Légère gouttière : un peu d'air sur les bords, sans grosses barres latérales.
-     Les toggles ne sont révélés qu'au survol (cf. .panel-toggle). */
+  /* Slight gutter: some breathing room on the sides, without large side bars.
+     Toggles are revealed only on hover (see .panel-toggle). */
   padding: 0 var(--space-3);
 }
 
@@ -376,8 +376,8 @@
   z-index: 10;
 }
 
-/* Zone de clic etendue — deborde de 6px de chaque cote pour atteindre facilement
-   une barre visuellement fine. Invisible mais intercepte les events souris. */
+/* Extended click zone — overflows 6px on each side to easily reach a
+   visually thin bar. Invisible but intercepts mouse events. */
 .resizer::after {
   content: '';
   position: absolute;
@@ -417,7 +417,7 @@
   background: var(--primary);
 }
 
-/* === PANEL TOGGLES (boutons replier / deplier) === */
+/* === PANEL TOGGLES (collapse / expand buttons) === */
 .panel-toggle {
   position: absolute;
   top: 50%;
@@ -445,9 +445,9 @@
     transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Toggles discrets : révélés seulement au survol du panneau central (ou au
-   focus clavier). Au repos ils sont invisibles → ne recouvrent plus les nœuds
-   et ne forment plus de barres sur les côtés. */
+/* Discrete toggles: revealed only on hover of central panel (or on
+   keyboard focus). At rest they are invisible → no longer cover nodes
+   and no longer form bars on the sides. */
 .middle-panel:hover .panel-toggle,
 .panel-toggle:focus-visible {
   opacity: 0.4;
@@ -492,7 +492,7 @@
   border-right: none;
 }
 
-/* Inverser la fleche quand le panneau correspondant est replie */
+/* Flip the arrow when the corresponding panel is collapsed */
 .three-panel-layout.left-collapsed .panel-toggle-left svg {
   transform: rotate(180deg);
 }

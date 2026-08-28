@@ -1,9 +1,9 @@
 /**
- * Module principal de l'application
- * Orchestre tous les autres modules
+ * Main application module
+ * Orchestrates all the other modules
  */
 
-// Import des modules
+// Import modules
 import emailAnalyzer from '/services/emailAnalyzer_browser.js';
 import treeVisualization, { setNodeClickHandler } from './treeRenderer.js';
 import { setupFetchInterceptor, initLoginButtons } from './auth.js';
@@ -47,26 +47,26 @@ import {
   DEMO_USER_ID,
 } from './demo.js';
 
-// Connecter showEmailDetail au treeRenderer (remplace window.showEmailDetail)
+// Wire showEmailDetail into treeRenderer (replaces window.showEmailDetail)
 setNodeClickHandler(showEmailDetail);
 
-// Restaurer le thème sauvegardé avant le premier paint
+// Restore the saved theme before the first paint
 restoreTheme();
 
-// Variables globales de l'état de l'application
+// Global application state variables
 let analysisLaunched = false;
 let availableMessageIds = [];
 
-// === INITIALISATION AU CHARGEMENT ===
+// === INITIALISATION ON LOAD ===
 document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
-  // Le mode demo lit un dataset embarque via fetch : il n'a besoin ni de dossier
-  // local ni de la File System Access API, donc il fonctionne sur Firefox, Safari
-  // et mobile. La detection de navigateur ne s'applique qu'au mode normal.
+  // Demo mode reads an embedded dataset via fetch: it needs neither a local
+  // folder nor the File System Access API, so it works on Firefox, Safari and
+  // mobile. Browser detection only applies to normal mode.
   const demo = isDemoMode();
 
-  // Détection navigateur non supporté (plan SaaS 1.5 — File System Access API)
+  // Unsupported browser detection (SaaS plan 1.5 — File System Access API)
   if (!demo && typeof window.showDirectoryPicker !== 'function') {
     const unsupportedEl = document.getElementById('unsupportedBrowser');
     const loginEl = document.getElementById('loginInterface');
@@ -77,34 +77,34 @@ async function initApp() {
     return;
   }
 
-  console.log("🚀 Initialisation de l'application");
+  console.log('🚀 Initialising the application');
 
-  // Configurer l'intercepteur fetch pour la gestion des sessions
+  // Set up the fetch interceptor for session handling
   setupFetchInterceptor();
 
-  // Initialiser les boutons de connexion
+  // Initialise the sign-in buttons
   initLoginButtons();
 
-  // Initialiser les resizers de panneaux
+  // Initialise the panel resizers
   initPanelResizers();
 
-  // Initialiser les événements UI (tiroirs, boutons actions, etc.) sans inline onclick
+  // Initialise UI events (drawers, action buttons, etc.) without inline onclick
   initUIEvents();
 
-  // Construire le sélecteur de thèmes
+  // Build the theme picker
   buildThemePicker();
 
-  // Mode demo : interface connectee en lecture seule, sans OAuth ni dossier.
-  // L'IA est desactivee (/api/ai/* exige une session authentifiee → 401).
+  // Demo mode: connected, read-only interface, no OAuth and no folder.
+  // The AI is disabled (/api/ai/* requires an authenticated session → 401).
   if (demo) {
     await initDemoInterface();
     return;
   }
 
-  // Initialiser le panneau de configuration IA
+  // Initialise the AI settings panel
   initAIPanel();
 
-  // Initialiser l'UI de chat IA
+  // Initialise the AI chat UI
   initChatUI({
     getEmailsForSubject: async (subjectInfo) => {
       const emailAnalyzer = (await import('/services/emailAnalyzer_browser.js')).default;
@@ -150,12 +150,12 @@ async function initApp() {
     },
   });
 
-  // Récupérer les paramètres URL
+  // Get the URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const provider = urlParams.get('provider');
   const email = urlParams.get('email');
 
-  // Gérer l'interface selon l'état de connexion
+  // Manage the interface based on sign-in state
   if (provider && email) {
     await initConnectedInterface(provider, email);
   } else {
@@ -163,28 +163,28 @@ async function initApp() {
   }
 }
 
-// Initialiser l'interface non connectée
+// Initialise the signed-out interface
 function initLoginInterface() {
   const statusDiv = document.getElementById('status');
   const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
 
-  statusDiv.textContent = 'Non connecté.';
+  statusDiv.textContent = 'Not signed in.';
   showLoginInterface();
 
   if (downloadEmailsBtn) downloadEmailsBtn.style.display = 'none';
 }
 
 /**
- * Mode demo : on reutilise le flux connecte tel quel, en sautant tout ce qui
- * ecrit ou parle au serveur (fetchEmails, restoreFolder, polling, telechargement,
- * filtres, groupes, IA). Aucun fichier, aucune entree IndexedDB, aucun handle.
+ * Demo mode: we reuse the connected flow as-is, skipping anything that writes
+ * to or talks to the server (fetchEmails, restoreFolder, polling, download,
+ * filters, groups, AI). No file, no IndexedDB entry, no handle.
  */
 async function initDemoInterface() {
   const provider = DEMO_PROVIDER;
   const email = DEMO_USER_ID;
 
-  // Les modules lisent l'identite dans l'URL (provider / email). On la renseigne
-  // sans navigation pour qu'ils fonctionnent sans modification.
+  // Modules read the identity from the URL (provider / email). We set it
+  // without navigating so they work unmodified.
   const url = new URL(window.location.href);
   url.searchParams.set('provider', provider);
   url.searchParams.set('email', email);
@@ -200,7 +200,7 @@ async function initDemoInterface() {
 
   showLoadingOverlay('Loading the sample dataset...', 0);
 
-  // Rafraichir l'arbre depuis la banniere de notification re-selectionne le sujet.
+  // Refreshing the tree from the notification banner re-selects the subject.
   initTreeNotificationBanner(async (subject) => {
     await analysisSelectSubject(emailAnalyzer, treeVisualization, subject, provider, email);
   });
@@ -210,44 +210,44 @@ async function initDemoInterface() {
   if (!ok) hideLoadingOverlay();
 }
 
-// Initialiser l'interface connectée
+// Initialise the connected interface
 async function initConnectedInterface(provider, email) {
   const statusDiv = document.getElementById('status');
 
-  statusDiv.textContent = `Connecté à ${provider} en tant que ${email}`;
+  statusDiv.textContent = `Signed in to ${provider} as ${email}`;
 
-  // Afficher l'interface connectée
+  // Show the connected interface
   showConnectedInterface(provider, email);
 
-  // Afficher l'overlay de chargement dès le début
-  showLoadingOverlay('Lecture des emails en cours...', 0);
+  // Show the loading overlay right from the start
+  showLoadingOverlay('Reading emails...', 0);
 
-  // Afficher la barre de chargement pour la lecture des emails
+  // Show the loading bar for reading emails
   const loadingAnalysis = document.getElementById('loadingAnalysis');
   loadingAnalysis.style.display = 'block';
   document.getElementById('loadingPercentage').textContent = '0%';
   document.getElementById('loadingProgress').style.width = '0%';
   const loadingTextSpan = document.querySelector('#loadingAnalysis .loading-text');
   if (loadingTextSpan) {
-    loadingTextSpan.innerHTML = '<span id="loadingPercentage">0%</span> - Lecture des mails...';
+    loadingTextSpan.innerHTML = '<span id="loadingPercentage">0%</span> - Reading emails...';
   }
 
-  // Récupérer les IDs et les 20 premiers emails pour affichage
-  // (l'analyse est déclenchée ci-dessous, après la sync, pas depuis fetchEmails)
+  // Get the IDs and the first 20 emails to display
+  // (the analysis is triggered below, after the sync, not from fetchEmails)
   await fetchEmails(provider, email);
 
-  // Initialiser les handlers de dossiers
+  // Initialise the folder handlers
   const userId = email;
   initFolderHandlers(userId, async () => {
-    // Callback appelé quand un nouveau dossier est sélectionné manuellement.
-    // Une sélection manuelle est une demande explicite de (re)charger ce dossier :
-    // on relance TOUJOURS l'analyse, même si une tentative automatique a déjà eu
-    // lieu au chargement (ex. handle sans permission, ou mauvais niveau de dossier
-    // choisi au premier essai → cette tentative a échoué). Sans ça, le drapeau
-    // analysisLaunched resté à true bloquait toute nouvelle analyse.
+    // Callback fired when a new folder is manually selected.
+    // A manual selection is an explicit request to (re)load this folder:
+    // we ALWAYS relaunch the analysis, even if an automatic attempt already
+    // happened on load (e.g. a handle with no permission, or the wrong folder
+    // level chosen on the first try → that attempt failed). Without this, the
+    // analysisLaunched flag staying true would block any new analysis.
     if (provider && email) {
       analysisLaunched = true;
-      console.log("🔄 Nouveau dossier sélectionné - Relancement de l'analyse...");
+      console.log('🔄 New folder selected - Relaunching the analysis...');
       setTimeout(
         () => autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email),
         500
@@ -255,15 +255,15 @@ async function initConnectedInterface(provider, email) {
     }
   });
 
-  // Initialiser le gestionnaire de téléchargement et de mise à jour
+  // Initialise the download and update handler
   initDownloadHandler(provider, email);
 
-  // Initialiser l'interface des filtres
+  // Initialise the filters interface
   await initFilterUI();
 
-  // When a subject is restored from the blacklist, re-download its emails
+  // When a subject is restored from the blocklist, re-download its emails
   setOnSubjectRestored(async (restoredSubject) => {
-    console.log(`🔄 Sujet rétabli: "${restoredSubject}" — re-téléchargement en fond...`);
+    console.log(`🔄 Subject restored: "${restoredSubject}" — re-downloading in the background...`);
     const hasDownloaded = await redownloadMissingEmails(provider, email);
     if (hasDownloaded) {
       // Refresh analysis to show the restored subject
@@ -273,14 +273,14 @@ async function initConnectedInterface(provider, email) {
     }
   });
 
-  // Restaurer le dossier au chargement
+  // Restore the folder on load
   await restoreFolder(userId);
 
-  // Démarrer le polling léger (badge "nouveaux emails" toutes les 5 min)
-  // Le polling lance un premier check immédiat, sans rien télécharger.
+  // Start light polling (a "new emails" badge every 5 min)
+  // Polling runs an immediate first check, without downloading anything.
   startEmailPolling(provider, userId);
 
-  // Initialiser le menu contextuel des groupes
+  // Initialise the groups context menu
   initGroupContextMenu();
 
   // Initialize tree notification banner (refresh re-selects the current subject)
@@ -288,7 +288,7 @@ async function initConnectedInterface(provider, email) {
     await analysisSelectSubject(emailAnalyzer, treeVisualization, subject, provider, email);
   });
 
-  // Lancer l'analyse du JSONL existant
+  // Run the analysis on the existing JSONL file
   if (!analysisLaunched) {
     analysisLaunched = true;
     setTimeout(
@@ -298,7 +298,7 @@ async function initConnectedInterface(provider, email) {
   }
 }
 
-// Récupérer les emails depuis le serveur
+// Retrieve emails from the server
 async function fetchEmails(provider) {
   const emailsDiv = document.getElementById('emails');
   const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
@@ -309,53 +309,53 @@ async function fetchEmails(provider) {
   else return;
 
   try {
-    // Récupérer les filtres actuels depuis filterUI
+    // Get the current filters from filterUI
     const { getCurrentFilters } = await import('./filterUI.js');
     const filters = getCurrentFilters();
 
-    console.log('📋 Filtres envoyés pour la récupération des emails:', filters);
+    console.log('📋 Filters sent to retrieve emails:', filters);
 
-    // Envoyer les filtres en query string (format original)
+    // Send the filters as a query string (original format)
     const filtersParam = filters ? encodeURIComponent(JSON.stringify(filters)) : '';
     let fetchUrlWithFilters = filtersParam ? `${fetchUrl}?filters=${filtersParam}` : fetchUrl;
 
-    // Ajouter le filtre de date personnalisée si actif
+    // Add the custom date filter if active
     if (filters && filters.useCustomAfterDate && filters.customAfterDate) {
       const afterDateMs = new Date(filters.customAfterDate).getTime();
       const separator = fetchUrlWithFilters.includes('?') ? '&' : '?';
       fetchUrlWithFilters += `${separator}afterDate=${afterDateMs}`;
-      console.log(`📅 Filtre date actif: après ${filters.customAfterDate}`);
+      console.log(`📅 Date filter active: after ${filters.customAfterDate}`);
     }
 
     const response = await fetch(fetchUrlWithFilters);
     const data = await response.json();
 
     if (data.displayEmails && Array.isArray(data.displayEmails)) {
-      // Nouveau format avec séparation affichage/téléchargement
+      // New format, separating display from download
       availableMessageIds = data.messageIds || [];
 
-      // Mettre à jour le compteur dans le panneau gauche
+      // Update the counter in the left-hand panel
       if (data.totalAvailable > 0) {
         document.getElementById('emailCount').textContent = data.totalAvailable;
 
-        // Mettre à jour le badge du bouton de téléchargement
+        // Update the download button's badge
         const emailCountBadge = document.getElementById('emailCountBadge');
         if (emailCountBadge) {
           emailCountBadge.textContent = data.totalAvailable;
         }
 
-        // Simuler la progression de lecture
+        // Simulate the reading progress
         simulateReadProgress();
 
         downloadEmailsBtn.style.display = 'block';
-        // L'analyse sera déclenchée depuis initConnectedInterface, après la sync
+        // The analysis is triggered from initConnectedInterface, after the sync
       } else {
         document.getElementById('emailCount').textContent = '0';
         hideLoadingOverlay();
         downloadEmailsBtn.style.display = 'none';
       }
     } else if (Array.isArray(data)) {
-      // Ancien format (fallback)
+      // Old format (fallback)
       availableMessageIds = data.map((e) => ({
         id: e.id,
         type: e.type,
@@ -365,7 +365,7 @@ async function fetchEmails(provider) {
         document.getElementById('emailCount').textContent = data.length;
         simulateReadProgress();
         downloadEmailsBtn.style.display = 'inline-block';
-        // L'analyse sera déclenchée depuis initConnectedInterface, après la sync
+        // The analysis is triggered from initConnectedInterface, after the sync
       } else {
         document.getElementById('emailCount').textContent = '0';
         hideLoadingOverlay();
@@ -373,11 +373,11 @@ async function fetchEmails(provider) {
       }
     } else {
       hideLoadingOverlay();
-      emailsDiv.textContent = data.error || 'Erreur lors de la récupération des emails';
+      emailsDiv.textContent = data.error || 'Error retrieving emails';
       downloadEmailsBtn.style.display = 'none';
     }
 
-    // Masquer le div emails dans le panneau central
+    // Hide the emails div in the central panel
     emailsDiv.innerHTML = '';
   } catch (error) {
     hideLoadingOverlay();
@@ -387,7 +387,7 @@ async function fetchEmails(provider) {
   }
 }
 
-// Simuler la progression de lecture
+// Simulate the reading progress
 function simulateReadProgress() {
   let readProgress = 0;
   const readInterval = setInterval(() => {
@@ -395,8 +395,8 @@ function simulateReadProgress() {
     if (readProgress > 100) readProgress = 100;
     document.getElementById('loadingProgress').style.width = readProgress + '%';
     document.getElementById('loadingPercentage').textContent = Math.round(readProgress) + '%';
-    // Mettre à jour l'overlay (phase 1: 0-50%)
-    updateLoadingOverlay('Lecture des emails en cours...', readProgress * 0.5);
+    // Update the overlay (phase 1: 0-50%)
+    updateLoadingOverlay('Reading emails...', readProgress * 0.5);
     if (readProgress >= 100) {
       clearInterval(readInterval);
     }
@@ -406,22 +406,22 @@ function simulateReadProgress() {
     clearInterval(readInterval);
     document.getElementById('loadingProgress').style.width = '100%';
     document.getElementById('loadingPercentage').textContent = '100%';
-    updateLoadingOverlay("Emails chargés, préparation de l'analyse...", 50);
+    updateLoadingOverlay('Emails loaded, preparing the analysis...', 50);
   }, 1000);
 }
 
-// Initialiser le gestionnaire de téléchargement et de mise à jour
+// Initialise the download and update handler
 function initDownloadHandler(provider, email) {
   const downloadEmailsBtn = document.getElementById('downloadEmailsBtn');
   const updateEmailsBtn = document.getElementById('updateEmailsBtn');
 
-  // Quand les filtres sont sauvegardés, re-récupérer les IDs avec les nouveaux filtres
+  // When filters are saved, retrieve the IDs again with the new filters
   setOnFiltersSaved(() => {
-    console.log('🔄 Filtres modifiés — re-récupération des IDs...');
+    console.log('🔄 Filters changed — retrieving IDs again...');
     fetchEmails(provider, email);
   });
 
-  // Téléchargement complet
+  // Full download
   downloadEmailsBtn.onclick = async () => {
     clearTreeNotification();
 
@@ -433,7 +433,7 @@ function initDownloadHandler(provider, email) {
     });
 
     // Final analysis from JSONL file (canonical source) after download completes
-    console.log('📊 Téléchargement terminé — analyse finale dans 2.5s');
+    console.log('📊 Download complete — final analysis in 2.5s');
     setTimeout(async () => {
       analysisLaunched = false;
       await autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email);
@@ -441,33 +441,33 @@ function initDownloadHandler(provider, email) {
     }, 2500);
   };
 
-  // Mise à jour incrémentale forcée (bouton manuel)
+  // Forced incremental update (manual button)
   if (updateEmailsBtn) {
     updateEmailsBtn.style.display = 'block';
     updateEmailsBtn.onclick = async () => {
       updateEmailsBtn.disabled = true;
-      updateEmailsBtn.querySelector('.btn-text').textContent = 'Mise à jour...';
+      updateEmailsBtn.querySelector('.btn-text').textContent = 'Updating...';
       try {
         const hasSynced = await syncEmails(provider, email);
         if (hasSynced) {
-          // Remettre le badge à 0 : on vient de tout synchroniser
+          // Reset the badge to 0: we just synced everything
           updateNewEmailsBadge(0);
-          // Relancer l'analyse pour afficher les nouveaux emails
+          // Relaunch the analysis to show the new emails
           analysisLaunched = false;
           await autoAnalyzeConversations(emailAnalyzer, treeVisualization, provider, email);
           analysisLaunched = true;
         } else {
-          toastSuccess('Vos emails sont d\u00e9j\u00e0 \u00e0 jour.');
+          toastSuccess('Your emails are already up to date.');
         }
       } finally {
         updateEmailsBtn.disabled = false;
-        updateEmailsBtn.querySelector('.btn-text').textContent = 'Mettre à jour';
+        updateEmailsBtn.querySelector('.btn-text').textContent = 'Update';
       }
     };
   }
 }
 
-// Injecter le handler de sélection de sujet dans analysis.js (évite le couplage via window.*)
+// Inject the subject selection handler into analysis.js (avoids window.* coupling)
 setSelectSubjectHandler(async (subject) => {
   const urlParams = new URLSearchParams(window.location.search);
   const provider = urlParams.get('provider') || 'gmail';
@@ -476,4 +476,4 @@ setSelectSubjectHandler(async (subject) => {
   await analysisSelectSubject(emailAnalyzer, treeVisualization, subject, provider, email);
 });
 
-console.log('✅ Module app.js chargé');
+console.log('✅ app.js module loaded');

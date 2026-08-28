@@ -18,12 +18,12 @@ describe('shouldExcludeEmail', () => {
     from: 'noreply@notifications.example.com',
   };
 
-  it('retourne false si pas de filtres', () => {
+  it('returns false if no filters', () => {
     expect(shouldExcludeEmail(email, null)).toBe(false);
     expect(shouldExcludeEmail(email, undefined)).toBe(false);
   });
 
-  it('retourne false si aucun filtre ne match', () => {
+  it('returns false if no filter matches', () => {
     const filters = {
       excludeNoSubject: false,
       excludeNotifications: false,
@@ -34,7 +34,7 @@ describe('shouldExcludeEmail', () => {
     expect(shouldExcludeEmail(email, filters)).toBe(false);
   });
 
-  it('exclut les emails sans sujet', () => {
+  it('excludes emails without a subject', () => {
     const filters = { excludeNoSubject: true };
     expect(shouldExcludeEmail({ subject: '', from: 'a@b.com' }, filters)).toBe(true);
     expect(shouldExcludeEmail({ subject: '  ', from: 'a@b.com' }, filters)).toBe(true);
@@ -42,25 +42,25 @@ describe('shouldExcludeEmail', () => {
     expect(shouldExcludeEmail({ subject: 'Hello', from: 'a@b.com' }, filters)).toBe(false);
   });
 
-  it('exclut les notifications par keyword (from ou subject)', () => {
+  it('excludes notifications by keyword (from or subject)', () => {
     const filters = {
       excludeNotifications: true,
       notificationKeywords: ['noreply', 'notifications'],
     };
-    // Match dans from
+    // Match in from
     expect(shouldExcludeEmail(email, filters)).toBe(true);
-    // Match dans subject (keyword 'notifications' dans le sujet)
+    // Match in subject (keyword 'notifications' in the subject)
     expect(
       shouldExcludeEmail(
         { subject: 'Your notifications are ready', from: 'user@corp.com' },
         filters
       )
     ).toBe(true);
-    // Pas de match
+    // No match
     expect(shouldExcludeEmail({ subject: 'Hello', from: 'alice@corp.com' }, filters)).toBe(false);
   });
 
-  it('exclut les promotions par keyword dans le sujet', () => {
+  it('excludes promotional emails by keyword in the subject', () => {
     const filters = {
       excludePromotional: true,
       promotionalKeywords: ['newsletter', 'promo'],
@@ -71,7 +71,7 @@ describe('shouldExcludeEmail', () => {
     ).toBe(false);
   });
 
-  it('exclut les expediteurs blacklistes', () => {
+  it('excludes blacklisted senders', () => {
     const filters = {
       blacklistedSenders: ['notifications.example.com'],
     };
@@ -79,7 +79,7 @@ describe('shouldExcludeEmail', () => {
     expect(shouldExcludeEmail({ subject: 'Hi', from: 'friend@other.com' }, filters)).toBe(false);
   });
 
-  it('exclut par mots-cles blacklistes dans le sujet', () => {
+  it('excludes by blacklisted keywords in the subject', () => {
     const filters = {
       blacklistedKeywords: ['newsletter'],
     };
@@ -89,7 +89,7 @@ describe('shouldExcludeEmail', () => {
     );
   });
 
-  it('exclut les sujets blacklistés (avec normalisation Re:/Fwd:)', () => {
+  it('excludes blacklisted subjects (with Re:/Fwd: normalisation)', () => {
     const filters = {
       blacklistedSubjects: ['Project Update', 'Weekly Report'],
     };
@@ -118,7 +118,7 @@ describe('shouldExcludeEmail', () => {
     ).toBe(false);
   });
 
-  it('est case-insensitive', () => {
+  it('is case-insensitive', () => {
     const filters = {
       blacklistedKeywords: ['NEWSLETTER'],
     };
@@ -127,7 +127,7 @@ describe('shouldExcludeEmail', () => {
     ).toBe(true);
   });
 
-  it('combine plusieurs filtres (OR logic — premier match suffit)', () => {
+  it('combines multiple filters (OR logic — first match is enough)', () => {
     const filters = {
       excludeNoSubject: true,
       excludeNotifications: true,
@@ -138,7 +138,7 @@ describe('shouldExcludeEmail', () => {
     expect(shouldExcludeEmail(email, filters)).toBe(true);
     // Match via blacklistedSenders
     expect(shouldExcludeEmail({ subject: 'Buy now!', from: 'spam@evil.com' }, filters)).toBe(true);
-    // Aucun match
+    // No match
     expect(shouldExcludeEmail({ subject: 'Real email', from: 'colleague@work.com' }, filters)).toBe(
       false
     );
@@ -150,24 +150,24 @@ describe('shouldExcludeEmail', () => {
 // ─────────────────────────────────────────────
 
 describe('isTokenError', () => {
-  it('detecte les erreurs 401 (code)', () => {
+  it('detects 401 errors (code)', () => {
     expect(isTokenError({ code: 401 })).toBe(true);
   });
 
-  it('detecte les erreurs 401 (statusCode)', () => {
+  it('detects 401 errors (statusCode)', () => {
     expect(isTokenError({ statusCode: 401 })).toBe(true);
   });
 
-  it('detecte invalid_grant dans le message', () => {
+  it('detects invalid_grant in the message', () => {
     expect(isTokenError({ message: 'Error: invalid_grant' })).toBe(true);
   });
 
-  it('detecte Token dans le message', () => {
+  it('detects Token in the message', () => {
     expect(isTokenError({ message: 'Token expired' })).toBe(true);
     expect(isTokenError({ message: 'token revoked' })).toBe(true);
   });
 
-  it('retourne false pour les erreurs non-token', () => {
+  it('returns false for non-token errors', () => {
     expect(isTokenError({ code: 500, message: 'Internal server error' })).toBe(false);
     expect(isTokenError({ message: 'Network error' })).toBe(false);
     expect(isTokenError({})).toBe(false);
@@ -179,7 +179,7 @@ describe('isTokenError', () => {
 // ─────────────────────────────────────────────
 
 describe('parseFiltersFromRequest', () => {
-  it('parse les filtres depuis query string', () => {
+  it('parses filters from query string', () => {
     const filters = { excludeNoSubject: true };
     const req = {
       query: { filters: JSON.stringify(filters), afterDate: '1710000000000' },
@@ -190,7 +190,7 @@ describe('parseFiltersFromRequest', () => {
     expect(result.afterDate).toBe('1710000000000');
   });
 
-  it('fallback sur body.filters si query.filters absent', () => {
+  it('falls back to body.filters if query.filters is absent', () => {
     const filters = { blacklistedSenders: ['spam@evil.com'] };
     const req = {
       query: {},
@@ -201,7 +201,7 @@ describe('parseFiltersFromRequest', () => {
     expect(result.afterDate).toBeNull();
   });
 
-  it('retourne null si aucun filtre', () => {
+  it('returns null if no filter', () => {
     const req = { query: {}, body: {} };
     const result = parseFiltersFromRequest(req);
     expect(result.filters).toBeNull();
@@ -214,25 +214,25 @@ describe('parseFiltersFromRequest', () => {
 // ─────────────────────────────────────────────
 
 describe('normalizeSubject', () => {
-  it('retire les prefixes Re:/Fwd:/Fw:/Tr:', () => {
+  it('removes the Re:/Fwd:/Fw:/Tr: prefixes', () => {
     expect(normalizeSubject('Re: Hello')).toBe('hello');
     expect(normalizeSubject('Fwd: Re: Hello')).toBe('re hello');
     expect(normalizeSubject('FW: Test')).toBe('test');
     expect(normalizeSubject('Tr: Bonjour')).toBe('bonjour');
   });
 
-  it('retire les dates et chiffres', () => {
+  it('removes dates and numbers', () => {
     expect(normalizeSubject('Votre digest du 01/03/2026')).toBe('votre digest du');
     expect(normalizeSubject('Alerte connexion #42')).toBe('alerte connexion');
     expect(normalizeSubject('Rapport semaine 12')).toBe('rapport semaine');
   });
 
-  it('retire la ponctuation et normalise les espaces', () => {
+  it('removes punctuation and normalizes spaces', () => {
     expect(normalizeSubject('  Hello,  World!  ')).toBe('hello world');
     expect(normalizeSubject('[URGENT] Action requise')).toBe('urgent action requise');
   });
 
-  it('gere les sujets vides ou null', () => {
+  it('handles empty or null subjects', () => {
     expect(normalizeSubject('')).toBe('');
     expect(normalizeSubject(null)).toBe('');
     expect(normalizeSubject(undefined)).toBe('');
@@ -244,7 +244,7 @@ describe('normalizeSubject', () => {
 // ─────────────────────────────────────────────
 
 describe('isSenderRepetitive', () => {
-  it('detecte des sujets quasi-identiques (5/5 identiques)', () => {
+  it('detects nearly identical subjects (5/5 identical)', () => {
     const subjects = [
       'Votre digest du 01/03',
       'Votre digest du 02/03',
@@ -255,7 +255,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, [100, 120, 110, 105, 115])).toBe(true);
   });
 
-  it('detecte 3/5 identiques (60% = seuil par defaut)', () => {
+  it('detects 3/5 identical (60% = default threshold)', () => {
     const subjects = [
       'Deployment crashed for MailProject!',
       'Deployment crashed for MailProject!',
@@ -267,7 +267,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, [1000, 1200, 1100, 900, 800])).toBe(true);
   });
 
-  it('ne detecte pas un collegue avec des sujets varies', () => {
+  it('does not detect a colleague with varied subjects', () => {
     const subjects = [
       'Reunion budget Q2',
       'Re: Question API auth',
@@ -278,7 +278,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, [45, 890, 12, 200, 156])).toBe(false);
   });
 
-  it('detecte des gros mails template via body length si sujets differents', () => {
+  it('detects large templated emails via body length if subjects differ', () => {
     const subjects = [
       'Commande #1234 expediee',
       'Commande #5678 expediee',
@@ -290,7 +290,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, bodyLengths)).toBe(true);
   });
 
-  it('ne detecte pas des gros mails avec body lengths tres varies', () => {
+  it('does not detect large emails with highly varied body lengths', () => {
     const subjects = [
       'Projet Alpha update',
       'Projet Beta review',
@@ -302,25 +302,25 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, bodyLengths)).toBe(false);
   });
 
-  it('ne declenche pas le body check pour petits mails', () => {
+  it('does not trigger body check for small emails', () => {
     const subjects = ['Salut', 'OK', 'Merci', 'RDV', 'Yes'];
     const bodyLengths = [10, 12, 8, 11, 9];
     expect(isSenderRepetitive(subjects, bodyLengths)).toBe(false);
   });
 
-  it('ignore les body lengths a 0 dans le body check', () => {
+  it('ignores body lengths of 0 in the body check', () => {
     const subjects = ['A', 'B', 'C', 'D', 'E'];
     // Body lengths avec des 0 (HTML-only mails) — ne doit pas trigger
     const bodyLengths = [0, 0, 0, 0, 0];
     expect(isSenderRepetitive(subjects, bodyLengths)).toBe(false);
   });
 
-  it('gere les sujets vides ou undefined dans la liste', () => {
+  it('handles empty or undefined subjects in the list', () => {
     const subjects = ['', '', '', undefined, null];
     expect(isSenderRepetitive(subjects, [100, 100, 100, 100, 100])).toBe(true);
   });
 
-  it('detecte 4/5 identiques (au dessus de 60%)', () => {
+  it('detects 4/5 identical (above 60%)', () => {
     const subjects = [
       'Alerte de securite du 01/03',
       'Alerte de securite du 02/03',
@@ -331,7 +331,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, [100, 100, 100, 100, 100])).toBe(true);
   });
 
-  it('ne detecte pas 2/5 identiques (sous 60%)', () => {
+  it('does not detect 2/5 identical (below 60%)', () => {
     const subjects = [
       'Alerte connexion',
       'Alerte connexion',
@@ -342,7 +342,7 @@ describe('isSenderRepetitive', () => {
     expect(isSenderRepetitive(subjects, [50, 60, 55, 200, 300])).toBe(false);
   });
 
-  it('fonctionne avec 10 samples (reevaluation)', () => {
+  it('works with 10 samples (re-evaluation)', () => {
     const subjects = [
       'Digest #1',
       'Digest #2',
@@ -361,24 +361,24 @@ describe('isSenderRepetitive', () => {
 });
 
 // ─────────────────────────────────────────────
-//  normalizeSubject — edge cases supplementaires
+//  normalizeSubject — additional edge cases
 // ─────────────────────────────────────────────
 
 describe('normalizeSubject — edge cases', () => {
-  it('gere les prefixes multiples imbriques', () => {
-    // Seul le premier prefixe est retire (par design)
+  it('handles nested multiple prefixes', () => {
+    // Only the first prefix is removed (by design)
     expect(normalizeSubject('Re: Fwd: Re: Hello')).toBe('fwd re hello');
   });
 
-  it('gere les caracteres unicode (accents, etc.)', () => {
+  it('handles unicode characters (accents, etc.)', () => {
     expect(normalizeSubject('Réunion préparatoire été')).toBe('réunion préparatoire été');
   });
 
-  it('gere les sujets avec uniquement des chiffres/dates', () => {
+  it('handles subjects with only numbers/dates', () => {
     expect(normalizeSubject('01/03/2026 - 42')).toBe('');
   });
 
-  it('gere les sujets tres longs sans crash', () => {
+  it('handles very long subjects without crashing', () => {
     const longSubject = 'A'.repeat(10000);
     const result = normalizeSubject(longSubject);
     expect(result.length).toBeLessThanOrEqual(10000);
@@ -391,7 +391,7 @@ describe('normalizeSubject — edge cases', () => {
 // ─────────────────────────────────────────────
 
 describe('extractEmailAddress', () => {
-  it('extrait email depuis le format "Name <email>"', () => {
+  it('extracts email from the "Name <email>" format', () => {
     expect(extractEmailAddress('Railway <hello@notify.railway.app>')).toBe(
       'hello@notify.railway.app'
     );
@@ -401,18 +401,18 @@ describe('extractEmailAddress', () => {
     );
   });
 
-  it('retourne email tel quel si pas de chevrons', () => {
+  it('returns email as is if no angle brackets', () => {
     expect(extractEmailAddress('contact@test.com')).toBe('contact@test.com');
     expect(extractEmailAddress('CONTACT@TEST.COM')).toBe('contact@test.com');
   });
 
-  it('gere les cas vides ou null', () => {
+  it('handles empty or null cases', () => {
     expect(extractEmailAddress('')).toBe('');
     expect(extractEmailAddress(null)).toBe('');
     expect(extractEmailAddress(undefined)).toBe('');
   });
 
-  it('gere les noms avec caracteres speciaux', () => {
+  it('handles names with special characters', () => {
     expect(extractEmailAddress('"Sélection Quora" <digest@quora.com>')).toBe('digest@quora.com');
     expect(extractEmailAddress('=?UTF-8?Q?Railway?= <hello@notify.railway.app>')).toBe(
       'hello@notify.railway.app'

@@ -1,18 +1,18 @@
 /**
- * Module de gestion des groupes de sujets
- * Stockage : EmailWorkflow/{userId}/{provider}_groups.json
+ * Subject group management module
+ * Storage: EmailWorkflow/{userId}/{provider}_groups.json
  *
- * Structure du fichier :
+ * File structure:
  * {
  *   version: 1,
  *   groups: [{ id, name, parentId, order }],
  *   subjectMemberships: [{ subjectKey, groupIds[] }]
  * }
  *
- * Règles :
- *  - Max 2 niveaux de profondeur (groupe racine + sous-groupe)
- *  - Un sujet peut appartenir à plusieurs groupes simultanément
- *  - subjectKey = sujet normalisé (sans Re:/Fwd:, trimé) — identique à subject.subject dans currentSubjects
+ * Rules:
+ *  - Max 2 levels of depth (root group + subgroup)
+ *  - A subject can belong to several groups at once
+ *  - subjectKey = normalised subject (without Re:/Fwd:, trimmed) — same as subject.subject in currentSubjects
  */
 
 import { getCurrentFolderHandle } from './folders.js';
@@ -20,7 +20,7 @@ import { resolveUserFolderHandle } from './folderResolver.js';
 
 const GROUPS_VERSION = 1;
 
-// ─── Helpers internes ────────────────────────────────────────────────────────
+// ─── Internal helpers ────────────────────────────────────────────────────────
 
 function createEmptyGroupsData() {
   return {
@@ -37,8 +37,8 @@ function generateGroupId() {
 }
 
 /**
- * Obtient le handle du dossier EmailWorkflow/{userId}/ depuis currentFolderHandle.
- * Retourne null si aucun dossier n'est sélectionné ou si le dossier n'existe pas encore.
+ * Gets the EmailWorkflow/{userId}/ folder handle from currentFolderHandle.
+ * Returns null if no folder is selected or if the folder does not exist yet.
  * @param {string} userId
  * @returns {FileSystemDirectoryHandle|null}
  */
@@ -46,21 +46,21 @@ export async function getUserFolderHandle(userId) {
   const rootHandle = getCurrentFolderHandle();
   if (!rootHandle) return null;
   try {
-    // Résolution tolérante (racine / EmailWorkflow / dossier compte), create si absent.
+    // Tolerant resolution (root / EmailWorkflow / account folder), create if missing.
     return await resolveUserFolderHandle(rootHandle, userId, { create: true });
   } catch (e) {
-    console.error("❌ [groups] Impossible d'obtenir le userFolderHandle:", e);
+    console.error('❌ [groups] Could not get the userFolderHandle:', e);
     return null;
   }
 }
 
-// ─── Lecture / écriture ───────────────────────────────────────────────────────
+// ─── Read / write ───────────────────────────────────────────────────────
 
 /**
- * Lit le fichier de groupes depuis le dossier utilisateur.
- * Retourne une structure vide si le fichier n'existe pas encore.
- * @param {FileSystemDirectoryHandle} userFolderHandle - Dossier EmailWorkflow/{userId}/
- * @param {string} provider - "gmail" ou "outlook"
+ * Reads the groups file from the user folder.
+ * Returns an empty structure if the file does not exist yet.
+ * @param {FileSystemDirectoryHandle} userFolderHandle - EmailWorkflow/{userId}/ folder
+ * @param {string} provider - "gmail" or "outlook"
  * @returns {Object}
  */
 export async function readGroups(userFolderHandle, provider) {
@@ -71,16 +71,16 @@ export async function readGroups(userFolderHandle, provider) {
     const content = await file.text();
     return JSON.parse(content);
   } catch (e) {
-    // Fichier absent = premier usage, on retourne une structure vide
+    // Missing file = first use, return an empty structure
     return createEmptyGroupsData();
   }
 }
 
 /**
- * Écrit (ou écrase) le fichier de groupes.
+ * Writes (or overwrites) the groups file.
  * @param {FileSystemDirectoryHandle} userFolderHandle
  * @param {string} provider
- * @param {Object} data - Structure complète des groupes
+ * @param {Object} data - Complete groups structure
  */
 export async function writeGroups(userFolderHandle, provider, data) {
   const fileName = `${provider}_groups.json`;
@@ -90,26 +90,26 @@ export async function writeGroups(userFolderHandle, provider, data) {
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
   } catch (e) {
-    console.error('❌ [groups] Erreur écriture groupes:', e);
+    console.error('❌ [groups] Error writing groups:', e);
     throw e;
   }
 }
 
-// ─── Opérations sur les groupes ──────────────────────────────────────────────
+// ─── Group operations ──────────────────────────────────────────
 
 /**
- * Crée un nouveau groupe et retourne son ID.
- * @param {Object} data - Structure complète (modifiée en place)
- * @param {string} name - Nom du groupe
- * @param {string|null} parentId - ID du groupe parent (null = racine)
- * @returns {string} - ID du nouveau groupe
- * @throws si la profondeur max (2 niveaux) serait dépassée
+ * Creates a new group and returns its ID.
+ * @param {Object} data - Complete structure (modified in place)
+ * @param {string} name - Group name
+ * @param {string|null} parentId - Parent group ID (null = root)
+ * @returns {string} - New group ID
+ * @throws if the max depth (2 levels) would be exceeded
  */
 export function createGroup(data, name, parentId = null) {
   if (parentId !== null) {
     const parent = data.groups.find((g) => g.id === parentId);
-    if (!parent) throw new Error(`Groupe parent "${parentId}" introuvable.`);
-    if (parent.parentId !== null) throw new Error('Profondeur maximale (2 niveaux) atteinte.');
+    if (!parent) throw new Error(`Parent group "${parentId}" not found.`);
+    if (parent.parentId !== null) throw new Error('Maximum depth (2 levels) reached.');
   }
 
   const newId = generateGroupId();
@@ -128,7 +128,7 @@ export function createGroup(data, name, parentId = null) {
 }
 
 /**
- * Renomme un groupe.
+ * Renames a group.
  * @param {Object} data
  * @param {string} groupId
  * @param {string} newName
@@ -141,12 +141,12 @@ export function renameGroup(data, groupId, newName) {
 }
 
 /**
- * Supprime un groupe (et ses sous-groupes directs) et libère tous les memberships associés.
+ * Deletes a group (and its direct subgroups) and frees all associated memberships.
  * @param {Object} data
  * @param {string} groupId
  */
 export function deleteGroup(data, groupId) {
-  // Collecter les IDs à supprimer : le groupe lui-même + ses enfants directs
+  // Collect the IDs to delete: the group itself + its direct children
   const idsToDelete = new Set([groupId]);
   data.groups.forEach((g) => {
     if (g.parentId === groupId) idsToDelete.add(g.id);
@@ -154,7 +154,7 @@ export function deleteGroup(data, groupId) {
 
   data.groups = data.groups.filter((g) => !idsToDelete.has(g.id));
 
-  // Nettoyer les memberships
+  // Clean up memberships
   data.subjectMemberships = data.subjectMemberships
     .map((m) => ({
       ...m,
@@ -163,12 +163,12 @@ export function deleteGroup(data, groupId) {
     .filter((m) => m.groupIds.length > 0);
 }
 
-// ─── Opérations sur les memberships ──────────────────────────────────────────
+// ─── Membership operations ──────────────────────────────────────────
 
 /**
- * Ajoute un sujet à un groupe. Sans effet si déjà membre.
+ * Adds a subject to a group. No effect if already a member.
  * @param {Object} data
- * @param {string} subjectKey - Sujet normalisé (identique à subject.subject dans currentSubjects)
+ * @param {string} subjectKey - Normalised subject (same as subject.subject in currentSubjects)
  * @param {string} groupId
  */
 export function addSubjectToGroup(data, subjectKey, groupId) {
@@ -183,7 +183,7 @@ export function addSubjectToGroup(data, subjectKey, groupId) {
 }
 
 /**
- * Retire un sujet d'un groupe.
+ * Removes a subject from a group.
  * @param {Object} data
  * @param {string} subjectKey
  * @param {string} groupId
@@ -199,10 +199,10 @@ export function removeSubjectFromGroup(data, subjectKey, groupId) {
   }
 }
 
-// ─── Requêtes ─────────────────────────────────────────────────────────────────
+// ─── Queries ─────────────────────────────────────────────────────────────────
 
 /**
- * Retourne les groupIds auxquels appartient un sujet.
+ * Returns the groupIds a subject belongs to.
  * @param {Object} data
  * @param {string} subjectKey
  * @returns {string[]}
@@ -213,7 +213,7 @@ export function getGroupsForSubject(data, subjectKey) {
 }
 
 /**
- * Retourne les subjectKeys des sujets appartenant à un groupe donné.
+ * Returns the subjectKeys of the subjects belonging to a given group.
  * @param {Object} data
  * @param {string} groupId
  * @returns {string[]}
@@ -225,10 +225,10 @@ export function getSubjectsInGroup(data, groupId) {
 }
 
 /**
- * Définit la couleur d'un groupe (null = couleur par défaut).
+ * Sets a group's colour (null = default colour).
  * @param {Object} data
  * @param {string} groupId
- * @param {string|null} color - Code couleur CSS (ex: "#ef4444") ou null
+ * @param {string|null} color - CSS colour code (e.g. "#ef4444") or null
  */
 export function setGroupColor(data, groupId, color) {
   const group = data.groups.find((g) => g.id === groupId);
@@ -236,9 +236,9 @@ export function setGroupColor(data, groupId, color) {
 }
 
 /**
- * Retourne les groupes enfants directs d'un parent, triés par order.
+ * Returns the direct child groups of a parent, sorted by order.
  * @param {Object} data
- * @param {string|null} parentId - null = groupes racine
+ * @param {string|null} parentId - null = root groups
  * @returns {Array<{id, name, parentId, order}>}
  */
 export function getChildGroups(data, parentId = null) {
@@ -248,7 +248,7 @@ export function getChildGroups(data, parentId = null) {
 }
 
 /**
- * Indique si un sujet est membre d'au moins un groupe.
+ * Indicates whether a subject is a member of at least one group.
  * @param {Object} data
  * @param {string} subjectKey
  * @returns {boolean}
@@ -257,13 +257,13 @@ export function isSubjectGrouped(data, subjectKey) {
   return data.subjectMemberships.some((m) => m.subjectKey === subjectKey && m.groupIds.length > 0);
 }
 
-// ─── Favoris ──────────────────────────────────────────────────────────────────
+// ─── Favourites ──────────────────────────────────────────────────────────────────
 
 /**
- * Bascule le statut favori d'un sujet.
+ * Toggles a subject's favourite status.
  * @param {Object} data
  * @param {string} subjectKey
- * @returns {boolean} - true si maintenant favori, false si retiré
+ * @returns {boolean} - true if now favourite, false if removed
  */
 export function toggleFavoriteSubject(data, subjectKey) {
   if (!data.favoriteSubjects) data.favoriteSubjects = [];
@@ -278,10 +278,10 @@ export function toggleFavoriteSubject(data, subjectKey) {
 }
 
 /**
- * Bascule le statut favori d'un groupe.
+ * Toggles a group's favourite status.
  * @param {Object} data
  * @param {string} groupId
- * @returns {boolean} - true si maintenant favori, false si retiré
+ * @returns {boolean} - true if now favourite, false if removed
  */
 export function toggleFavoriteGroup(data, groupId) {
   if (!data.favoriteGroups) data.favoriteGroups = [];
@@ -296,7 +296,7 @@ export function toggleFavoriteGroup(data, groupId) {
 }
 
 /**
- * Indique si un sujet est favori.
+ * Indicates whether a subject is a favourite.
  * @param {Object} data
  * @param {string} subjectKey
  * @returns {boolean}
@@ -306,7 +306,7 @@ export function isSubjectFavorite(data, subjectKey) {
 }
 
 /**
- * Indique si un groupe est favori.
+ * Indicates whether a group is a favourite.
  * @param {Object} data
  * @param {string} groupId
  * @returns {boolean}

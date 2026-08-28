@@ -10,23 +10,23 @@ const {
 } = require('../services/aiService');
 const { requireAuth } = require('../middleware/authMiddleware');
 
-// Rate-limit sur tout /api/ai/* (même pattern que routes/gmail.js).
-// 60 req/min : assez large pour le filtrage IA par batches, bloque l'abus open-proxy.
+// Rate-limit on all /api/ai/* (same pattern as routes/gmail.js).
+// 60 req/min: wide enough for batch AI filtering, blocks open-proxy abuse.
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
-  message: { error: 'Trop de requêtes IA. Réessayez dans une minute.' },
+  message: { error: 'Too many AI requests. Try again in a minute.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 router.use(aiLimiter);
 
-// Auth obligatoire : le proxy IA n'est jamais exposé anonymement (défense
-// principale contre l'abus open-proxy/SSRF — cf. aiService.js).
+// Auth mandatory: AI proxy is never exposed anonymously (main defense
+// against open-proxy/SSRF abuse — see aiService.js).
 router.use(requireAuth);
 
 /**
- * Valide la baseUrl client (anti-SSRF) — répond 400 et retourne false si refusée.
+ * Validates client baseUrl (anti-SSRF) — responds 400 and returns false if rejected.
  */
 async function ensureSafeBaseUrl(res, provider, baseUrl) {
   try {
@@ -47,7 +47,7 @@ router.post('/model-info', async (req, res) => {
   const { provider, apiKey, model, baseUrl } = req.body;
 
   if (!provider || !model || !baseUrl) {
-    return res.status(400).json({ error: 'provider, model et baseUrl requis' });
+    return res.status(400).json({ error: 'provider, model and baseUrl required' });
   }
 
   if (!(await ensureSafeBaseUrl(res, provider, baseUrl))) return;
@@ -55,7 +55,7 @@ router.post('/model-info', async (req, res) => {
   // Ollama: use /api/show to get model info
   if (provider === 'ollama') {
     if (apiKey && !validateOllamaApiKey(apiKey)) {
-      return res.status(401).json({ error: 'Cle API Ollama invalide' });
+      return res.status(401).json({ error: 'Invalid Ollama API key' });
     }
     try {
       const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
@@ -118,13 +118,13 @@ router.post('/health', async (req, res) => {
   const { provider, apiKey, model, baseUrl } = req.body;
 
   if (!provider || !apiKey || !model || !baseUrl) {
-    return res.status(400).json({ error: 'Champs requis : provider, apiKey, model, baseUrl' });
+    return res.status(400).json({ error: 'Required fields: provider, apiKey, model, baseUrl' });
   }
 
   if (!(await ensureSafeBaseUrl(res, provider, baseUrl))) return;
 
   if (provider === 'ollama' && !validateOllamaApiKey(apiKey)) {
-    return res.status(401).json({ error: 'Cle API Ollama invalide' });
+    return res.status(401).json({ error: 'Invalid Ollama API key' });
   }
 
   try {
@@ -133,7 +133,7 @@ router.post('/health', async (req, res) => {
       apiKey,
       model,
       baseUrl,
-      messages: [{ role: 'user', content: 'Dis juste "OK".' }],
+      messages: [{ role: 'user', content: 'Just say "OK".' }],
       stream: false,
     });
 
@@ -141,12 +141,12 @@ router.post('/health', async (req, res) => {
 
     if (!response.ok) {
       const text = await response.text();
-      return res.status(502).json({ error: `Connexion echouee: ${response.status} ${text}` });
+      return res.status(502).json({ error: `Connection failed: ${response.status} ${text}` });
     }
 
     return res.json({ status: 'ok', provider, model });
   } catch (err) {
-    return res.status(502).json({ error: `Connexion echouee: ${err.message}` });
+    return res.status(502).json({ error: `Connection failed: ${err.message}` });
   }
 });
 
@@ -157,13 +157,13 @@ router.post('/chat', async (req, res) => {
   if (!provider || !apiKey || !model || !baseUrl || !messages) {
     return res
       .status(400)
-      .json({ error: 'Champs requis : provider, apiKey, model, baseUrl, messages' });
+      .json({ error: 'Required fields: provider, apiKey, model, baseUrl, messages' });
   }
 
   if (!(await ensureSafeBaseUrl(res, provider, baseUrl))) return;
 
   if (provider === 'ollama' && !validateOllamaApiKey(apiKey)) {
-    return res.status(401).json({ error: 'Cle API Ollama invalide' });
+    return res.status(401).json({ error: 'Invalid Ollama API key' });
   }
 
   try {
@@ -180,7 +180,7 @@ router.post('/chat', async (req, res) => {
 
     if (!response.ok) {
       const text = await response.text();
-      return res.status(502).json({ error: `Connexion echouee: ${response.status} ${text}` });
+      return res.status(502).json({ error: `Connection failed: ${response.status} ${text}` });
     }
 
     // Non-streaming mode: return full JSON response
@@ -234,7 +234,7 @@ router.post('/chat', async (req, res) => {
     }
   } catch (err) {
     if (!res.headersSent) {
-      return res.status(502).json({ error: `Connexion echouee: ${err.message}` });
+      return res.status(502).json({ error: `Connection failed: ${err.message}` });
     }
     res.end();
   }

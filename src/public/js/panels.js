@@ -1,5 +1,5 @@
 /**
- * Module de gestion du redimensionnement et du repli des panneaux lateraux
+ * Module for managing side panel resizing and collapsing
  */
 
 import { autoFit } from './treeRenderer.js';
@@ -9,9 +9,9 @@ const DEFAULTS = { leftWidth: 260, rightWidth: 280, leftCollapsed: false, rightC
 const MIN_PANEL_WIDTH = 180;
 const MAX_PANEL_WIDTH = 600;
 const RESIZER_WIDTH = 1;
-// Doit rester synchro avec le breakpoint 1024px de three-panel.css (grille
-// 1 colonne). En dessous, la mise en page mobile doit etre geree par les
-// media queries CSS — un style inline sur gridTemplateColumns les court-circuite.
+// Must stay in sync with the 1024px breakpoint in three-panel.css (1-column
+// grid). Below it, the mobile layout must be handled by the CSS media
+// queries — an inline style on gridTemplateColumns would override them.
 const MOBILE_BREAKPOINT = 1024;
 
 let state = { ...DEFAULTS };
@@ -36,7 +36,7 @@ function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // Quota exceeded ou storage indisponible : ignorer silencieusement
+    // Quota exceeded or storage unavailable: ignore silently
   }
 }
 
@@ -51,8 +51,8 @@ function applyLayout() {
   if (!layout) return;
 
   if (window.innerWidth <= MOBILE_BREAKPOINT) {
-    // Laisser le CSS (media queries) gerer entierement la grille mobile —
-    // ne pas ecrire de gridTemplateColumns inline qui la battrait toujours.
+    // Let the CSS (media queries) fully handle the mobile grid —
+    // do not write an inline gridTemplateColumns that would always override it.
     layout.style.gridTemplateColumns = '';
   } else {
     const left = state.leftCollapsed ? 0 : state.leftWidth;
@@ -73,7 +73,7 @@ function refitTree(delay = 240) {
   }, delay);
 }
 
-// === RESET (depuis le menu Actions) ===
+// === RESET (from the Actions menu) ===
 export function resetPanelSizes() {
   state = { ...DEFAULTS };
   saveState();
@@ -105,18 +105,18 @@ export function initPanelResizers() {
   const toggleLeft = document.getElementById('panelToggleLeft');
   const toggleRight = document.getElementById('panelToggleRight');
 
-  // === Boutons de repli ===
+  // === Collapse buttons ===
   if (toggleLeft) toggleLeft.addEventListener('click', () => togglePanel('left'));
   if (toggleRight) toggleRight.addEventListener('click', () => togglePanel('right'));
 
-  // === Reactivite : re-appliquer le layout si la fenetre franchit le breakpoint mobile ===
+  // === Responsiveness: re-apply the layout if the window crosses the mobile breakpoint ===
   let layoutResizeTimeout = null;
   window.addEventListener('resize', () => {
     if (layoutResizeTimeout) clearTimeout(layoutResizeTimeout);
     layoutResizeTimeout = setTimeout(applyLayout, 150);
   });
 
-  // === Drag resize (Pointer Events : couvre souris, tactile et stylet) ===
+  // === Drag resize (Pointer Events: covers mouse, touch and stylus) ===
   let isResizing = false;
   let currentResizer = null;
   let startX = 0;
@@ -126,7 +126,7 @@ export function initPanelResizers() {
   const layoutEl = document.querySelector('.three-panel-layout');
 
   function startResize(e, resizer) {
-    // Ne pas demarrer un resize si le panneau est replie
+    // Do not start a resize if the panel is collapsed
     if (resizer === resizerLeft && state.leftCollapsed) return;
     if (resizer === resizerRight && state.rightCollapsed) return;
 

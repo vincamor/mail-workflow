@@ -182,8 +182,8 @@
   color: var(--accent);
 }
 
-/* Uniquement sur les dispositifs a hover fiable (souris) : etoile cachee au
-   repos, revelee au survol du sujet/groupe parent. */
+/* Only on devices with reliable hover (mouse): star hidden at rest,
+   revealed when the parent subject/group is hovered. */
 @media (hover: hover) {
   .star-btn {
     opacity: 0;

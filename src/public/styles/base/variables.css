@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* === PRIMARY PALETTE (Warm Peach / Corail) === */
+  /* === PRIMARY PALETTE (Warm Peach / Coral) === */
   --primary: #f2a07b;
   --primary-hover: #f5b899;
   --primary-deep: #e8874f;
@@ -17,7 +17,7 @@
   --primary-muted: rgba(242, 160, 123, 0.08);
   --primary-ring: rgba(242, 160, 123, 0.3);
 
-  /* Secondary (Orchidée) */
+  /* Secondary (Orchid) */
   --secondary: #b44ae6;
   --secondary-hover: #c66ef0;
   --secondary-light: rgba(180, 74, 230, 0.12);

@@ -1,9 +1,9 @@
 /**
- * Module de gestion des filtres d'emails
- * Permet de configurer et appliquer des filtres pour exclure certains emails lors du téléchargement
+ * Email filters management module
+ * Configures and applies filters to exclude certain emails during download
  */
 
-// Configuration par défaut des filtres
+// Default filter configuration
 const DEFAULT_FILTERS = {
   excludeNoSubject: true,
   excludeNotifications: true,
@@ -32,12 +32,12 @@ const DEFAULT_FILTERS = {
   promotionalKeywords: ['unsubscribe', 'promo', 'promotional', 'offer', 'sale', 'discount'],
 };
 
-// Clé pour IndexedDB
+// Key for IndexedDB
 const FILTERS_STORAGE_KEY = 'emailFilters';
 
 /**
- * Charge les filtres depuis IndexedDB
- * @returns {Promise<Object>} - Configuration des filtres
+ * Loads filters from IndexedDB
+ * @returns {Promise<Object>} - Filter configuration
  */
 export async function loadFilters() {
   try {
@@ -50,31 +50,31 @@ export async function loadFilters() {
       request.onsuccess = () => {
         const savedFilters = request.result?.value || {};
 
-        // Fusionner avec les filtres par défaut pour s'assurer que les keywords sont présents
+        // Merge with default filters to ensure the keywords are present
         const filters = {
           ...DEFAULT_FILTERS,
           ...savedFilters,
-          // Toujours inclure les keywords par défaut s'ils ne sont pas personnalisés
+          // Always include the default keywords if they are not customised
           notificationKeywords:
             savedFilters.notificationKeywords || DEFAULT_FILTERS.notificationKeywords,
           promotionalKeywords:
             savedFilters.promotionalKeywords || DEFAULT_FILTERS.promotionalKeywords,
         };
 
-        console.log('✅ Filtres chargés:', filters);
+        console.log('✅ Filters loaded:', filters);
         resolve(filters);
       };
       request.onerror = () => reject(request.error);
     });
   } catch (e) {
-    console.log('Utilisation des filtres par défaut');
+    console.log('Using default filters');
     return { ...DEFAULT_FILTERS };
   }
 }
 
 /**
- * Sauvegarde les filtres dans IndexedDB
- * @param {Object} filters - Configuration des filtres
+ * Saves filters to IndexedDB
+ * @param {Object} filters - Filter configuration
  */
 export async function saveFilters(filters) {
   try {
@@ -82,11 +82,11 @@ export async function saveFilters(filters) {
     const transaction = db.transaction(['filters'], 'readwrite');
     const store = transaction.objectStore('filters');
 
-    // store.put() renvoie un IDBRequest, PAS une Promise : un `await` dessus se
-    // resout immediatement sans attendre la transaction. On enveloppe donc dans
-    // une vraie Promise qui n'est resolue qu'a la fin de la transaction et
-    // rejetee en cas d'echec (sinon les erreurs sont invisibles et le toast de
-    // succes de l'appelant est mensonger).
+    // store.put() returns an IDBRequest, NOT a Promise: an `await` on it
+    // resolves immediately without waiting for the transaction. So we wrap it
+    // in a real Promise that only resolves once the transaction completes and
+    // rejects on failure (otherwise errors are invisible and the caller's
+    // success toast is misleading).
     await new Promise((resolve, reject) => {
       const request = store.put({
         key: FILTERS_STORAGE_KEY,
@@ -98,16 +98,16 @@ export async function saveFilters(filters) {
       transaction.onabort = () => reject(transaction.error);
     });
 
-    console.log('✅ Filtres sauvegardés');
+    console.log('✅ Filters saved');
   } catch (e) {
-    console.error('❌ Erreur sauvegarde filtres:', e);
-    // Propager pour que le catch de l'appelant se declenche (toast d'erreur).
+    console.error('❌ Error saving filters:', e);
+    // Propagate so the caller's catch fires (error toast).
     throw e;
   }
 }
 
 /**
- * Ouvre ou crée la base de données pour les filtres
+ * Opens or creates the database for filters
  * @returns {Promise<IDBDatabase>}
  */
 function openFiltersDB() {
@@ -127,7 +127,7 @@ function openFiltersDB() {
 }
 
 /**
- * Réinitialise les filtres aux valeurs par défaut
+ * Resets filters to their default values
  */
 export async function resetFilters() {
   await saveFilters(DEFAULT_FILTERS);
@@ -135,21 +135,21 @@ export async function resetFilters() {
 }
 
 /**
- * Vérifie si un email doit être exclu selon les filtres
- * @param {Object} email - Email à vérifier
- * @param {Object} filters - Configuration des filtres
+ * Checks whether an email should be excluded according to the filters
+ * @param {Object} email - Email to check
+ * @param {Object} filters - Filter configuration
  * @returns {Object} - { shouldExclude: boolean, reason: string }
  */
 export function shouldExcludeEmail(email, filters) {
   const subject = (email.subject || '').toLowerCase();
   const from = (email.from || '').toLowerCase();
 
-  // 1. Vérifier le sujet vide
+  // 1. Check for an empty subject
   if (filters.excludeNoSubject && (!email.subject || email.subject.trim() === '')) {
-    return { shouldExclude: true, reason: 'Sans sujet' };
+    return { shouldExclude: true, reason: 'No subject' };
   }
 
-  // 2. Vérifier les notifications
+  // 2. Check for notifications
   if (filters.excludeNotifications) {
     const isNotification = filters.notificationKeywords.some(
       (keyword) => from.includes(keyword.toLowerCase()) || subject.includes(keyword.toLowerCase())
@@ -159,7 +159,7 @@ export function shouldExcludeEmail(email, filters) {
     }
   }
 
-  // 3. Vérifier les promotions
+  // 3. Check for promotional content
   if (filters.excludePromotional) {
     const isPromotional = filters.promotionalKeywords.some((keyword) =>
       subject.includes(keyword.toLowerCase())
@@ -169,23 +169,23 @@ export function shouldExcludeEmail(email, filters) {
     }
   }
 
-  // 4. Vérifier la liste noire d'expéditeurs
+  // 4. Check the sender blocklist
   if (filters.blacklistedSenders && filters.blacklistedSenders.length > 0) {
     const isBlacklisted = filters.blacklistedSenders.some((sender) =>
       from.includes(sender.toLowerCase())
     );
     if (isBlacklisted) {
-      return { shouldExclude: true, reason: 'Expéditeur bloqué' };
+      return { shouldExclude: true, reason: 'Blocked sender' };
     }
   }
 
-  // 5. Vérifier les mots-clés interdits
+  // 5. Check the forbidden keywords
   if (filters.blacklistedKeywords && filters.blacklistedKeywords.length > 0) {
     const hasBlacklistedKeyword = filters.blacklistedKeywords.some((keyword) =>
       subject.includes(keyword.toLowerCase())
     );
     if (hasBlacklistedKeyword) {
-      return { shouldExclude: true, reason: 'Mot-clé interdit' };
+      return { shouldExclude: true, reason: 'Forbidden keyword' };
     }
   }
 
@@ -193,9 +193,9 @@ export function shouldExcludeEmail(email, filters) {
 }
 
 /**
- * Filtre une liste d'emails
- * @param {Array} emails - Liste d'emails à filtrer
- * @param {Object} filters - Configuration des filtres
+ * Filters a list of emails
+ * @param {Array} emails - List of emails to filter
+ * @param {Object} filters - Filter configuration
  * @returns {Object} - { filtered: Array, excluded: Array, stats: Object }
  */
 export function filterEmails(emails, filters) {
@@ -225,7 +225,7 @@ export function filterEmails(emails, filters) {
 }
 
 /**
- * Obtient les filtres par défaut
+ * Gets the default filters
  * @returns {Object}
  */
 export function getDefaultFilters() {

@@ -1,6 +1,6 @@
 /* === Split panel : drawers en haut, chat en bas, diviseur draggable === */
 
-/* Wrapper des drawers — prend tout l'espace disponible, scroll vertical */
+/* Drawer wrapper — takes all available space, scrolls vertically */
 .right-panel-drawers {
   flex: 1 1 auto;
   min-height: 0;
@@ -29,8 +29,8 @@
   background: var(--accent-primary, #f2a07b);
 }
 
-/* Zone de clic etendue verticalement de chaque cote pour saisir plus facilement
-   le diviseur visuellement fin (6px). */
+/* Click area extended vertically on each side so the visually thin
+   divider (6px) is easier to grab. */
 #aiChatDivider::after {
   content: '';
   position: absolute;

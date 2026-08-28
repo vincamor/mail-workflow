@@ -1,7 +1,7 @@
 /**
  * Tree Visualization — Theme-aware
- * Aubergine & Peach — anti-slop : aurora reservee aux mails self-sent
- * Refonte 2026-04-26 (taste-skill 5/5/6)
+ * Aubergine & Peach — anti-slop: aurora reserved for self-sent emails
+ * 2026-04-26 rework (taste-skill 5/5/6)
  */
 
 /* === NODES — base === */
@@ -24,7 +24,7 @@
     filter 220ms ease-out;
 }
 
-/* Hover : glow doux peach + leger scale */
+/* Hover: soft peach glow + slight scale */
 .node:hover rect:not(.expand-button):not(.badge-bg),
 .node.hover rect:not(.expand-button):not(.badge-bg) {
   fill: var(--bg-elevated);
@@ -33,12 +33,12 @@
   filter: drop-shadow(0 6px 18px var(--primary-light));
 }
 
-/* Pressed feedback (scale tactile) */
+/* Pressed feedback (touch scale) */
 .node.pressing {
   transform: scale(0.985);
 }
 
-/* Dim non-branch nodes au hover sur un autre nœud */
+/* Dim non-branch nodes when hovering another node */
 .node.dimmed-out {
   opacity: 0.28;
 }
@@ -47,7 +47,7 @@
   filter: none;
 }
 
-/* Self-sent : marqueur aurora subtil (le seul accent gradient dans l'arbre) */
+/* Self-sent: subtle aurora marker (the only gradient accent in the tree) */
 .node.self-sent rect:not(.expand-button):not(.badge-bg) {
   fill: var(--bg-elevated);
   stroke: url(#aurora-stroke-gradient);
@@ -61,21 +61,22 @@
   filter: drop-shadow(0 6px 22px var(--primary-light));
 }
 
-/* Root : bord plus epais pour le distinguer (origine du thread) */
+/* Root: thicker border to set it apart (origin of the subject) */
 .node.root rect:not(.expand-button):not(.badge-bg) {
   stroke: var(--primary);
   stroke-width: 2.5;
   stroke-opacity: 0.7;
 }
 
-/* Root self-sent : combine epaisseur root + aurora gradient */
+/* Root self-sent: combines the root thickness + the aurora gradient */
 .node.root.self-sent rect:not(.expand-button):not(.badge-bg) {
   stroke: url(#aurora-stroke-gradient);
   stroke-width: 2.5;
   stroke-opacity: 0.85;
 }
 
-/* Root au hover : preserve l'epaisseur (sinon retombe a 1.5 via .node:hover) */
+/* Root on hover: keeps the thickness
+   (otherwise it drops to 1.5 via .node:hover) */
 .node.root:hover rect:not(.expand-button):not(.badge-bg),
 .node.root.hover rect:not(.expand-button):not(.badge-bg),
 .node.root.self-sent:hover rect:not(.expand-button):not(.badge-bg),
@@ -157,7 +158,7 @@
   stroke: var(--primary);
 }
 
-/* === EXPAND BUTTON (le "+") === */
+/* === EXPAND BUTTON (the "+") === */
 .expand-button {
   fill: var(--primary);
   stroke: none;
@@ -202,8 +203,8 @@
   opacity: 1;
 }
 
-/* Ecrans tactiles/stylet : pas de :hover fiable — le bouton "+" doit rester
-   visible en permanence, sinon il est invisible ET inatteignable. */
+/* Touch/stylus screens: no reliable :hover — the "+" button must stay visible
+   at all times, otherwise it is both invisible AND unreachable. */
 @media (hover: none) {
   .expand-button,
   .expand-text {
@@ -439,9 +440,9 @@ marker {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* === BARRE D'OUTILS FLOTTANTE DE LA VUE ===
-   Contrôles (ajuster / timeline / réinitialiser) posés au plus près de l'arbre,
-   plutôt qu'enterrés dans un drawer du panneau droit. */
+/* === FLOATING VIEW TOOLBAR ===
+   Controls (fit / timeline / reset) placed as close to the tree as possible,
+   rather than buried in a drawer of the right-hand panel. */
 .tree-toolbar {
   position: absolute;
   top: var(--space-3, 12px);

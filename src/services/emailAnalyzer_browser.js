@@ -1,17 +1,17 @@
-// === FONCTIONS DE BASE ===
+// === CORE FUNCTIONS ===
 
 /**
- * Décode les données base64 des emails Gmail
- * @param {string} data - Données base64 à décoder
- * @returns {string} - Données décodées
+ * Decodes base64 data from Gmail emails
+ * @param {string} data - Base64 data to decode
+ * @returns {string} - Decoded data
  */
 function decodeBase64Data(data) {
   if (!data) return '';
   try {
-    // Gestion des caractères spéciaux dans base64
-    // `let`, pas `const` : le padding est ajouté juste en dessous. Avec `const`,
-    // l'affectation levait une TypeError avalée par le catch, et la fonction
-    // retournait le base64 brut au lieu du texte décodé — silencieusement.
+    // Handling of special characters in base64
+    // `let`, not `const`: padding is appended right below. With `const`,
+    // the assignment threw a TypeError that was swallowed by the catch, and the
+    // function returned the raw base64 instead of the decoded text — silently.
     let cleanData = data.replace(/-/g, '+').replace(/_/g, '/');
     const missingPadding = cleanData.length % 4;
     if (missingPadding) {
@@ -21,16 +21,16 @@ function decodeBase64Data(data) {
     const decodedString = atob(cleanData);
     return decodeURIComponent(escape(decodedString));
   } catch (error) {
-    console.warn(`⚠️  Erreur décodage: ${error}`);
+    console.warn(`⚠️  Decoding error: ${error}`);
     return data;
   }
 }
 
 /**
- * Charge les emails depuis un FileSystemHandle par chunks
- * @param {FileSystemFileHandle} fileHandle - Handle du fichier
- * @param {number} chunkSize - Taille des chunks (défaut: 500)
- * @returns {Array} - Liste des emails avec index des chunks
+ * Loads emails from a FileSystemHandle in chunks
+ * @param {FileSystemFileHandle} fileHandle - File handle
+ * @param {number} chunkSize - Chunk size (default: 500)
+ * @returns {Array} - List of emails with chunk indices
  */
 async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
   const emails = [];
@@ -42,7 +42,7 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
     const stream = file.stream();
     const textDecoder = new TextDecoder();
 
-    // Buffer pour les lignes incomplètes
+    // Buffer for incomplete lines
     let buffer = '';
 
     for await (const chunk of stream) {
@@ -50,19 +50,19 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
       const chunkText = textDecoder.decode(chunk, { stream: true });
       buffer += chunkText;
 
-      // Traiter les lignes complètes
+      // Process the complete lines
       const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Garder la dernière ligne incomplète
+      buffer = lines.pop() || ''; // Keep the last incomplete line
 
-      // Traiter les lignes complètes
+      // Process the complete lines
       for (const line of lines) {
         if (line.trim()) {
           try {
             const full = JSON.parse(line);
-            // Construire immédiatement un objet allégé avec uniquement les champs utilisés.
-            // L'objet complet (full) — qui contient bodyHtml et originalPayload — sort
-            // de portée à la fin de ce bloc et devient éligible au GC sans délai,
-            // évitant l'accumulation de 80+ Ko par email dans le heap.
+            // Immediately build a lightweight object with only the fields used.
+            // The full object (full) — which holds bodyHtml and originalPayload —
+            // goes out of scope at the end of this block and becomes GC-eligible
+            // right away, avoiding an accumulation of 80+ KB per email in the heap.
             emails.push({
               id: full.id,
               threadId: full.threadId,
@@ -82,13 +82,13 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
               _chunkIndex: chunkCount,
             });
           } catch (e) {
-            console.warn('Ligne malformée ignorée:', line.substring(0, 50));
+            console.warn('Malformed line ignored:', line.substring(0, 50));
           }
         }
       }
     }
 
-    // Traiter la dernière ligne si elle existe
+    // Process the last line if it exists
     if (buffer.trim()) {
       try {
         const full = JSON.parse(buffer);
@@ -111,33 +111,33 @@ async function loadEmailsFromHandle(fileHandle, _chunkSize = 500) {
           _chunkIndex: chunkCount,
         });
       } catch (e) {
-        console.warn('Dernière ligne malformée ignorée');
+        console.warn('Last malformed line ignored');
       }
     }
 
-    console.log(`✅ ${emails.length} emails chargés en ${chunkCount} chunks`);
+    console.log(`✅ ${emails.length} emails loaded in ${chunkCount} chunks`);
     return emails;
   } catch (error) {
-    console.error('Erreur chargement emails par chunks:', error);
+    console.error('Error loading emails by chunks:', error);
     return [];
   }
 }
 
 /**
- * Extrait et nettoie le sujet
- * @param {Object} email - Email à traiter
- * @returns {string} - Sujet nettoyé
+ * Extracts and cleans up the subject
+ * @param {Object} email - Email to process
+ * @returns {string} - Cleaned subject
  */
 function extractSubject(email) {
   let subject = '';
 
-  // D'abord chercher directement dans email.subject
+  // First look directly in email.subject
   if (email.subject) {
     subject = email.subject;
   }
-  // Sinon chercher dans les headers (fallback)
+  // Otherwise look in the headers (fallback)
   else if (email.payload && email.payload.headers) {
-    subject = 'Sans sujet';
+    subject = 'No subject';
     for (const header of email.payload.headers) {
       if (header.name.toLowerCase() === 'subject') {
         subject = header.value;
@@ -145,25 +145,25 @@ function extractSubject(email) {
       }
     }
   } else {
-    return 'Sans sujet';
+    return 'No subject';
   }
 
-  // Nettoyage (supprime Re:, Fwd:, etc.)
+  // Clean-up (removes Re:, Fwd:, etc.)
   subject = subject.replace(/^(Re:|Fwd:|FW:|RE:|FWD:)\s*/i, '');
   return subject.trim();
 }
 
 /**
- * Extrait l'expéditeur
- * @param {Object} email - Email à traiter
- * @returns {string} - Expéditeur
+ * Extracts the sender
+ * @param {Object} email - Email to process
+ * @returns {string} - Sender
  */
 function extractFrom(email) {
-  // D'abord chercher directement dans email.from
+  // First look directly in email.from
   if (email.from) {
     return email.from;
   }
-  // Sinon chercher dans les headers (fallback)
+  // Otherwise look in the headers (fallback)
   else if (email.payload && email.payload.headers) {
     for (const header of email.payload.headers) {
       if (header.name.toLowerCase() === 'from') {
@@ -171,13 +171,13 @@ function extractFrom(email) {
       }
     }
   }
-  return 'Inconnu';
+  return 'Unknown';
 }
 
 /**
- * Extrait la date
- * @param {Object} email - Email à traiter
- * @returns {Date} - Date de l'email
+ * Extracts the date
+ * @param {Object} email - Email to process
+ * @returns {Date} - Email date
  */
 function extractDate(email) {
   if (email.internalDate) {
@@ -188,26 +188,26 @@ function extractDate(email) {
 }
 
 /**
- * Extrait le contenu du corps
- * @param {Object} email - Email à traiter
- * @returns {string} - Contenu du corps
+ * Extracts the body content
+ * @param {Object} email - Email to process
+ * @returns {string} - Body content
  */
 function extractBodyContent(email) {
-  // Si le serveur a déjà décodé le contenu (format gmailService), l'utiliser directement
+  // If the server has already decoded the content (gmailService format), use it directly
   if (email.bodyText) {
     return email.bodyText;
   }
 
-  // Fallback sur le snippet (bodyText est toujours présent car décodé côté serveur)
+  // Fallback to the snippet (bodyText is always present since it is decoded server-side)
   return email.snippet || '';
 }
 
-// === FONCTIONS D'ANALYSE ===
+// === ANALYSIS FUNCTIONS ===
 
 /**
- * Groupe les emails par sujet
- * @param {Array} emails - Liste des emails
- * @returns {Object} - Emails groupés par sujet
+ * Groups emails by subject
+ * @param {Array} emails - List of emails
+ * @returns {Object} - Emails grouped by subject
  */
 function groupBySubject(emails) {
   const conversations = {};
@@ -220,7 +220,7 @@ function groupBySubject(emails) {
     conversations[subject].push(email);
   }
 
-  // Trie chaque conversation par date
+  // Sort each conversation by date
   for (const subject in conversations) {
     conversations[subject].sort((a, b) => extractDate(a) - extractDate(b));
   }
@@ -229,16 +229,16 @@ function groupBySubject(emails) {
 }
 
 /**
- * Crée un graphique pour une conversation
- * @param {Array} emails - Liste des emails d'une conversation
- * @param {string} subject - Sujet de la conversation
- * @returns {Object} - Graphique avec nodes et links
+ * Creates a graph for a conversation
+ * @param {Array} emails - List of emails in a conversation
+ * @param {string} subject - Conversation subject
+ * @returns {Object} - Graph with nodes and links
  */
 function createConversationGraph(emails, subject) {
   const nodes = [];
   const links = [];
 
-  // Crée les nodes
+  // Create the nodes
   for (let i = 0; i < emails.length; i++) {
     const email = emails[i];
     const node = {
@@ -253,7 +253,7 @@ function createConversationGraph(emails, subject) {
     nodes.push(node);
   }
 
-  // Crée les liens chronologiques (email i -> email i+1)
+  // Create the chronological links (email i -> email i+1)
   for (let i = 0; i < emails.length - 1; i++) {
     const link = {
       source: i,
@@ -271,12 +271,12 @@ function createConversationGraph(emails, subject) {
   };
 }
 
-// === FONCTIONS DE NETTOYAGE ===
+// === CLEAN-UP FUNCTIONS ===
 
 /**
- * Nettoie et normalise un email
- * @param {Object} email - Email brut
- * @returns {Object} - Email nettoyé
+ * Cleans up and normalises an email
+ * @param {Object} email - Raw email
+ * @returns {Object} - Cleaned email
  */
 function cleanEmail(email) {
   return {
@@ -295,23 +295,23 @@ function cleanEmail(email) {
     bodyText: extractBodyContent(email),
     snippet: email.snippet || '',
     hasAttachments: email.hasAttachments === true,
-    _chunkIndex: email._chunkIndex, // Conserver l'index du chunk
+    _chunkIndex: email._chunkIndex, // Keep the chunk index
   };
 }
 
-// === FONCTIONS POUR LES SUJETS AVEC MINIMUM D'EMAILS ===
+// === FUNCTIONS FOR SUBJECTS WITH A MINIMUM NUMBER OF EMAILS ===
 
 /**
- * Retourne les sujets ayant au minimum X emails avec index des chunks
- * @param {Array} emailsClean - Liste des emails nettoyés
- * @param {number} minCount - Nombre minimum d'emails (défaut: 3)
- * @returns {Array} - Liste des sujets valides avec index des chunks
+ * Returns subjects with at least X emails, with chunk indices
+ * @param {Array} emailsClean - List of cleaned emails
+ * @param {number} minCount - Minimum number of emails (default: 3)
+ * @returns {Array} - List of valid subjects with chunk indices
  */
 function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
-  // Grouper par sujet
+  // Group by subject
   const conversations = groupBySubject(emailsClean);
 
-  // Filtrer les sujets avec minimum X emails
+  // Filter subjects with at least X emails
   const validSubjects = [];
 
   for (const [subject, emailList] of Object.entries(conversations)) {
@@ -455,18 +455,18 @@ function getSubjectsWithMinEmails(emailsClean, minCount = 3, userEmail = null) {
     }
   }
 
-  // Trier par nombre d'emails décroissant
+  // Sort by descending email count
   validSubjects.sort((a, b) => b.emailCount - a.emailCount);
 
   return validSubjects;
 }
 
 /**
- * Affiche les sujets valides de manière lisible
- * @param {Array} validSubjects - Liste des sujets valides
+ * Displays the valid subjects in a readable form
+ * @param {Array} validSubjects - List of valid subjects
  */
 function displayValidSubjects(validSubjects) {
-  console.log(`📧 SUJETS AVEC MINIMUM 3 EMAILS (${validSubjects.length} trouvés)`);
+  console.log(`📧 SUBJECTS WITH AT LEAST 3 EMAILS (${validSubjects.length} found)`);
   console.log('='.repeat(70));
 
   for (let i = 0; i < validSubjects.length; i++) {
@@ -474,27 +474,27 @@ function displayValidSubjects(validSubjects) {
     console.log(`\n${i + 1}. 📌 ${subjectInfo.subject}`);
     console.log(`   📊 ${subjectInfo.emailCount} emails`);
     console.log(`   👥 Participants: ${subjectInfo.participants.join(', ')}`);
-    console.log(`   📅 Du ${subjectInfo.dateRange.start} au ${subjectInfo.dateRange.end}`);
+    console.log(`   📅 From ${subjectInfo.dateRange.start} to ${subjectInfo.dateRange.end}`);
   }
 }
 
-// === FONCTION PRINCIPALE POUR CRÉER L'ARBRE TEMPOREL ===
+// === MAIN FUNCTION TO BUILD THE CONVERSATION TREE ===
 
 /**
- * Extrait le groupe de participants d'un email
- * @param {Object} email - Email à analyser
- * @returns {Set} - Ensemble des participants
+ * Extracts the participant group of an email
+ * @param {Object} email - Email to analyse
+ * @returns {Set} - Set of participants
  */
 function getParticipantsGroup(email) {
   const participants = new Set();
 
-  // Ajouter l'expéditeur
+  // Add the sender
   if (email.from) {
     const fromEmail = email.from.split('<').pop().replace('>', '');
     participants.add(fromEmail.toLowerCase());
   }
 
-  // Ajouter les destinataires
+  // Add the recipients
   if (email.to) {
     for (const to of email.to.split(',')) {
       const toEmail = to.split('<').pop().replace('>', '').trim();
@@ -504,7 +504,7 @@ function getParticipantsGroup(email) {
     }
   }
 
-  // Ajouter les CC
+  // Add the CC
   if (email.cc) {
     for (const cc of email.cc.split(',')) {
       const ccEmail = cc.split('<').pop().replace('>', '').trim();
@@ -518,13 +518,13 @@ function getParticipantsGroup(email) {
 }
 
 /**
- * Crée un arbre temporel avec logique de groupes de participants
- * @param {Array} emails - Liste des emails nettoyés
- * @param {string} subject - Sujet de la conversation
- * @returns {Object} - Arbre avec nodes et links
+ * Builds a conversation tree using participant-group logic
+ * @param {Array} emails - List of cleaned emails
+ * @param {string} subject - Conversation subject
+ * @returns {Object} - Tree with nodes and links
  */
 function createTemporalGroupTree(emails, subject) {
-  // Filtrer et trier par date
+  // Filter and sort by date
   const subjectEmails = emails.filter((e) => e.subject === subject);
   subjectEmails.sort((a, b) => a.date - b.date);
 
@@ -532,7 +532,7 @@ function createTemporalGroupTree(emails, subject) {
     return { nodes: [], links: [], metadata: {} };
   }
 
-  // Créer les nodes
+  // Create the nodes
   const nodes = [];
   const emailToIndex = {};
 
@@ -561,14 +561,14 @@ function createTemporalGroupTree(emails, subject) {
     emailToIndex[email.messageId] = i;
   }
 
-  // PARCOURIR DU PLUS RÉCENT AU PLUS ANCIEN
+  // WALK FROM MOST RECENT TO OLDEST
   for (let i = subjectEmails.length - 1; i > 0; i--) {
     const currentEmail = subjectEmails[i];
     const currentGroup = new Set(nodes[i].participantsGroup);
 
     let parentIndex = null;
 
-    // 1. Chercher le mail juste avant avec le même groupe
+    // 1. Look for the mail just before with the same group
     for (let j = i - 1; j >= 0; j--) {
       const previousGroup = new Set(nodes[j].participantsGroup);
       if (setsAreEqual(currentGroup, previousGroup)) {
@@ -577,7 +577,7 @@ function createTemporalGroupTree(emails, subject) {
       }
     }
 
-    // 2. Sinon utiliser inReplyTo
+    // 2. Otherwise use inReplyTo
     if (parentIndex === null) {
       const parentId = currentEmail.inReplyTo;
       if (parentId && Object.prototype.hasOwnProperty.call(emailToIndex, parentId)) {
@@ -585,16 +585,16 @@ function createTemporalGroupTree(emails, subject) {
       }
     }
 
-    // 3. Sinon lier au root
+    // 3. Otherwise link to the root
     if (parentIndex === null) {
       parentIndex = 0;
     }
 
-    // Ajouter aux children du parent
+    // Add to the parent's children
     nodes[parentIndex].children.push(currentEmail.messageId);
   }
 
-  // Créer les links à partir des children
+  // Create the links from the children
   const links = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -622,10 +622,10 @@ function createTemporalGroupTree(emails, subject) {
 }
 
 /**
- * Compare deux ensembles pour vérifier l'égalité
- * @param {Set} set1 - Premier ensemble
- * @param {Set} set2 - Deuxième ensemble
- * @returns {boolean} - True si égaux
+ * Compares two sets for equality
+ * @param {Set} set1 - First set
+ * @param {Set} set2 - Second set
+ * @returns {boolean} - True if equal
  */
 function setsAreEqual(set1, set2) {
   if (set1.size !== set2.size) return false;
@@ -635,39 +635,39 @@ function setsAreEqual(set1, set2) {
   return true;
 }
 
-// === FONCTIONS D'UTILISATION ===
+// === USAGE FUNCTIONS ===
 
 /**
- * Récupère les emails d'un sujet (version simplifiée)
- * @param {FileSystemFileHandle} fileHandle - Handle du fichier
- * @param {Object} subjectInfo - Informations du sujet
- * @returns {Array} - Liste des emails du sujet
+ * Retrieves the emails for a subject (simplified version)
+ * @param {FileSystemFileHandle} fileHandle - File handle
+ * @param {Object} subjectInfo - Subject information
+ * @returns {Array} - List of emails for the subject
  */
 async function getEmailsForSubjectOptimized(fileHandle, subjectInfo) {
   try {
-    console.log(`🔍 DEBUG: Recherche des emails pour le sujet "${subjectInfo.subject}"`);
+    console.log(`🔍 DEBUG: Looking up emails for subject "${subjectInfo.subject}"`);
 
-    // Charger tous les emails et filtrer par sujet
+    // Load all emails and filter by subject
     const allEmails = await loadEmailsFromHandle(fileHandle, 500);
-    console.log(`🔍 DEBUG: ${allEmails.length} emails chargés au total`);
+    console.log(`🔍 DEBUG: ${allEmails.length} emails loaded in total`);
 
-    // Filtrer par sujet
+    // Filter by subject
     const subjectEmails = allEmails.filter((email) => {
       const emailSubject = extractSubject(email);
       return emailSubject === subjectInfo.subject;
     });
 
-    console.log(`✅ ${subjectEmails.length} emails trouvés pour "${subjectInfo.subject}"`);
+    console.log(`✅ ${subjectEmails.length} emails found for "${subjectInfo.subject}"`);
     return subjectEmails;
   } catch (error) {
-    console.error('Erreur récupération emails optimisée:', error);
+    console.error('Error retrieving optimised emails:', error);
     return [];
   }
 }
 
 // === EXPORTS ===
 
-// ✅ AJOUTER à la fin du fichier :
+// ✅ ADD at the end of the file:
 export default {
   createTemporalGroupTree,
   getSubjectsWithMinEmails,

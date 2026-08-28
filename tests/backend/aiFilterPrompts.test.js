@@ -6,10 +6,10 @@ function parseAIFilterResponse(text) {
   const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) jsonStr = jsonMatch[1].trim();
   const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
-  if (!objectMatch) throw new Error('Aucun JSON trouve dans la reponse IA');
+  if (!objectMatch) throw new Error('No JSON found in the AI response');
   const parsed = JSON.parse(objectMatch[0]);
   if (!parsed.exclure || !parsed.garder)
-    throw new Error('Format invalide: champs "exclure" et "garder" requis');
+    throw new Error('Invalid format: the "exclure" and "garder" fields are required');
   return {
     exclure: Array.isArray(parsed.exclure) ? parsed.exclure : [],
     garder: Array.isArray(parsed.garder) ? parsed.garder : [],
@@ -52,7 +52,7 @@ function buildPass2Batches(subjects, maxTokensPerBatch = 7000) {
 }
 
 describe('parseAIFilterResponse', () => {
-  it('parse un JSON valide', () => {
+  it('parses valid JSON', () => {
     const text = '{"exclure": ["A", "B"], "garder": ["C"], "incertain": ["D"]}';
     const result = parseAIFilterResponse(text);
     expect(result.exclure).toEqual(['A', 'B']);
@@ -60,28 +60,28 @@ describe('parseAIFilterResponse', () => {
     expect(result.incertain).toEqual(['D']);
   });
 
-  it('parse un JSON entoure de code fences', () => {
+  it('parses JSON wrapped in code fences', () => {
     const text = '```json\n{"exclure": ["A"], "garder": ["B"], "incertain": []}\n```';
     const result = parseAIFilterResponse(text);
     expect(result.exclure).toEqual(['A']);
   });
 
-  it('parse un JSON avec du texte autour', () => {
+  it('parses JSON surrounded by text', () => {
     const text =
-      'Voici mon analyse:\n{"exclure": ["A"], "garder": ["B"], "incertain": []}\nBonne journee!';
+      'Here is my analysis:\n{"exclure": ["A"], "garder": ["B"], "incertain": []}\nHave a good day!';
     const result = parseAIFilterResponse(text);
     expect(result.exclure).toEqual(['A']);
   });
 
-  it('lance une erreur si pas de JSON', () => {
-    expect(() => parseAIFilterResponse('Pas de JSON ici')).toThrow('Aucun JSON');
+  it('throws when there is no JSON', () => {
+    expect(() => parseAIFilterResponse('No JSON here')).toThrow('No JSON');
   });
 
-  it('lance une erreur si format invalide', () => {
-    expect(() => parseAIFilterResponse('{"foo": "bar"}')).toThrow('Format invalide');
+  it('throws when the format is invalid', () => {
+    expect(() => parseAIFilterResponse('{"foo": "bar"}')).toThrow('Invalid format');
   });
 
-  it('gere les champs manquants avec des arrays vides', () => {
+  it('falls back to empty arrays for the missing fields', () => {
     const text = '{"exclure": ["A"], "garder": ["B"]}';
     const result = parseAIFilterResponse(text);
     expect(result.incertain).toEqual([]);
@@ -89,15 +89,19 @@ describe('parseAIFilterResponse', () => {
 });
 
 describe('validateFilterResults', () => {
-  it('filtre les sujets hallucines', () => {
-    const aiResult = { exclure: ['A', 'Hallucine'], garder: ['B', 'Invente'], incertain: ['C'] };
+  it('filters out the hallucinated subjects', () => {
+    const aiResult = {
+      exclure: ['A', 'Hallucinated'],
+      garder: ['B', 'Invented'],
+      incertain: ['C'],
+    };
     const result = validateFilterResults(aiResult, ['A', 'B', 'C', 'D']);
     expect(result.exclure).toEqual(['A']);
     expect(result.garder).toEqual(['B']);
     expect(result.incertain).toEqual(['C']);
   });
 
-  it('retourne des arrays vides si tout est hallucine', () => {
+  it('returns empty arrays when everything is hallucinated', () => {
     const result = validateFilterResults({ exclure: ['X'], garder: ['Y'], incertain: ['Z'] }, [
       'A',
       'B',
@@ -109,7 +113,7 @@ describe('validateFilterResults', () => {
 });
 
 describe('buildPass2Batches', () => {
-  it('regroupe les sujets dans le budget tokens', () => {
+  it('groups the subjects within the token budget', () => {
     const subjects = [
       { subject: 'A', promptBlock: 'x'.repeat(400) },
       { subject: 'B', promptBlock: 'x'.repeat(400) },
@@ -121,7 +125,7 @@ describe('buildPass2Batches', () => {
     expect(batches[0].length).toBe(4);
   });
 
-  it('split quand le budget est depasse', () => {
+  it('splits when the budget is exceeded', () => {
     const subjects = [
       { subject: 'A', promptBlock: 'x'.repeat(10000) },
       { subject: 'B', promptBlock: 'x'.repeat(10000) },
@@ -132,7 +136,7 @@ describe('buildPass2Batches', () => {
     expect(batches.length).toBe(2);
   });
 
-  it('met un gros sujet seul dans un batch', () => {
+  it('puts a large subject alone in its batch', () => {
     const subjects = [
       { subject: 'A', promptBlock: 'x'.repeat(30000) },
       { subject: 'B', promptBlock: 'x'.repeat(400) },
@@ -141,7 +145,7 @@ describe('buildPass2Batches', () => {
     expect(batches.length).toBe(2);
   });
 
-  it('retourne un array vide si pas de sujets', () => {
+  it('returns an empty array when there are no subjects', () => {
     expect(buildPass2Batches([], 7000).length).toBe(0);
   });
 });

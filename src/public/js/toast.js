@@ -1,10 +1,10 @@
 /**
- * Module de notifications — remplace les alert() natifs
- * Toasts empilés (success, warning, error, info) + modale guide
- * 100 % CSS variables — compatible avec tous les thèmes
+ * Notification module — replaces native alert() calls
+ * Stacked toasts (success, warning, error, info) + guide modal
+ * 100% CSS variables — works with every theme
  */
 
-// ── Container (créé une seule fois) ─────────────────────────────────
+// ── Container (created once) ─────────────────────────────────
 let container = null;
 
 function getContainer() {
@@ -16,7 +16,7 @@ function getContainer() {
   return container;
 }
 
-// ── Icônes SVG inline (pas de dépendance) ───────────────────────────
+// ── Inline SVG icons (no dependency) ───────────────────────────
 const ICONS = {
   success: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`,
   error: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
@@ -24,13 +24,13 @@ const ICONS = {
   info: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
 };
 
-// ── Toast (notification empilée) ────────────────────────────────────
+// ── Toast (stacked notification) ────────────────────────────────────
 
 /**
- * Affiche un toast en bas à droite.
- * @param {string} message  — texte à afficher
+ * Shows a toast in the bottom right.
+ * @param {string} message  — text to display
  * @param {'success'|'error'|'warning'|'info'} type
- * @param {number} duration — ms avant auto-dismiss (0 = pas d'auto)
+ * @param {number} duration — ms before auto-dismiss (0 = no auto-dismiss)
  */
 export function showToast(message, type = 'info', duration = 4000) {
   const el = document.createElement('div');
@@ -41,7 +41,7 @@ export function showToast(message, type = 'info', duration = 4000) {
   el.innerHTML = `
     <span class="toast-icon">${ICONS[type] || ICONS.info}</span>
     <span class="toast-message">${escapeHtml(message)}</span>
-    <button class="toast-close" aria-label="Fermer">&times;</button>
+    <button class="toast-close" aria-label="Close">&times;</button>
   `;
 
   // Dismiss on click
@@ -63,7 +63,7 @@ function dismissToast(el) {
   el.addEventListener('animationend', () => el.remove(), { once: true });
 }
 
-// ── Raccourcis sémantiques ──────────────────────────────────────────
+// ── Semantic shortcuts ──────────────────────────────────────────
 
 export function toastSuccess(message, duration = 3500) {
   return showToast(message, 'success', duration);
@@ -81,17 +81,17 @@ export function toastInfo(message, duration = 4000) {
   return showToast(message, 'info', duration);
 }
 
-// ── Guide Modal (remplace l'alert onboarding) ──────────────────────
+// ── Guide Modal (replaces the onboarding alert) ──────────────────────
 
 /**
- * Affiche une modale "guide" avec titre, corps HTML, et bouton OK.
+ * Shows a "guide" modal with title, HTML body, and OK button.
  * @param {object} opts
  * @param {string} opts.title
- * @param {string} opts.body       — HTML autorisé
- * @param {string} opts.icon       — emoji ou HTML pour l'icône du header
+ * @param {string} opts.body       — HTML allowed
+ * @param {string} opts.icon       — emoji or HTML for the header icon
  * @param {'info'|'warning'|'error'|'success'} opts.type
- * @param {string} opts.buttonText — texte du bouton (défaut "OK")
- * @returns {Promise<void>}        — se résout quand l'utilisateur ferme
+ * @param {string} opts.buttonText — button text (default "OK")
+ * @returns {Promise<void>}        — resolves when the user closes it
  */
 export function showGuideModal({ title, body, icon = '', type = 'info', buttonText = 'OK' } = {}) {
   return new Promise((resolve) => {
@@ -101,7 +101,7 @@ export function showGuideModal({ title, body, icon = '', type = 'info', buttonTe
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
 
-    // Contenu
+    // Content
     overlay.innerHTML = `
       <div class="guide-modal guide-modal-${type}">
         <div class="guide-modal-accent"></div>
@@ -124,15 +124,15 @@ export function showGuideModal({ title, body, icon = '', type = 'info', buttonTe
       );
     };
 
-    // Fermer sur bouton
+    // Close on button
     overlay.querySelector('.guide-modal-btn').onclick = close;
 
-    // Fermer sur clic overlay (hors modale)
+    // Close on overlay click (outside the modal)
     overlay.addEventListener('mousedown', (e) => {
       if (e.target === overlay) close();
     });
 
-    // Fermer sur Escape
+    // Close on Escape
     const onKey = (e) => {
       if (e.key === 'Escape') {
         document.removeEventListener('keydown', onKey);
@@ -143,31 +143,31 @@ export function showGuideModal({ title, body, icon = '', type = 'info', buttonTe
 
     document.body.appendChild(overlay);
 
-    // Focus le bouton
+    // Focus the button
     overlay.querySelector('.guide-modal-btn').focus();
   });
 }
 
-// ── Confirm Modal (remplace confirm()) ──────────────────────────────
+// ── Confirm Modal (replaces confirm()) ──────────────────────────────
 
 /**
- * Affiche une modale de confirmation avec boutons Confirmer / Annuler.
+ * Shows a confirmation modal with Confirm / Cancel buttons.
  * @param {object} opts
  * @param {string} opts.title
- * @param {string} opts.message     — texte simple (échappé) ou HTML si html=true
- * @param {boolean} opts.html       — si true, message est injecté tel quel
+ * @param {string} opts.message     — plain text (escaped) or HTML if html=true
+ * @param {boolean} opts.html       — if true, message is injected as-is
  * @param {'info'|'warning'|'error'} opts.type
- * @param {string} opts.confirmText — texte du bouton confirmer (défaut "Confirmer")
- * @param {string} opts.cancelText  — texte du bouton annuler (défaut "Annuler")
- * @returns {Promise<boolean>}      — true si confirmé, false sinon
+ * @param {string} opts.confirmText — confirm button text (default "Confirm")
+ * @param {string} opts.cancelText  — cancel button text (default "Cancel")
+ * @returns {Promise<boolean>}      — true if confirmed, false otherwise
  */
 export function showConfirmModal({
   title = 'Confirmation',
   message = '',
   html = false,
   type = 'info',
-  confirmText = 'Confirmer',
-  cancelText = 'Annuler',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
 } = {}) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -224,7 +224,7 @@ export function showConfirmModal({
   });
 }
 
-// ── Utilitaire ──────────────────────────────────────────────────────
+// ── Utility ──────────────────────────────────────────────────────
 
 function escapeHtml(str) {
   const div = document.createElement('div');

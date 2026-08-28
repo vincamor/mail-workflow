@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,16 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Design System -->
     <link rel="stylesheet" href="/styles/main.css" />
-    <!-- Filtres CSS -->
+    <!-- Filters CSS -->
     <link rel="stylesheet" href="/styles/components/filters.css" />
-    <!-- Interface dossier CSS -->
+    <!-- Folder interface CSS -->
     <link rel="stylesheet" href="/styles/components/folder-interface.css" />
-    <!-- Groupes de sujets CSS -->
+    <!-- Subject groups CSS -->
     <link rel="stylesheet" href="/styles/components/groups.css" />
     <!-- Tree visualization CSS -->
     <link rel="stylesheet" href="/tree-visualization.css" />
-    <!-- Demo mode (?demo=1) : bandeau permanent + masquage des actions d'ecriture.
-         Couleurs 100% via variables CSS, comme partout ailleurs. -->
+    <!-- Demo mode (?demo=1): permanent banner + hiding of write actions.
+         Colours 100% via CSS variables, as everywhere else. -->
     <style>
       body.demo-mode {
         --demo-banner-height: 34px;
@@ -49,15 +49,15 @@
         color: var(--primary);
         text-decoration: underline;
       }
-      /* Le conteneur applicatif est fixed/top:0 : on le decale sous le bandeau. */
+      /* The app container is fixed/top:0: shift it below the banner. */
       body.demo-mode .app-container {
         top: var(--demo-banner-height, 34px);
         height: calc(100vh - var(--footer-height, 34px) - var(--demo-banner-height, 34px));
       }
-      /* Actions d'ecriture creees dynamiquement : masquees, pas grisees.
-         Les favoris et les groupes s'ecrivent dans le dossier local, qui
-         n'existe pas en mode demo — on retire les commandes plutot que de
-         laisser des boutons morts. */
+      /* Dynamically created write actions: hidden, not greyed out.
+         Favourites and groups are written to the local folder, which
+         does not exist in demo mode — we remove the commands rather than
+         leave dead buttons. */
       body.demo-mode #replyActionsBar,
       body.demo-mode #replyFormSection,
       body.demo-mode #filterButton,
@@ -68,10 +68,10 @@
     </style>
   </head>
   <body>
-    <!-- Skip link (accessibilité clavier) -->
-    <a href="#mainContent" class="skip-link">Aller au contenu principal</a>
+    <!-- Skip link (keyboard accessibility) -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-    <!-- Bandeau mode demo (?demo=1) — permanent, non dismissible -->
+    <!-- Demo mode banner (?demo=1) — permanent, not dismissible -->
     <div id="demoBanner" class="demo-banner" role="status" style="display: none">
       <span><strong>Demo mode</strong> — sample data, read-only.</span>
       <a href="https://github.com/vincamor/mail-workflow#quick-start" target="_blank" rel="noopener"
@@ -79,59 +79,57 @@
       >
     </div>
 
-    <!-- Message navigateur non supporté (FileSystem Handle API requise) -->
+    <!-- Unsupported browser message (File System Access API required) -->
     <div id="unsupportedBrowser" class="unsupported-browser" style="display: none">
       <div class="unsupported-browser-content">
-        <h1>Navigateur non supporté</h1>
+        <h1>Unsupported browser</h1>
         <p>
-          Cet outil nécessite <strong>Chrome</strong> ou <strong>Edge 86+</strong> (API File System
-          Access).
+          This tool requires <strong>Chrome</strong> or <strong>Edge 86+</strong> (File System
+          Access API).
         </p>
-        <p>Vos données restent sur votre ordinateur ; le choix du dossier est indispensable.</p>
+        <p>Your data stays on your computer; choosing a folder is required.</p>
         <a href="https://www.google.com/chrome/" target="_blank" rel="noopener" class="btn-primary"
-          >Télécharger Chrome</a
+          >Download Chrome</a
         >
       </div>
     </div>
 
-    <!-- INTERFACE NON CONNECTÉ (Format simple) -->
+    <!-- SIGNED-OUT INTERFACE (simple layout) -->
     <div id="loginInterface" class="login-container">
       <div class="content-wrapper">
         <h1>Mail Workflow</h1>
 
         <main class="login-main">
-          <!-- Section de connexion -->
+          <!-- Sign-in section -->
           <div class="login-section">
             <div class="login-card">
-              <h2><span class="icon icon-lock icon-inline" aria-hidden="true"></span>Connexion</h2>
-              <p>
-                Connectez-vous à votre compte email pour commencer l'analyse de vos conversations
-              </p>
+              <h2><span class="icon icon-lock icon-inline" aria-hidden="true"></span>Sign in</h2>
+              <p>Sign in to your email account to start analysing your conversations</p>
 
               <div class="connection-buttons">
                 <button id="gmailBtn" class="btn-primary btn-lg">
                   <span class="icon icon-email icon-lg"></span>
-                  Se connecter avec Gmail
+                  Sign in with Gmail
                 </button>
                 <button id="outlookBtn" class="btn-primary btn-lg">
                   <span class="icon icon-email icon-lg"></span>
-                  Se connecter avec Outlook
+                  Sign in with Outlook
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Messages d'état pour la connexion -->
+          <!-- Sign-in status messages -->
           <div id="loginStatus" class="login-status"></div>
         </main>
       </div>
     </div>
 
-    <!-- Overlay de chargement global -->
+    <!-- Global loading overlay -->
     <div id="loadingOverlay" class="loading-overlay" style="display: none">
       <div class="loading-overlay-content">
         <div class="loading-spinner"></div>
-        <div class="loading-overlay-text" id="loadingOverlayText">Chargement en cours...</div>
+        <div class="loading-overlay-text" id="loadingOverlayText">Loading...</div>
         <div class="loading-overlay-progress">
           <div class="loading-overlay-bar">
             <div class="loading-overlay-bar-fill" id="loadingOverlayProgress"></div>
@@ -141,93 +139,91 @@
       </div>
     </div>
 
-    <!-- INTERFACE CONNECTÉ (3 panneaux) -->
+    <!-- SIGNED-IN INTERFACE (3 panels) -->
     <div id="appInterface" class="app-container" style="display: none">
-      <!-- Interface 3 panneaux -->
+      <!-- 3-panel interface -->
       <main class="three-panel-layout" id="mainContent">
-        <!-- PANNEAU GAUCHE - Actions -->
-        <aside class="left-panel" aria-label="Sujets">
-          <!-- HEADER AVEC RECHERCHE -->
+        <!-- LEFT PANEL - Actions -->
+        <aside class="left-panel" aria-label="Subjects">
+          <!-- HEADER WITH SEARCH -->
           <div class="left-panel-header">
             <input
               type="text"
               id="subjectSearch"
-              placeholder="Rechercher (sujets, contacts, contenu)..."
+              placeholder="Search (subjects, contacts, content)..."
               class="search-input-header"
             />
             <button
               id="favoritesFilterBtn"
               class="favorites-filter-btn"
-              title="Afficher uniquement les favoris"
-              aria-label="Afficher uniquement les favoris"
+              title="Show only favourites"
+              aria-label="Show only favourites"
             >
               <span class="icon icon-star" aria-hidden="true"></span>
             </button>
             <button
               id="myConversationsBtn"
               class="favorites-filter-btn"
-              title="Mes conversations (où j'ai participé)"
-              aria-label="Mes conversations (où j'ai participé)"
+              title="My conversations (where I participated)"
+              aria-label="My conversations (where I participated)"
             >
               <span class="icon icon-reply" aria-hidden="true"></span>
             </button>
           </div>
 
-          <!-- BARRE DE RECHERCHE EN HAUT (sans titre) -->
+          <!-- TOP SEARCH BAR (no title) -->
           <div class="search-top-section">
-            <!-- Barre de chargement pendant l'analyse -->
+            <!-- Loading bar during analysis -->
             <div id="loadingAnalysis" style="display: none" class="loading-container">
               <div class="loading-bar">
                 <div id="loadingProgress" class="loading-progress"></div>
               </div>
               <div class="loading-text">
-                <span id="loadingPercentage">0%</span> - Analyse en cours...
+                <span id="loadingPercentage">0%</span> - Analysis in progress...
               </div>
             </div>
 
-            <!-- Section de recherche (affichée après analyse - cachée maintenant) -->
+            <!-- Search section (shown after analysis - now hidden) -->
             <div id="searchSection" style="display: none" class="search-section"></div>
           </div>
 
-          <!-- Navigation Bar avec titre "Sujets" -->
+          <!-- Navigation bar with "Subjects" title -->
           <div class="sidebar-navigation-bar" style="display: none" id="subjectNavigationBar">
             <div class="navigation-title-container">
-              <h2 class="navigation-title">Sujets</h2>
+              <h2 class="navigation-title">Subjects</h2>
             </div>
           </div>
 
-          <!-- Barre de progression du téléchargement (inline, non-bloquante) -->
+          <!-- Download progress bar (inline, non-blocking) -->
           <div id="downloadProgressBar" class="download-progress-bar" style="display: none">
             <div class="download-progress-bar-fill" id="downloadProgressFill"></div>
-            <div class="download-progress-bar-text" id="downloadProgressText">
-              Téléchargement...
-            </div>
+            <div class="download-progress-bar-text" id="downloadProgressText">Downloading...</div>
           </div>
 
-          <!-- Liste des sujets -->
+          <!-- Subject list -->
           <div id="subjectsList" class="subjects-list" style="display: none">
-            <p class="no-data">En attente de l'analyse...</p>
+            <p class="no-data">Waiting for analysis...</p>
           </div>
         </aside>
 
-        <!-- Barre de redimensionnement gauche -->
+        <!-- Left resize bar -->
         <div
           class="resizer resizer-left"
           role="separator"
           aria-orientation="vertical"
-          aria-label="Redimensionner le panneau gauche"
+          aria-label="Resize the left panel"
           tabindex="0"
         ></div>
 
-        <!-- PANNEAU CENTRAL - Visualisation -->
-        <section class="middle-panel" aria-label="Visualisation de la conversation">
-          <!-- Boutons de repli/depli des panneaux lateraux -->
+        <!-- CENTER PANEL - Visualisation -->
+        <section class="middle-panel" aria-label="Conversation visualisation">
+          <!-- Buttons to collapse/expand the side panels -->
           <button
             id="panelToggleLeft"
             class="panel-toggle panel-toggle-left"
             type="button"
-            aria-label="Replier ou deplier le panneau gauche"
-            title="Replier / deplier le panneau gauche"
+            aria-label="Collapse or expand the left panel"
+            title="Collapse / expand the left panel"
           >
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
               <path
@@ -244,8 +240,8 @@
             id="panelToggleRight"
             class="panel-toggle panel-toggle-right"
             type="button"
-            aria-label="Replier ou deplier le panneau droit"
-            title="Replier / deplier le panneau droit"
+            aria-label="Collapse or expand the right panel"
+            title="Collapse / expand the right panel"
           >
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
               <path
@@ -259,28 +255,28 @@
             </svg>
           </button>
           <div class="visualization-container">
-            <!-- Rapport de filtrage IA -->
+            <!-- AI filtering report -->
             <div id="aiFilterReport" style="display: none"></div>
-            <!-- Zone de visualisation de l'arbre -->
+            <!-- Tree visualisation area -->
             <div id="treeVisualization" style="display: none" class="tree-visualization">
-              <!-- Notification de nouveaux emails pour le sujet sélectionné -->
+              <!-- Notification of new emails for the selected subject -->
               <div id="treeNewEmailsBanner" class="tree-new-emails-banner" style="display: none">
-                <span id="treeNewEmailsText">0 nouveaux emails</span>
+                <span id="treeNewEmailsText">0 new emails</span>
                 <button id="treeNewEmailsRefreshBtn" class="tree-new-emails-refresh-btn">
-                  Rafraîchir l'arbre
+                  Refresh the tree
                 </button>
                 <button class="tree-new-emails-dismiss-btn" id="treeNewEmailsDismissBtn">
                   &times;
                 </button>
               </div>
-              <!-- Barre d'outils flottante de la vue (contrôles au plus près de l'arbre) -->
-              <div class="tree-toolbar" role="toolbar" aria-label="Contrôles de la vue">
+              <!-- Floating view toolbar (controls close to the tree) -->
+              <div class="tree-toolbar" role="toolbar" aria-label="View controls">
                 <button
                   id="autoFitTreeBtn"
                   class="tree-tool-btn"
                   type="button"
-                  title="Ajuster la vue"
-                  aria-label="Ajuster la vue"
+                  title="Fit the view"
+                  aria-label="Fit the view"
                 >
                   <span class="icon icon-zoom" aria-hidden="true"></span>
                 </button>
@@ -288,8 +284,8 @@
                   id="toggleTimelinesBtn"
                   class="tree-tool-btn"
                   type="button"
-                  title="Afficher/masquer la timeline"
-                  aria-label="Afficher ou masquer la timeline"
+                  title="Show/hide the timeline"
+                  aria-label="Show or hide the timeline"
                 >
                   <span class="icon icon-calendar" aria-hidden="true"></span>
                 </button>
@@ -297,18 +293,18 @@
                   id="resetPanelsBtn"
                   class="tree-tool-btn"
                   type="button"
-                  title="Réinitialiser la disposition"
-                  aria-label="Réinitialiser la disposition des panneaux"
+                  title="Reset the layout"
+                  aria-label="Reset the panel layout"
                 >
                   <span class="icon icon-reset" aria-hidden="true"></span>
                 </button>
               </div>
               <div id="treeContainer" class="tree-container">
-                <p>Sélectionnez un sujet pour voir l'arbre</p>
+                <p>Select a subject to see the tree</p>
               </div>
             </div>
 
-            <!-- État par défaut -->
+            <!-- Default state -->
             <div id="defaultView" class="default-view">
               <div class="welcome-content">
                 <div class="welcome-icon">
@@ -317,35 +313,35 @@
                     style="width: 64px; height: 64px; opacity: 0.5"
                   ></span>
                 </div>
-                <h2>Bienvenue dans Mail Workflow</h2>
-                <p>Connectez-vous et téléchargez vos emails pour commencer l'analyse</p>
+                <h2>Welcome to Mail Workflow</h2>
+                <p>Sign in and download your emails to start the analysis</p>
               </div>
             </div>
 
-            <!-- Messages d'état -->
+            <!-- Status messages -->
             <div id="emails" class="status-messages"></div>
           </div>
         </section>
 
-        <!-- Barre de redimensionnement droite -->
+        <!-- Right resize bar -->
         <div
           class="resizer resizer-right"
           role="separator"
           aria-orientation="vertical"
-          aria-label="Redimensionner le panneau droit"
+          aria-label="Resize the right panel"
           tabindex="0"
         ></div>
 
-        <!-- PANNEAU DROIT - Outils complet -->
-        <aside class="right-panel" aria-label="Outils">
-          <!-- Titre Outils -->
+        <!-- RIGHT PANEL - Full toolset -->
+        <aside class="right-panel" aria-label="Tools">
+          <!-- Tools title -->
           <div class="right-panel-navigation-bar">
             <div class="right-panel-title-container">
-              <h2 class="right-panel-title">Outils</h2>
+              <h2 class="right-panel-title">Tools</h2>
             </div>
           </div>
 
-          <!-- Section Utilisateur (Tiroir) -->
+          <!-- User section (Drawer) -->
           <div id="userSection" class="user-section" style="display: none">
             <div
               class="user-avatar-container"
@@ -353,7 +349,7 @@
               tabindex="0"
               aria-expanded="false"
               aria-controls="userDropdown"
-              aria-label="Options du compte"
+              aria-label="Account options"
             >
               <div class="user-avatar-left">
                 <div class="user-avatar-bubble" id="userAvatarBubble">?</div>
@@ -367,15 +363,15 @@
               ></span>
             </div>
 
-            <!-- Contenu déroulant -->
+            <!-- Dropdown content -->
             <div id="userDropdown" class="user-dropdown">
               <button id="disconnectBtn" class="user-dropdown-disconnect">
-                <span class="icon icon-logout"></span> Se déconnecter
+                <span class="icon icon-logout"></span> Sign out
               </button>
             </div>
           </div>
 
-          <!-- Section Dossier (Tiroir) -->
+          <!-- Folder section (Drawer) -->
           <div class="panel-section drawer-section" id="folderSection" style="display: none">
             <div
               class="drawer-header"
@@ -384,96 +380,96 @@
               aria-expanded="true"
               aria-controls="folderDrawer"
             >
-              <h3><span class="icon icon-folder icon-inline" aria-hidden="true"></span>Dossier</h3>
+              <h3><span class="icon icon-folder icon-inline" aria-hidden="true"></span>Folder</h3>
               <span id="folderToggle" class="drawer-toggle open"
                 ><span class="icon icon-chevron-right" aria-hidden="true"></span
               ></span>
             </div>
             <div id="folderDrawer" class="drawer-content">
               <div class="folder-content">
-                <!-- Guide étape par étape -->
+                <!-- Step-by-step guide -->
                 <div class="folder-guide">
                   <div class="guide-step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                      <h4>Choisir un dossier de sauvegarde</h4>
-                      <p>Sélectionnez où sauvegarder vos emails localement</p>
+                      <h4>Choose a folder to save to</h4>
+                      <p>Select where to save your emails locally</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- État du dossier -->
+                <!-- Folder status -->
                 <div id="folderStatus" class="folder-status folder-status-empty">
                   <div class="folder-status-icon">
                     <span class="icon icon-folder icon-xl"></span>
                   </div>
                   <div class="folder-status-content">
-                    <div class="folder-status-title">Aucun dossier sélectionné</div>
+                    <div class="folder-status-title">No folder selected</div>
                     <div class="folder-status-path" id="currentFolderPath">
-                      Cliquez sur le bouton ci-dessous pour choisir un dossier
+                      Click the button below to choose a folder
                     </div>
                   </div>
                 </div>
 
-                <!-- Bouton de sélection -->
+                <!-- Selection button -->
                 <button id="changeFolderBtn" class="btn-folder-select">
                   <span class="icon icon-folder icon-lg"></span>
-                  <span class="btn-text">Choisir un dossier</span>
+                  <span class="btn-text">Choose a folder</span>
                 </button>
 
-                <!-- Séparateur avec étape 2 -->
+                <!-- Separator with step 2 -->
                 <div class="folder-guide" id="step2Guide" style="display: none">
                   <div class="guide-step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                      <h4>Configurer les filtres (optionnel)</h4>
-                      <p>Personnalisez quels emails télécharger</p>
+                      <h4>Configure filters (optional)</h4>
+                      <p>Customise which emails to download</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Bouton filtres (sera ajouté ici par filterUI.js) -->
+                <!-- Filters button (added here by filterUI.js) -->
 
-                <!-- Séparateur avec étape 3 -->
+                <!-- Separator with step 3 -->
                 <div class="folder-guide" id="step3Guide" style="display: none">
                   <div class="guide-step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                      <h4>Télécharger vos emails</h4>
-                      <p>Lancer le téléchargement et la sauvegarde</p>
+                      <h4>Download your emails</h4>
+                      <p>Start the download and save</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Bouton de téléchargement -->
+                <!-- Download button -->
                 <button id="downloadEmailsBtn" class="btn-download" style="display: none" disabled>
                   <span class="icon icon-download icon-lg"></span>
-                  <span class="btn-text">Télécharger les emails</span>
+                  <span class="btn-text">Download emails</span>
                   <span class="btn-badge" id="emailCountBadge">0</span>
                 </button>
 
-                <!-- Bouton de mise à jour incrémentale -->
+                <!-- Incremental update button -->
                 <button id="updateEmailsBtn" class="btn-download" style="display: none">
                   <span class="icon icon-download icon-lg"></span>
-                  <span class="btn-text">Mettre à jour</span>
+                  <span class="btn-text">Update</span>
                   <span class="btn-badge" id="newEmailCountBadge">0</span>
                 </button>
 
-                <!-- Info supplémentaire -->
+                <!-- Additional info -->
                 <div id="downloadInfo" class="download-info" style="display: none">
                   <div class="info-icon">
                     <span class="icon icon-info-dot icon-lg"></span>
                   </div>
                   <div class="info-text">
-                    <strong>Prêt à télécharger !</strong><br />
-                    Les emails seront sauvegardés dans le dossier sélectionné
+                    <strong>Ready to download!</strong><br />
+                    Emails will be saved to the selected folder
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Section Statistiques (Tiroir) -->
+          <!-- Statistics section (Drawer) -->
           <div class="panel-section drawer-section" id="statisticsSection" style="display: none">
             <div
               class="drawer-header"
@@ -483,7 +479,7 @@
               aria-controls="statisticsDrawer"
             >
               <h3>
-                <span class="icon icon-chart icon-inline" aria-hidden="true"></span>Statistiques
+                <span class="icon icon-chart icon-inline" aria-hidden="true"></span>Statistics
               </h3>
               <span id="statisticsToggle" class="drawer-toggle"
                 ><span class="icon icon-chevron-right" aria-hidden="true"></span
@@ -492,7 +488,7 @@
             <div id="statisticsDrawer" class="drawer-content closed">
               <div class="drawer-stats">
                 <div class="drawer-stat-line drawer-stat-primary">
-                  <span id="totalEmails">0</span> mails analysés ·
+                  <span id="totalEmails">0</span> emails analysed ·
                   <span id="totalConversations">0</span> relations
                 </div>
                 <div
@@ -500,13 +496,13 @@
                   id="emailCountInfo"
                   style="display: none"
                 >
-                  <span id="emailCount">0</span> mails disponibles au téléchargement
+                  <span id="emailCount">0</span> emails available to download
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Section Actions (Tiroir) -->
+          <!-- Actions section (Drawer) -->
           <div class="panel-section drawer-section" id="actionsSection" style="display: none">
             <div
               class="drawer-header"
@@ -516,7 +512,7 @@
               aria-controls="actionsDrawer"
             >
               <h3>
-                <span class="icon icon-settings icon-inline" aria-hidden="true"></span>Apparence
+                <span class="icon icon-settings icon-inline" aria-hidden="true"></span>Appearance
               </h3>
               <span id="actionsToggle" class="drawer-toggle"
                 ><span class="icon icon-chevron-right" aria-hidden="true"></span
@@ -525,13 +521,13 @@
             <div id="actionsDrawer" class="drawer-content closed">
               <!-- Theme Picker -->
               <div class="theme-picker-section">
-                <h4 class="theme-picker-title">Thème</h4>
+                <h4 class="theme-picker-title">Theme</h4>
                 <div id="themePickerList" class="theme-picker-list"></div>
               </div>
             </div>
           </div>
 
-          <!-- Section Assistant IA (Tiroir) -->
+          <!-- AI Assistant section (Drawer) -->
           <div class="panel-section drawer-section" id="aiSection" style="display: none">
             <div
               class="drawer-header"
@@ -541,7 +537,7 @@
               aria-controls="aiDrawer"
             >
               <h3>
-                <span class="icon icon-robot icon-inline" aria-hidden="true"></span>Assistant IA
+                <span class="icon icon-robot icon-inline" aria-hidden="true"></span>AI assistant
               </h3>
               <span id="aiToggle" class="drawer-toggle"
                 ><span class="icon icon-chevron-right" aria-hidden="true"></span
@@ -585,7 +581,7 @@
                       />
                     </div>
                     <div class="ai-config-field">
-                      <label for="aiApiKey">Cle API</label>
+                      <label for="aiApiKey">API key</label>
                       <div class="ai-input-group">
                         <input
                           type="password"
@@ -597,22 +593,22 @@
                           id="aiToggleKeyVisibility"
                           class="btn-icon"
                           type="button"
-                          title="Afficher/masquer"
-                          aria-label="Afficher ou masquer la clé API"
+                          title="Show/hide"
+                          aria-label="Show or hide the API key"
                         >
                           <span class="icon icon-eye" aria-hidden="true"></span>
                         </button>
                       </div>
                     </div>
                     <div class="ai-config-field">
-                      <label for="aiModel">Modele</label>
+                      <label for="aiModel">Model</label>
                       <input type="text" id="aiModel" class="ai-input" placeholder="gemma3:4b" />
                     </div>
                     <div class="ai-config-actions">
                       <button id="aiTestBtn" class="btn-secondary btn-full">
-                        Tester la connexion
+                        Test the connection
                       </button>
-                      <button id="aiSaveBtn" class="btn-primary btn-full">Sauvegarder</button>
+                      <button id="aiSaveBtn" class="btn-primary btn-full">Save</button>
                     </div>
                     <div id="aiTestResult" class="ai-test-result" style="display: none"></div>
                   </div>
@@ -624,50 +620,49 @@
                   id="aiFilterBtn"
                   class="btn-primary btn-full"
                   disabled
-                  title="Configurez d'abord votre provider IA"
+                  title="Configure your AI provider first"
                 >
-                  <span class="icon icon-broom icon-inline" aria-hidden="true"></span>Faire le
-                  Menage
+                  <span class="icon icon-broom icon-inline" aria-hidden="true"></span>Clean-up
                 </button>
                 <p class="ai-filter-hint">
-                  Analyse vos sujets avec l'IA pour identifier les newsletters et spams
+                  Analyses your subjects with AI to identify newsletters and spam
                 </p>
                 <button
                   id="aiChatBtn"
                   class="btn-primary btn-full"
                   disabled
-                  title="Configurez l'IA et selectionnez un sujet"
+                  title="Configure AI and select a subject"
                   style="margin-top: 8px"
                 >
-                  <span class="icon icon-chat icon-inline" aria-hidden="true"></span>Discuter du
-                  sujet
+                  <span class="icon icon-chat icon-inline" aria-hidden="true"></span>Discuss the
+                  subject
                 </button>
                 <p class="ai-filter-hint">
-                  Pose des questions sur le sujet sélectionné ou rédige une réponse à partir du fil.
+                  Ask questions about the selected subject or draft a reply from the thread.
                 </p>
               </div>
             </div>
           </div>
 
-          <!-- Informations système masquées -->
+          <!-- Hidden system information -->
           <div id="status" style="display: none"></div>
         </aside>
       </main>
     </div>
 
-    <!-- Menu contextuel groupes (positionné en fixed, caché par défaut) -->
+    <!-- Group context menu (positioned fixed, hidden by default) -->
     <div id="groupContextMenu" class="context-menu"></div>
 
-    <!-- Chargement du module principal de l'application -->
+    <!-- Load the app's main module -->
     <script type="module" src="/js/app.js"></script>
-    <!-- Footer légal minimal (obligatoire pour OAuth Google) -->
+    <!-- Minimal legal footer (required for Google OAuth) -->
     <footer class="app-footer">
       <div class="app-footer-content">
-        <span>Mail Workflow — bêta personnelle</span>
+        <span>Mail Workflow — personal beta</span>
         <nav class="app-footer-links">
-          <a href="/privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy policy</a>
           <span>·</span>
-          <a href="/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>
+          <a href="/terms.html" target="_blank" rel="noopener">Terms of use</a>
         </nav>
       </div>
     </footer>

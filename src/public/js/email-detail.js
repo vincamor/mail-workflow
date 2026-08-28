@@ -1,55 +1,55 @@
 /**
- * Module pour afficher les détails d'un email dans une fenêtre modale
+ * Module for displaying an email's details in a modal window
  */
 import { showReplyForm } from './reply.js';
 import { getEmailById } from './analysis.js';
 import { loadBodyHtmlForEmail } from './emails.js';
 
-// Données de l'email actuellement affiché — lues par les handlers des boutons Répondre
+// Data of the email currently displayed — read by the Reply button handlers
 let currentEmailData = null;
 
-// Element ayant le focus avant l'ouverture de la modal (pour le restaurer a la fermeture)
+// Element that had focus before the modal opened (to restore it on close)
 let lastFocusedElement = null;
-// Handler keydown actif tant que la modal est ouverte (Escape + focus trap)
+// Keydown handler active while the modal is open (Escape + focus trap)
 let modalKeyHandler = null;
 
-// Créer et afficher la modal avec le contenu de l'email
+// Create and display the modal with the email content
 export function showEmailDetail(emailData) {
-  // Créer la modal si elle n'existe pas
+  // Create the modal if it does not exist yet
   let modal = document.getElementById('emailDetailModal');
   if (!modal) {
     modal = createEmailDetailModal();
     document.body.appendChild(modal);
   }
 
-  // Mémoriser le focus courant pour le restaurer à la fermeture (a11y)
+  // Remember the current focus to restore it on close (a11y)
   lastFocusedElement = document.activeElement;
 
-  // Afficher la modal
+  // Show the modal
   modal.style.display = 'flex';
 
-  // Escape + piège à focus tant que la modal est ouverte
+  // Escape + focus trap while the modal is open
   modalKeyHandler = (e) => handleModalKeydown(e, modal);
   document.addEventListener('keydown', modalKeyHandler);
 
-  // Récupérer l'email complet depuis la Map (déjà chargé lors de l'affichage de l'arbre)
+  // Retrieve the full email from the Map (already loaded when the tree was rendered)
   const fullEmail = getEmailById ? getEmailById(emailData.id) : null;
 
   if (fullEmail) {
-    // Utiliser l'email complet de la Map
+    // Use the full email from the Map
     populateEmailDetail(modal, fullEmail);
   } else {
-    // Fallback sur les données du noeud (ne devrait pas arriver)
+    // Fallback to the node data (should not happen)
     populateEmailDetail(modal, emailData);
   }
 
-  // Focus initial sur le bouton de fermeture (a11y — l'utilisateur clavier entre dans la modal)
+  // Initial focus on the close button (a11y — a keyboard user enters the modal)
   const closeBtn = modal.querySelector('#closeEmailDetail');
   if (closeBtn) closeBtn.focus();
 }
 
 /**
- * Ferme la modal détail : masque, retire le handler clavier, restaure le focus.
+ * Closes the detail modal: hides it, removes the keyboard handler, restores focus.
  */
 function closeEmailDetailModal(modal) {
   modal.style.display = 'none';
@@ -61,14 +61,14 @@ function closeEmailDetailModal(modal) {
     try {
       lastFocusedElement.focus();
     } catch (_) {
-      /* element retiré du DOM */
+      /* element removed from the DOM */
     }
   }
   lastFocusedElement = null;
 }
 
 /**
- * Gère Escape (fermeture) et Tab (piège à focus) pour la modal détail email.
+ * Handles Escape (close) and Tab (focus trap) for the email detail modal.
  */
 function handleModalKeydown(e, modal) {
   if (e.key === 'Escape') {
@@ -78,7 +78,7 @@ function handleModalKeydown(e, modal) {
   }
   if (e.key !== 'Tab') return;
 
-  // Piège à focus : garder le focus à l'intérieur de la modal.
+  // Focus trap: keep focus inside the modal.
   const focusables = Array.from(
     modal.querySelectorAll(
       'button, [href], input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])'
@@ -97,7 +97,7 @@ function handleModalKeydown(e, modal) {
   }
 }
 
-// Créer la structure HTML de la modal
+// Build the modal's HTML structure
 function createEmailDetailModal() {
   const modal = document.createElement('div');
   modal.id = 'emailDetailModal';
@@ -148,8 +148,8 @@ function createEmailDetailModal() {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
         color: var(--text-primary);
       ">
-        <h2 id="emailDetailTitle" style="margin: 0; font-size: 20px; font-weight: 600; color: var(--text-primary);">Détails de l'email</h2>
-        <button id="closeEmailDetail" aria-label="Fermer" style="
+        <h2 id="emailDetailTitle" style="margin: 0; font-size: 20px; font-weight: 600; color: var(--text-primary);">Email details</h2>
+        <button id="closeEmailDetail" aria-label="Close" style="
           background: var(--border-subtle);
           border: 1px solid var(--border-subtle);
           color: var(--text-secondary);
@@ -171,15 +171,15 @@ function createEmailDetailModal() {
         overflow-y: auto;
         flex: 1;
       ">
-        <!-- De -->
+        <!-- From -->
         <div style="margin-bottom: 16px;">
-          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">De</div>
+          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">From</div>
           <div id="emailFrom" style="color: var(--text-primary); font-size: 15px;"></div>
         </div>
 
-        <!-- À -->
+        <!-- To -->
         <div style="margin-bottom: 16px;">
-          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">À</div>
+          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">To</div>
           <div id="emailTo" style="color: var(--text-primary); font-size: 15px;"></div>
         </div>
 
@@ -189,9 +189,9 @@ function createEmailDetailModal() {
           <div id="emailCc" style="color: var(--text-secondary); font-size: 14px;"></div>
         </div>
 
-        <!-- Sujet -->
+        <!-- Subject -->
         <div style="margin-bottom: 16px;">
-          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Sujet</div>
+          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Subject</div>
           <div id="emailSubject" style="color: var(--text-primary); font-size: 16px; font-weight: 600;"></div>
         </div>
 
@@ -201,9 +201,9 @@ function createEmailDetailModal() {
           <div id="emailDate" style="color: var(--text-secondary); font-size: 14px;"></div>
         </div>
 
-        <!-- Contenu -->
+        <!-- Content -->
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-light);">
-          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Contenu</div>
+          <div style="font-weight: 600; color: var(--text-tertiary); margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Content</div>
           <div id="emailBody" style="
             color: var(--text-primary);
             font-size: 14px;
@@ -217,29 +217,29 @@ function createEmailDetailModal() {
           "></div>
         </div>
 
-        <!-- Boutons de réponse -->
+        <!-- Reply buttons -->
         <div id="replyActionsBar" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); display: flex; gap: 8px;">
-          <button id="replyBtn" class="btn-reply-action" style="padding: 8px 16px; border: 1px solid var(--primary-ring); background: transparent; color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">↩ Répondre</button>
-          <button id="replyAllBtn" class="btn-reply-action" style="padding: 8px 16px; border: 1px solid var(--primary-ring); background: transparent; color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">↩↩ Répondre à tous</button>
+          <button id="replyBtn" class="btn-reply-action" style="padding: 8px 16px; border: 1px solid var(--primary-ring); background: transparent; color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">↩ Reply</button>
+          <button id="replyAllBtn" class="btn-reply-action" style="padding: 8px 16px; border: 1px solid var(--primary-ring); background: transparent; color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">↩↩ Reply all</button>
         </div>
       </div>
     </div>
   `;
 
-  // Ajouter l'événement de fermeture
+  // Add the close event
   const closeBtn = modal.querySelector('#closeEmailDetail');
   closeBtn.addEventListener('click', () => {
     closeEmailDetailModal(modal);
   });
 
-  // Fermer en cliquant sur le fond
+  // Close by clicking the backdrop
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeEmailDetailModal(modal);
     }
   });
 
-  // Améliorer le style du bouton close au survol
+  // Improve the close button's style on hover
   closeBtn.addEventListener('mouseenter', () => {
     closeBtn.style.background = 'var(--primary-light)';
     closeBtn.style.color = 'var(--primary)';
@@ -251,7 +251,7 @@ function createEmailDetailModal() {
     closeBtn.style.borderColor = 'var(--border-subtle)';
   });
 
-  // Boutons de réponse — lisent currentEmailData au moment du clic
+  // Reply buttons — read currentEmailData at click time
   modal.querySelector('#replyBtn').addEventListener('click', () => {
     if (currentEmailData) showReplyForm(currentEmailData, 'reply');
   });
@@ -262,26 +262,26 @@ function createEmailDetailModal() {
   return modal;
 }
 
-// Remplir le contenu de la modal avec les données de l'email
+// Fill the modal's content with the email data
 function populateEmailDetail(modal, emailData) {
-  // Mémoriser l'email courant pour les boutons Répondre
+  // Remember the current email for the Reply buttons
   currentEmailData = emailData;
 
-  // Masquer le formulaire de réponse s'il était ouvert depuis un email précédent
+  // Hide the reply form if it was left open from a previous email
   const replySection = modal.querySelector('#replyFormSection');
   if (replySection) replySection.style.display = 'none';
 
-  // Extraire les informations
-  const from = emailData.from || 'Expéditeur inconnu';
-  const to = emailData.to || 'Destinataire inconnu';
+  // Extract the information
+  const from = emailData.from || 'Unknown sender';
+  const to = emailData.to || 'Unknown recipient';
   const cc = emailData.cc || '';
-  const subject = emailData.subject || 'Sans sujet';
+  const subject = emailData.subject || 'No subject';
   const date = formatDate(emailData.date);
   const bodyTextContent = cleanEmailBody(
-    emailData.bodyText || emailData.snippet || 'Aucun contenu disponible'
+    emailData.bodyText || emailData.snippet || 'No content available'
   );
 
-  // Remplir les champs
+  // Fill the fields
   modal.querySelector('#emailFrom').textContent = from;
   modal.querySelector('#emailTo').textContent = to;
   modal.querySelector('#emailSubject').textContent = subject;
@@ -292,7 +292,7 @@ function populateEmailDetail(modal, emailData) {
   // Try to load rich HTML content in background
   loadRichBody(bodyEl, emailData.id);
 
-  // CC : afficher la ligne uniquement si non vide
+  // CC: only show the row when it is not empty
   const ccRow = modal.querySelector('#emailCcRow');
   const ccEl = modal.querySelector('#emailCc');
   if (cc && cc.trim()) {
@@ -304,8 +304,8 @@ function populateEmailDetail(modal, emailData) {
 }
 
 /**
- * Charge le bodyHtml et l'affiche dans un iframe sandboxé.
- * Fallback silencieux sur le bodyText déjà affiché.
+ * Loads the bodyHtml and displays it in a sandboxed iframe.
+ * Falls back silently to the bodyText already displayed.
  */
 async function loadRichBody(bodyEl, emailId) {
   try {
@@ -317,9 +317,9 @@ async function loadRichBody(bodyEl, emailId) {
     const rawHtml = await loadBodyHtmlForEmail(provider, userId, emailId);
     if (!rawHtml) return;
 
-    // Strip les scripts et handlers inline pour eviter les warnings de sandbox
-    // et prevenir tout XSS si un mail contient du JS malicieux (sandbox bloque
-    // mais Chrome log des warnings — autant nettoyer en amont).
+    // Strip scripts and inline handlers to avoid sandbox warnings and to
+    // prevent any XSS if an email contains malicious JS (the sandbox blocks
+    // it, but Chrome still logs warnings — better to clean it up upfront).
     const bodyHtml = rawHtml
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
@@ -328,24 +328,24 @@ async function loadRichBody(bodyEl, emailId) {
 
     // Replace text content with sandboxed iframe for rich HTML
     const iframe = document.createElement('iframe');
-    // ┌──────────────────────────────────────────────────────────────────────┐
-    // │ SÉCURITÉ CRITIQUE — NE JAMAIS AJOUTER 'allow-scripts' À CE SANDBOX.    │
-    // │ Le contenu affiché est du HTML d'emails ARBITRAIRES et potentiellement │
-    // │ malveillants. Le sandbox SANS 'allow-scripts' est la protection XSS    │
-    // │ principale : il neutralise tout JavaScript embarqué (inline, <script>, │
-    // │ handlers on*, javascript: URIs), même ce que le nettoyage regex        │
-    // │ ci-dessus pourrait rater. Le regex de sanitization est une défense     │
-    // │ EN PROFONDEUR, PAS une protection suffisante à elle seule.             │
-    // │ Ajouter 'allow-scripts' (surtout combiné à 'allow-same-origin')        │
-    // │ rouvrirait une faille XSS complète. À NE PAS FAIRE.                    │
-    // └──────────────────────────────────────────────────────────────────────┘
+    // ┌───────────────────────────────────────────────────────────────────────┐
+    // │ SECURITY CRITICAL — NEVER ADD 'allow-scripts' TO THIS SANDBOX.        │
+    // │ The content displayed here is HTML from ARBITRARY, potentially        │
+    // │ malicious emails. The sandbox WITHOUT 'allow-scripts' is the          │
+    // │ primary XSS protection: it neutralises all embedded JavaScript        │
+    // │ (inline, <script>, on* handlers, javascript: URIs), even what the     │
+    // │ regex cleanup above might miss. The sanitization regex is defence     │
+    // │ IN DEPTH, NOT sufficient protection on its own.                       │
+    // │ Adding 'allow-scripts' (especially combined with 'allow-same-origin') │
+    // │ would reopen a full XSS hole. DO NOT DO THIS.                         │
+    // └───────────────────────────────────────────────────────────────────────┘
     iframe.sandbox = 'allow-same-origin';
     iframe.style.cssText =
       'width:100%;border:none;min-height:200px;background:white;border-radius:6px;';
     bodyEl.textContent = '';
     bodyEl.appendChild(iframe);
 
-    // Detecte si le mail contient des citations pour afficher/non le bouton toggle
+    // Detect whether the email contains quoted text to show/hide the toggle button
     const hasQuote = /class=["'][^"']*gmail_quote|<blockquote/i.test(bodyHtml);
 
     const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -354,7 +354,7 @@ async function loadRichBody(bodyEl, emailId) {
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #333; margin: 12px; word-wrap: break-word; }
       img { max-width: 100%; height: auto; }
       a { color: #2563eb; }
-      /* Masque les citations par defaut, re-affiche via body.show-quotes */
+      /* Hides quoted text by default, shown again via body.show-quotes */
       blockquote, .gmail_quote, div.gmail_quote {
         display: none;
       }
@@ -383,19 +383,19 @@ async function loadRichBody(bodyEl, emailId) {
         background: #e5e7eb;
       }
     </style></head><body>${bodyHtml}
-      <button class="quote-toggle" type="button">▼ Afficher la citation</button>
+      <button class="quote-toggle" type="button">▼ Show quoted text</button>
     </body></html>`);
     doc.close();
 
-    // Attache le handler depuis le parent (evite le CSP inline-script-attr)
+    // Attach the handler from the parent (avoids the CSP inline-script-attr issue)
     const toggleBtn = doc.querySelector('.quote-toggle');
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         const body = doc.body;
         body.classList.toggle('show-quotes');
         toggleBtn.textContent = body.classList.contains('show-quotes')
-          ? '▲ Masquer la citation'
-          : '▼ Afficher la citation';
+          ? '▲ Hide quoted text'
+          : '▼ Show quoted text';
         setTimeout(() => {
           const contentHeight = doc.documentElement.scrollHeight;
           iframe.style.height = Math.min(contentHeight + 20, 600) + 'px';
@@ -412,13 +412,13 @@ async function loadRichBody(bodyEl, emailId) {
     setTimeout(resizeIframe, 100);
     setTimeout(resizeIframe, 500);
   } catch (e) {
-    console.warn('⚠️ Chargement HTML échoué:', e.message);
+    console.warn('⚠️ HTML loading failed:', e.message);
   }
 }
 
-// Formater la date de manière lisible
+// Format the date in a readable way
 function formatDate(dateString) {
-  if (!dateString) return 'Date inconnue';
+  if (!dateString) return 'Unknown date';
 
   try {
     const date = new Date(dateString);
@@ -430,20 +430,20 @@ function formatDate(dateString) {
       hour: '2-digit',
       minute: '2-digit',
     };
-    return date.toLocaleDateString('fr-FR', options);
+    return date.toLocaleDateString('en-GB', options);
   } catch (e) {
     return dateString;
   }
 }
 
-// Nettoyer le corps de l'email (enlever HTML, entités, etc.)
+// Clean up the email body (strip HTML, entities, etc.)
 function cleanEmailBody(body) {
-  if (!body) return 'Aucun contenu';
+  if (!body) return 'No content';
 
-  // Enlever les balises HTML
+  // Remove HTML tags
   let cleaned = body.replace(/<[^>]*>/g, '');
 
-  // Décoder les entités HTML communes
+  // Decode common HTML entities
   cleaned = cleaned
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -453,40 +453,40 @@ function cleanEmailBody(body) {
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'");
 
-  // Enlever les espaces multiples
+  // Collapse multiple whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
 
-  // Extraire uniquement la partie originale (sans l'historique)
+  // Extract only the original part (without the history)
   cleaned = extractOriginalMessage(cleaned);
 
   return cleaned;
 }
 
 /**
- * Extrait uniquement le message original sans l'historique des échanges
- * @param {string} text - Texte complet de l'email
- * @returns {string} - Message original uniquement
+ * Extracts only the original message, without the exchange history
+ * @param {string} text - Full text of the email
+ * @returns {string} - Original message only
  */
 function extractOriginalMessage(text) {
   if (!text) return text;
 
   const originalText = text;
 
-  // Patterns de détection des citations/historiques
+  // Patterns for detecting quoted text/history
   const quotePatterns = [
-    // Gmail anglais: "On Mon, Aug 25, 2025 at 12:30 PM, name@email.com wrote:"
+    // Gmail English: "On Mon, Aug 25, 2025 at 12:30 PM, name@email.com wrote:"
     /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}\s*(AM|PM)?,?\s+.*?wrote:/i,
 
-    // Gmail français: "Le lun. 25 août 2025 à 12:30, name@email.com a écrit :"
+    // Gmail French: "Le lun. 25 août 2025 à 12:30, name@email.com a écrit :"
     /Le\s+\w+\.?\s+\d{1,2}\s+\w+\.?\s+\d{4}\s+à\s+\d{1,2}:\d{2}.*?a écrit\s*:/i,
 
-    // Pattern simple date + wrote: "On Mon 25 Aug 2025 at 00:38, ... wrote:"
+    // Simple date + wrote pattern: "On Mon 25 Aug 2025 at 00:38, ... wrote:"
     /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}.*?wrote:/i,
 
-    // Pattern sans virgule: "On Mon 25 Aug 2025 at 00:38"
+    // Pattern without comma: "On Mon 25 Aug 2025 at 00:38"
     /On\s+\w+\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}/i,
 
-    // Pattern court: "On Sat, 22 Mar 2025 at 18:26"
+    // Short pattern: "On Sat, 22 Mar 2025 at 18:26"
     /On\s+\w+,\s+\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{1,2}:\d{2}/i,
 
     // Outlook: "From: ... Sent: ... To: ..."
@@ -495,17 +495,17 @@ function extractOriginalMessage(text) {
     // Original Message delimiter
     /[-_]{3,}\s*Original Message\s*[-_]{3,}/i,
 
-    // Email standard: "--- On ... wrote:"
+    // Standard email: "--- On ... wrote:"
     /---+\s*On\s+.*?wrote:/i,
 
-    // Format avec date ISO: "2025-08-25 12:30"
+    // ISO date format: "2025-08-25 12:30"
     /\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}.*?wrote:/i,
   ];
 
   let earliestIndex = text.length;
   let foundPattern = false;
 
-  // Chercher le premier pattern de citation
+  // Look for the first quote pattern
   for (const pattern of quotePatterns) {
     const match = text.match(pattern);
     if (match && match.index < earliestIndex) {
@@ -514,25 +514,25 @@ function extractOriginalMessage(text) {
     }
   }
 
-  // Si on a trouvé un pattern, couper le texte avant celui-ci
+  // If a pattern was found, cut the text before it
   if (foundPattern && earliestIndex > 0) {
     text = text.substring(0, earliestIndex).trim();
   } else if (foundPattern && earliestIndex === 0) {
-    // Le mail commence directement par une citation (pas de contenu original)
-    return '[Message vide - Contenu non textuel (image ou pièce jointe uniquement)]';
+    // The email starts directly with quoted text (no original content)
+    return '[Empty message - Non-text content (image or attachment only)]';
   }
 
-  // Nettoyer les lignes commençant par ">" (citations)
+  // Clean up lines starting with ">" (quoted text)
   const lines = text.split('\n');
   const cleanedLines = [];
   let foundQuoteLine = false;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
-    // Détecter les lignes de citation (commencent par > ou >>)
+    // Detect quoted lines (starting with > or >>)
     if (trimmedLine.startsWith('>')) {
       foundQuoteLine = true;
-      break; // Tout ce qui suit est une citation
+      break; // Everything after this is quoted text
     }
     cleanedLines.push(line);
   }
@@ -541,13 +541,13 @@ function extractOriginalMessage(text) {
     text = cleanedLines.join('\n').trim();
   }
 
-  // Vérifier si le texte final est vide ou très court (< 5 caractères)
+  // Check whether the final text is empty or very short (< 5 characters)
   if (!text || text.length < 5) {
-    // Vérifier si le texte original contenait des citations
+    // Check whether the original text contained quoted text
     if (originalText.includes('>') || foundPattern) {
-      return '[Message vide - Contenu non textuel (image ou pièce jointe uniquement)]';
+      return '[Empty message - Non-text content (image or attachment only)]';
     }
   }
 
-  return text || '[Aucun contenu textuel]';
+  return text || '[No text content]';
 }

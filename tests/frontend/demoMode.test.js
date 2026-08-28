@@ -16,11 +16,11 @@ const HTML_JSONL = path.join(DEMO_DIR, 'gmail_emails_html.jsonl');
 const ANALYZER = path.join(__dirname, '..', '..', 'src', 'services', 'emailAnalyzer_browser.js');
 
 /**
- * Charge le VRAI emailAnalyzer_browser.js. Le fichier est un module ES servi tel
- * quel au navigateur, mais il vit hors de src/public/js/ (qui porte le
- * package.json "type":"module") : Node le verrait donc comme du CommonJS et
- * refuserait son `export default`. On l'evalue comme module ES dans un contexte
- * vm — c'est bien le fichier de production qui est charge, pas une copie.
+ * Loads the REAL emailAnalyzer_browser.js. The file is an ES module served as-is
+ * to the browser, but it lives outside of src/public/js/ (which carries the
+ * package.json "type":"module"): Node would see it as CommonJS and refuse its
+ * `export default`. We evaluate it as an ES module in a vm context — it is the
+ * production file that is loaded, not a copy.
  */
 async function loadRealAnalyzer() {
   const source = fs.readFileSync(ANALYZER, 'utf8');
@@ -39,8 +39,8 @@ async function loadRealAnalyzer() {
   return mod.namespace.default;
 }
 
-// makeReadOnlyFileHandle est la VRAIE fabrique de demo.js : seul le fetch est
-// remplace par une lecture disque du fixture.
+// makeReadOnlyFileHandle is the REAL factory from demo.js: only the fetch is
+// replaced by a disk read of the fixture.
 let makeReadOnlyFileHandle;
 
 beforeAll(async () => {
@@ -53,8 +53,8 @@ function fakeHandleFromDisk(filePath) {
   return makeReadOnlyFileHandle(blob, path.basename(filePath));
 }
 
-describe('demo mode — faux handle de fichier', () => {
-  test('getFile() rend un objet lisible comme un vrai File (size + stream)', async () => {
+describe('demo mode — fake file handle', () => {
+  test('getFile() returns an object readable like a real File (size + stream)', async () => {
     const handle = fakeHandleFromDisk(MAIN_JSONL);
     const file = await handle.getFile();
     expect(file.name).toBe('gmail_emails.jsonl');
@@ -62,12 +62,12 @@ describe('demo mode — faux handle de fichier', () => {
     expect(typeof file.size).toBe('number');
     expect(file.size).toBeGreaterThan(0);
     expect(typeof file.stream).toBe('function');
-    // Tous les lecteurs de l'app consomment le stream avec `for await` : Firefox
-    // et Safari n'implementent pas ReadableStream[Symbol.asyncIterator], demo.js
-    // doit donc le garantir.
+    // All the app's readers consume the stream with `for await`: Firefox
+    // and Safari do not implement ReadableStream[Symbol.asyncIterator], demo.js
+    // must therefore guarantee it.
     expect(typeof file.stream()[Symbol.asyncIterator]).toBe('function');
 
-    // Lecture streaming identique a celle de analyzeEmailFile / loadEmailsFromHandle
+    // Streaming read identical to that of analyzeEmailFile / loadEmailsFromHandle
     const decoder = new TextDecoder();
     let text = '';
     for await (const chunk of file.stream()) {
@@ -77,7 +77,7 @@ describe('demo mode — faux handle de fichier', () => {
     expect(() => JSON.parse(text.split('\n')[0])).not.toThrow();
   });
 
-  test('le companion HTML se lit de la meme facon', async () => {
+  test('the companion HTML is read the same way', async () => {
     const handle = fakeHandleFromDisk(HTML_JSONL);
     const file = await handle.getFile();
     expect(file.size).toBeGreaterThan(0);
@@ -103,7 +103,7 @@ describe('demo mode — isDemoMode()', () => {
     globalThis.location = previousLocation;
   });
 
-  test('false sur une URL normale', () => {
+  test('false on a normal URL', () => {
     globalThis.location.search = '';
     expect(isDemoMode()).toBe(false);
     globalThis.location.search = '?provider=gmail&email=me@example.com';
@@ -112,28 +112,28 @@ describe('demo mode — isDemoMode()', () => {
     expect(isDemoMode()).toBe(false);
   });
 
-  test('true avec ?demo=1', () => {
+  test('true with ?demo=1', () => {
     globalThis.location.search = '?demo=1';
     expect(isDemoMode()).toBe(true);
     globalThis.location.search = '?provider=gmail&demo=1&email=x@example.com';
     expect(isDemoMode()).toBe(true);
   });
 
-  test("l'identite demo est bien celle du fixture", async () => {
+  test('the demo identity is indeed the fixture one', async () => {
     const mod = await import('../../src/public/js/demo.js');
     expect(mod.DEMO_PROVIDER).toBe('gmail');
     expect(mod.DEMO_USER_ID).toBe('demo@example.com');
-    // Le nom de fichier construit par demo.js doit exister dans src/public/demo/
+    // The filename built by demo.js must exist in src/public/demo/
     expect(fs.existsSync(path.join(DEMO_DIR, `${mod.DEMO_PROVIDER}_emails.jsonl`))).toBe(true);
     expect(fs.existsSync(path.join(DEMO_DIR, `${mod.DEMO_PROVIDER}_emails_html.jsonl`))).toBe(true);
   });
 });
 
 /**
- * LE test qui compte : le fixture embarque traverse la VRAIE chaine d'analyse et
- * produit un graphe {nodes, links} valide et non trivial.
+ * THE test that matters: the embedded fixture traverses the REAL analysis chain and
+ * produces a valid and non-trivial {nodes, links} graph.
  */
-describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
+describe('demo mode — the fixture traverses the real analysis chain', () => {
   let analyzer;
   let rawEmails;
   let cleanEmails;
@@ -148,11 +148,11 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     cleanEmails = rawEmails.map(analyzer.cleanEmail);
   });
 
-  test('le dataset se charge via loadEmailsFromHandle (faux handle)', async () => {
+  test('the dataset loads via loadEmailsFromHandle (fake handle)', async () => {
     const emails = await analyzer.loadEmailsFromHandle(fakeHandleFromDisk(MAIN_JSONL), 500);
     expect(emails.length).toBe(rawEmails.length);
     expect(emails.length).toBeGreaterThanOrEqual(50);
-    // Les champs de threading portent toute la topologie de l'arbre.
+    // The threading fields carry the entire tree topology.
     for (const e of emails) {
       expect(typeof e.id).toBe('string');
       expect(e.messageId.length).toBeGreaterThan(0);
@@ -161,9 +161,9 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     }
   });
 
-  test("les enregistrements ont la forme ecrite par l'app reelle", () => {
-    // Champs produits par formatGmailEmail(), moins ceux que emails.js retire
-    // avant ecriture (bodyHtml, sizeEstimate, historyId, labelIds).
+  test('records have the shape written by the real app', () => {
+    // Fields produced by formatGmailEmail(), minus those that emails.js removes
+    // before writing (bodyHtml, sizeEstimate, historyId, labelIds).
     const expected = [
       'id',
       'threadId',
@@ -186,9 +186,9 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     }
   });
 
-  test('les champs de threading sont coherents entre eux', () => {
+  test('threading fields are consistent with each other', () => {
     const byMessageId = new Map(rawEmails.map((e) => [e.messageId, e]));
-    expect(byMessageId.size).toBe(rawEmails.length); // messageId uniques
+    expect(byMessageId.size).toBe(rawEmails.length); // unique messageIds
     expect(new Set(rawEmails.map((e) => e.id)).size).toBe(rawEmails.length);
     for (const e of rawEmails) {
       if (e.inReplyTo) expect(byMessageId.has(e.inReplyTo)).toBe(true);
@@ -198,39 +198,39 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     }
   });
 
-  test('getSubjectsWithMinEmails rend plusieurs sujets exploitables', () => {
+  test('getSubjectsWithMinEmails returns multiple exploitable subjects', () => {
     const subjects = analyzer.getSubjectsWithMinEmails(cleanEmails, 3, 'demo@example.com');
     expect(subjects.length).toBeGreaterThanOrEqual(8);
-    // Newsletter / transactionnel : cibles du "Faire le menage"
+    // Newsletter / transactional: targets of "Clean-up"
     expect(subjects.some((s) => s.isNewsletter)).toBe(true);
-    // Fil court a 2 participants, pour le contraste
+    // Short thread with 2 participants, for contrast
     expect(subjects.some((s) => s.participants.length === 2)).toBe(true);
-    // Fil vedette : 5 participants
+    // Flagship thread: 5 participants
     expect(subjects.some((s) => s.participants.length >= 5)).toBe(true);
-    // L'utilisateur demo participe reellement a la conversation
+    // The demo user actually participates in the conversation
     expect(subjects.some((s) => s.userReplied)).toBe(true);
   });
 
-  test('au moins deux emails portent hasAttachments', () => {
+  test('at least two emails carry hasAttachments', () => {
     expect(rawEmails.filter((e) => e.hasAttachments === true).length).toBeGreaterThanOrEqual(2);
   });
 
-  test('au moins un email a un bodyHtml riche avec citation', () => {
+  test('at least one email has rich bodyHtml with quoted text', () => {
     const entries = fs
       .readFileSync(HTML_JSONL, 'utf8')
       .split('\n')
       .filter((l) => l.trim())
       .map((l) => JSON.parse(l));
     expect(entries.length).toBeGreaterThan(0);
-    // Le toggle de citation de email-detail.js cherche gmail_quote / <blockquote>
+    // The quoted text toggle in email-detail.js looks for gmail_quote / <blockquote>
     expect(entries.some((e) => /gmail_quote|<blockquote/i.test(e.bodyHtml))).toBe(true);
     expect(entries.some((e) => /<table/i.test(e.bodyHtml))).toBe(true);
-    // Chaque bodyHtml doit correspondre a un email du JSONL principal
+    // Each bodyHtml must correspond to an email in the main JSONL
     const ids = new Set(rawEmails.map((e) => e.id));
     for (const e of entries) expect(ids.has(e.id)).toBe(true);
   });
 
-  test('chaque sujet produit un graphe {nodes, links} valide', () => {
+  test('each subject produces a valid {nodes, links} graph', () => {
     const subjects = analyzer.getSubjectsWithMinEmails(cleanEmails, 3, 'demo@example.com');
     for (const s of subjects) {
       const tree = analyzer.createTemporalGroupTree(cleanEmails, s.subject);
@@ -238,7 +238,7 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
       expect(Array.isArray(tree.links)).toBe(true);
       expect(tree.nodes.length).toBe(s.emailCount);
       expect(tree.nodes.length).toBeGreaterThan(1);
-      // Un arbre : un lien entrant par node, sauf la racine
+      // A tree: one incoming link per node, except the root
       expect(tree.links.length).toBe(tree.nodes.length - 1);
       const incoming = new Set();
       for (const link of tree.links) {
@@ -253,7 +253,7 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     }
   });
 
-  test('le fil vedette est profond ET ramifie (la capture README)', () => {
+  test('the flagship thread is deep AND branched (the README capture)', () => {
     const flagship = cleanEmails
       .map((e) => e.subject)
       .find((s) => s.startsWith('Q3 platform migration'));
@@ -263,17 +263,17 @@ describe("demo mode — le fixture traverse la vraie chaine d'analyse", () => {
     expect(tree.nodes.length).toBe(15);
     expect(tree.links.length).toBe(14);
 
-    // 5 participants distincts
+    // 5 distinct participants
     expect(new Set(tree.nodes.map((n) => n.from)).size).toBe(5);
 
-    // Au moins deux points de divergence -> de vraies branches, pas une ligne
+    // At least two divergence points -> true branches, not a single line
     const childCount = new Map();
     for (const link of tree.links) {
       childCount.set(link.source, (childCount.get(link.source) || 0) + 1);
     }
     expect([...childCount.values()].filter((c) => c > 1).length).toBeGreaterThanOrEqual(2);
 
-    // Et une vraie profondeur (le tronc = plus long chemin depuis la racine)
+    // And true depth (the trunk = longest path from the root)
     const children = new Map();
     for (const link of tree.links) {
       if (!children.has(link.source)) children.set(link.source, []);

@@ -1,11 +1,11 @@
 const { describe, it, expect } = require('@jest/globals');
 const { stripQuotedText } = require('../../src/services/quoteStripper');
 
-// Chaque fixture : on verifie que le contenu AVANT la citation est preserve
-// et que tout depuis le marker (inclus) est supprime, le tout trim().
+// Each fixture: we verify that the content BEFORE the quoted text is preserved
+// and that everything from the marker (included) is removed, all trim()ed.
 
 describe('stripQuotedText — Gmail FR', () => {
-  it('coupe au marker "Le ... a écrit :"', () => {
+  it('cuts at the marker "Le ... a écrit :"', () => {
     const body = [
       'Bonjour Marc,',
       '',
@@ -30,7 +30,7 @@ describe('stripQuotedText — Gmail FR', () => {
 });
 
 describe('stripQuotedText — Gmail EN with day-name', () => {
-  it('coupe au marker "On Thu, Sep 19, 2024 at 10:15 AM, ... wrote:"', () => {
+  it('cuts at the marker "On Thu, Sep 19, 2024 at 10:15 AM, ... wrote:"', () => {
     const body = [
       'Hi Alice,',
       '',
@@ -54,7 +54,7 @@ describe('stripQuotedText — Gmail EN with day-name', () => {
 });
 
 describe('stripQuotedText — Gmail EN variant (day-name + day-month-year)', () => {
-  it('coupe au marker "On Mon 19 Sep 2024 at 10:15, ... wrote:"', () => {
+  it('cuts at the marker "On Mon 19 Sep 2024 at 10:15, ... wrote:"', () => {
     const body = [
       'Hello Bob,',
       '',
@@ -76,7 +76,7 @@ describe('stripQuotedText — Gmail EN variant (day-name + day-month-year)', () 
 });
 
 describe('stripQuotedText — Outlook dividers', () => {
-  it('coupe au marker "-----Original Message-----"', () => {
+  it('cuts at the marker "-----Original Message-----"', () => {
     const body = [
       'Bonjour,',
       '',
@@ -100,7 +100,7 @@ describe('stripQuotedText — Outlook dividers', () => {
     expect(result).toBe(result.trim());
   });
 
-  it('coupe au marker "------ Forwarded message ------"', () => {
+  it('cuts at the marker "------ Forwarded message ------"', () => {
     const body = [
       'FYI ci-dessous.',
       '',
@@ -120,7 +120,7 @@ describe('stripQuotedText — Outlook dividers', () => {
 });
 
 describe('stripQuotedText — Underscore separator', () => {
-  it("coupe sur une ligne d'au moins 5 underscores", () => {
+  it('cuts on a line with at least 5 underscores', () => {
     const body = [
       'Voici les conclusions de la reunion.',
       '',
@@ -144,7 +144,7 @@ describe('stripQuotedText — Underscore separator', () => {
 });
 
 describe('stripQuotedText — Outlook header block', () => {
-  it('coupe au bloc "From: ... Sent: ... To:"', () => {
+  it('cuts at the block "From: ... Sent: ... To:"', () => {
     const body = [
       'Bonjour,',
       '',
@@ -169,7 +169,7 @@ describe('stripQuotedText — Outlook header block', () => {
 });
 
 describe('stripQuotedText — Outlook FR "De :"', () => {
-  it('coupe sur une ligne commencant par "De : ... <...@..."', () => {
+  it('cuts on a line starting with "De : ... <...@..."', () => {
     const body = [
       'Voici les chiffres a jour.',
       '',
@@ -193,7 +193,7 @@ describe('stripQuotedText — Outlook FR "De :"', () => {
 });
 
 describe('stripQuotedText — Outlook FR "Envoyé :"', () => {
-  it('coupe sur une ligne commencant par "Envoyé :"', () => {
+  it('cuts on a line starting with "Envoyé :"', () => {
     const body = [
       'Reponse rapide : oui je valide.',
       '',
@@ -213,7 +213,7 @@ describe('stripQuotedText — Outlook FR "Envoyé :"', () => {
 });
 
 describe('stripQuotedText — Outlook EN "Sent :"', () => {
-  it('coupe sur une ligne commencant par "Sent :"', () => {
+  it('cuts on a line starting with "Sent :"', () => {
     const body = [
       'Quick reply: confirmed.',
       '',
@@ -233,7 +233,7 @@ describe('stripQuotedText — Outlook EN "Sent :"', () => {
 });
 
 describe('stripQuotedText — quoted lines "> ..."', () => {
-  it('coupe a la premiere ligne commencant par > meme sans marker', () => {
+  it('cuts at the first line starting with > even without a marker', () => {
     const body = [
       'Merci pour les informations.',
       '',
@@ -252,8 +252,8 @@ describe('stripQuotedText — quoted lines "> ..."', () => {
   });
 });
 
-describe('stripQuotedText — pas de citation', () => {
-  it('retourne le contenu trim() inchange si aucun marker', () => {
+describe('stripQuotedText — no quoted text', () => {
+  it('returns content trim()ed unchanged if no marker', () => {
     const body = [
       'Bonjour Marc,',
       '',
@@ -272,23 +272,23 @@ describe('stripQuotedText — pas de citation', () => {
     expect(result).toBe(result.trim());
   });
 
-  it('preserve le contenu meme avec un trim() initial', () => {
+  it('preserves content even with initial trim()', () => {
     const body = '\n\n  Contenu unique sans citation.  \n\n';
     const result = stripQuotedText(body);
     expect(result).toBe('Contenu unique sans citation.');
   });
 });
 
-describe('stripQuotedText — input vide ou null', () => {
-  it('retourne chaine vide pour null', () => {
+describe('stripQuotedText — empty or null input', () => {
+  it('returns empty string for null', () => {
     expect(stripQuotedText(null)).toBe('');
   });
 
-  it('retourne chaine vide pour undefined', () => {
+  it('returns empty string for undefined', () => {
     expect(stripQuotedText(undefined)).toBe('');
   });
 
-  it('retourne chaine vide pour chaine vide', () => {
+  it('returns empty string for empty string', () => {
     expect(stripQuotedText('')).toBe('');
   });
 });

@@ -1,19 +1,19 @@
 /**
- * Supprime le contenu cite (historique des reponses precedentes) du corps d'un mail.
- * Recherche par substring (sans ancrage ^) pour etre robuste aux bodies collapses
- * en une seule ligne (ex: HTML converti sans preservation des \n).
+ * Removes quoted content (history of previous replies) from email body.
+ * Searches by substring (without ^ anchor) to be robust to bodies collapsed
+ * into a single line (e.g. HTML converted without \n preservation).
  *
- * NOTE: ce module duplique la logique de stripQuotedText dans
- * src/public/js/aiChat.js (ESM cote frontend). Le frontend conserve sa version
- * pour gerer les anciens JSONL non-strippes (defense-in-depth). Backend = CommonJS.
+ * NOTE: this module duplicates the stripQuotedText logic in
+ * src/public/js/aiChat.js (ESM on frontend). Frontend keeps its version
+ * to handle old non-stripped JSONL (defense-in-depth). Backend = CommonJS.
  *
- * @param {string} body - Corps de mail (text/plain ou stripHtml deja applique).
- * @returns {string} Corps sans citations, trim().
+ * @param {string} body - Email body (text/plain or stripHtml already applied).
+ * @returns {string} Body without quotes, trimmed.
  */
 function stripQuotedText(body) {
   if (!body) return '';
 
-  // Patterns detectes n'importe ou dans le texte — on coupe a la premiere occurrence.
+  // Patterns detected anywhere in text — cut at first occurrence.
   const QUOTE_MARKERS = [
     /Le\s+\S+\s+\d{1,2}\s+\S+\s+\d{4}\s+[àa]\s+\d{1,2}:\d{2}[^]*?a\s+[ée]crit\s*:/i, // Gmail FR
     /On\s+\w+,?\s+\w+\.?\s+\d{1,2},?\s+\d{4}\s+at\s+\d{1,2}:\d{2}[^]*?wrote:/i, // Gmail EN date "On Thu, Sep 19, 2024 at..."
@@ -22,11 +22,11 @@ function stripQuotedText(body) {
     /_{5,}/, // Underscore separator
     /From:\s*.+?Sent:\s*.+?To:/is, // Outlook header block
     /^De\s*:\s*.+<.+@/im, // Outlook FR "De : ..."
-    /^Envoy[ée]\s*:\s*/im, // Outlook FR "Envoye : ..."
+    /^Envoy[ée]\s*:\s*/im, // Outlook FR "Sent : ..."
     /^Sent\s*:\s*/im, // Outlook EN "Sent: ..."
   ];
 
-  // Cherche la plus ancienne occurrence de citation
+  // Find earliest occurrence of quote
   let earliestIndex = body.length;
   for (const re of QUOTE_MARKERS) {
     const m = body.match(re);
@@ -37,7 +37,7 @@ function stripQuotedText(body) {
 
   const result = body.slice(0, earliestIndex);
 
-  // Retire aussi les lignes commencant par > (citation classique) presentes avant un marker
+  // Also remove lines starting with > (classic quote) present before a marker
   const lines = result.split('\n');
   const out = [];
   for (const line of lines) {
