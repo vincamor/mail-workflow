@@ -333,41 +333,44 @@ in `7aa5c84` with a negation scoped strictly to `src/public/demo/`.
 
 This is the argument for the demo's regression test, made concrete.
 
-### Open decision — Dependabot PR #3, `connect-redis` 9 → 10
+### Decided — the Node floor stays at 20
 
-Five Dependabot pull requests were opened. #1 and #2 (the minor/patch groups)
-are merged. #3, #4 and #5 remain open; all were rebased onto the fixed `main`
-and are green.
+Five Dependabot pull requests were opened. **#1, #2, #4 and #5 are merged**:
+express 5.2.1, express-session 1.19.0, dotenv 17.4.2, cors 2.8.6, the Jest 30.4.x
+toolchain, globals 17.11.0 and googleapis 176.0.0.
 
-**Four are verified safe.** All the upgrades were installed together on a scratch
-branch and exercised: 159 tests green, lint clean under `globals` 17, both
-provider services load under `googleapis` 176, the app boots and serves
-`/?demo=1` and `/health` with 200, and each of the six `googleapis` calls the
-code makes still exists in v176.
+They were verified before merging, not merely trusted to a green CI: all the
+upgrades were installed together on a scratch branch and exercised — 159 tests
+green, lint clean under globals 17, both provider services loading under
+googleapis 176, the app booting and serving `/?demo=1` and `/health` with 200,
+and each of the six googleapis calls the code makes still present in v176.
 
-**PR #3 is not safe, and CI cannot see why.** `connect-redis@10.0.0` declares
-`engines.node: ">=22"`. This project declares `>=20`, `.nvmrc` says 20, and CI
-tests Node 20. It would still go green: npm does not fail on `EBADENGINE`, and
-no test covers the Redis path because sessions are in memory in CI. The breakage
-would only appear for someone self-hosting on Node 20 with Redis — precisely the
-case `docs/guides/deployment.md` describes.
+**#3 (`connect-redis` 9 → 10) was closed, not merged.** It declares
+`engines.node: ">=22"` while this project supports Node >= 20. The pull request
+was green, which is precisely the danger: npm only _warns_ on `EBADENGINE`, and
+no test exercises the Redis path because sessions are in memory in CI. The
+breakage would have surfaced only for someone self-hosting on Node 20 with
+Redis — the case `docs/guides/deployment.md` describes.
 
-Two options, and **this needs Enzo's decision**:
+Two guards landed so this cannot recur silently:
 
-- **Keep Node 20.** Do not merge #3; stay on `connect-redis` 9. Dependabot will
-  re-open it; close it or add an ignore rule.
-- **Move to Node 22.** Merge #3 and update all six places consistently:
-  `package.json` `engines`, `.nvmrc`, the CI matrix, the version check in
-  `scripts/setup.js`, the one in `scripts/doctor.js`, and the README
-  requirements. Node 20 leaves maintenance in April 2026, so this is defensible
-  — but it narrows who can install the project.
+- **`.npmrc` sets `engine-strict=true`.** An incompatible dependency now fails
+  the install instead of warning, on every machine and in CI. This is the real
+  protection. Verified that `npm ci` still passes and that installing
+  `connect-redis@10` is now rejected outright.
+- **`.github/dependabot.yml` ignores major bumps of `connect-redis`**, so the
+  pull request does not return every week. Noise reduction only — the `.npmrc`
+  guard is what actually prevents the mistake.
+
+**If the Node floor ever moves to 22**, six places must change together or the
+project starts contradicting itself: `engines` in `package.json`, `.nvmrc`, the
+CI matrix, the version check in `scripts/setup.js`, the one in
+`scripts/doctor.js`, and the README requirements — plus lifting both guards
+above.
 
 ### Next session — in this order
 
-1. **Merge PRs #5 and #4** (`gh pr merge <n> --squash --delete-branch`), then
-   pull and re-verify on `main`. #1 and #2 are already merged. Decide on #3 per
-   the section above.
-2. **Wave 3 — the English migration.** The Prettier prerequisite is done. B0,
+1. **Wave 3 — the English migration.** The Prettier prerequisite is done. B0,
    the glossary (`docs/internal/glossary.md`), is still unwritten and blocks the
    fan-out. Scope measured: ~250-400 user-visible strings, ~600 French comments
    and log lines across 36 files. The AI prompts are the risk zone — translating
@@ -375,11 +378,11 @@ Two options, and **this needs Enzo's decision**:
    asserts on their content.
    `CLAUDE.md` still says "French UI copy and code comments"; that line must be
    updated as part of this wave.
-3. **Wave 4 — release.** Screenshots of the English UI (the README carries a
+2. **Wave 4 — release.** Screenshots of the English UI (the README carries a
    marked `<!-- screenshot: conversation tree, demo mode -->` placeholder), then
    `v1.0.0`, GitHub Release, and the switch to public. CodeQL starts running by
    itself at that point — its job is guarded on repository visibility.
-4. **Open the section 6 defects as GitHub issues**, now that the repo exists.
+3. **Open the section 6 defects as GitHub issues**, now that the repo exists.
    Section 6.1 and 6.2 are fixed; the front-end test that duplicates the code it
    claims to test is not.
 

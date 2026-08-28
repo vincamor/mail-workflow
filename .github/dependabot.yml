@@ -43,6 +43,17 @@ updates:
           - minor
           - patch
     # Majors are deliberately left ungrouped: one PR each, reviewed individually.
+    ignore:
+      # connect-redis 10 requires Node >=22; this project supports Node >=20.
+      # The pull request would still go green — npm only warns on EBADENGINE and
+      # no test exercises the Redis path, since sessions are in memory in CI —
+      # so it is blocked here rather than re-reviewed every week.
+      # .npmrc sets engine-strict=true, which turns that warning into a failed
+      # install and is the real guard; this rule just stops the noise.
+      # Lift this the day the Node floor moves to 22.
+      - dependency-name: connect-redis
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: '/'
