@@ -75,6 +75,55 @@ jobs:
         env:
           NODE_ENV: test
 
+  # Plays the path a brand-new user actually takes, on a machine that has never
+  # seen this project: clone, npm install (not npm ci), then run the app with no
+  # .env at all. The test job proves the code works; this one proves the
+  # onboarding works, which is a different claim and the one that breaks
+  # silently — the missing demo fixtures were exactly this kind of failure.
+  install:
+    name: Fresh install (what a new user gets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+
+      # npm install, deliberately, not npm ci: this is what a new user runs, and
+      # it exercises the lockfile differently.
+      - name: npm install
+        run: npm install
+
+      # With no .env, doctor must FAIL and say why. If it ever exits 0 here, it
+      # has stopped detecting an unconfigured project and is useless.
+      - name: doctor detects an unconfigured project
+        run: |
+          if npm run doctor --silent; then
+            echo "::error::npm run doctor exited 0 with no .env — it should fail"
+            exit 1
+          fi
+          echo "doctor correctly exited non-zero"
+
+      - name: demo boots with no .env and serves the fixture
+        run: |
+          node scripts/demo.js &
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null "http://localhost:3000/health"; then break; fi
+            sleep 1
+          done
+          curl -sf -o /dev/null "http://localhost:3000/health"
+          curl -sf -o /dev/null "http://localhost:3000/?demo=1"
+          curl -sf -o /dev/null "http://localhost:3000/demo/gmail_emails.jsonl"
+          curl -sf -o /dev/null "http://localhost:3000/demo/gmail_emails_html.jsonl"
+          curl -sf -o /dev/null "http://localhost:3000/services/emailAnalyzer_browser.js"
+          echo "demo mode serves every asset it needs"
+
   lint:
     name: Lint + format check
     runs-on: ubuntu-latest
