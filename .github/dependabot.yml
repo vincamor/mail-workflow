@@ -1,5 +1,24 @@
 version: 2
 
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ VERSION UPDATES ARE PAUSED — see open-pull-requests-limit: 0 below.       │
+# │                                                                          │
+# │ Paused during the run-up to v1.0.0: routine bumps are churn while the    │
+# │ codebase is still moving, and a weekly drip mostly teaches you to merge  │
+# │ without looking.                                                         │
+# │                                                                          │
+# │ To resume: set both limits back to 5 (npm) and 3 (github-actions).       │
+# │ Nothing else needs changing — the grouping, commit-message and ignore    │
+# │ rules below are intact and take effect again immediately.                │
+# │                                                                          │
+# │ SECURITY IS NOT PAUSED, and does not depend on this file:                │
+# │   - Dependabot security alerts + automated security fixes are enabled in │
+# │     the repository settings, and open PRs out of schedule.               │
+# │   - CI runs `npm audit --audit-level=high` on every push and PR.         │
+# │   - .npmrc sets engine-strict=true, so a dependency raising the Node     │
+# │     floor fails the install instead of warning.                          │
+# └──────────────────────────────────────────────────────────────────────────┘
+
 # Automated dependency updates.
 #
 # Two ecosystems matter here:
@@ -25,7 +44,8 @@ updates:
       day: monday
       time: '06:00'
       timezone: Europe/Paris
-    open-pull-requests-limit: 5
+    # Paused: 0 disables version-update PRs. Restore to 5 to resume.
+    open-pull-requests-limit: 0
     # `include: scope` makes Dependabot append the scope to the prefix itself,
     # so prefix `chore` yields `chore(deps): …` for runtime deps and
     # `chore(deps-dev): …` for devDependencies — matching this project's
@@ -68,7 +88,8 @@ updates:
       day: monday
       time: '06:00'
       timezone: Europe/Paris
-    open-pull-requests-limit: 3
+    # Paused: 0 disables version-update PRs. Restore to 3 to resume.
+    open-pull-requests-limit: 0
     # Same as above: yields `chore(deps): bump actions/checkout …`.
     commit-message:
       prefix: chore

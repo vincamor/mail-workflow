@@ -351,11 +351,30 @@ in `docs/internal/glossary.md`, which `CLAUDE.md` now points to:
 
 ### Dependency policy — settled
 
-`.npmrc` sets `engine-strict=true`, so a dependency raising the Node floor fails
-the install instead of warning. Dependabot security alerts and automated security
-fixes are enabled, and CI runs `npm audit --audit-level=high`. Version updates
-moved from weekly to monthly; the github-actions ecosystem stays weekly because
-it is what keeps the SHA pins fresh. `connect-redis` major bumps are ignored
+The two halves of Dependabot are treated separately, because only one of them is
+about safety.
+
+**Security is on, and does not depend on `dependabot.yml`.** Security alerts and
+automated security fixes are enabled in the repository settings and open PRs out
+of schedule; CI runs `npm audit --audit-level=high` on every push and pull
+request; `.npmrc` sets `engine-strict=true`, so a dependency raising the Node
+floor fails the install instead of merely warning. That last guard exists because
+`connect-redis@10` would otherwise have shipped a Node 22 requirement through a
+green CI — see the section above.
+
+**Version updates are PAUSED until v1.0.0.** Both ecosystems carry
+`open-pull-requests-limit: 0`. Routine bumps are churn while the codebase is
+still moving, and a weekly drip mostly trains you to merge without looking. The
+five pull requests open at the time (three ESLint 9→10, `helmet` 7→8, `redis`
+5→6) were closed, not merged.
+
+**To resume:** restore the limits to 5 (npm) and 3 (github-actions). Nothing else
+changes — the grouping, commit-message and `connect-redis` ignore rules are
+intact.
+
+One cost to remember while paused: the github-actions ecosystem is what keeps the
+full-SHA action pins fresh. Over a few weeks that is fine; if the pause runs long,
+check the pins by hand before releasing. `connect-redis` major bumps stay ignored
 until the Node floor moves to 22.
 
 ### Next session — wave 4, the release
