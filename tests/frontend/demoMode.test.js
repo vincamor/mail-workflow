@@ -7,37 +7,14 @@
 // Blob does not — and `.stream()` is precisely what every reader in this app uses.
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
+const { loadRealAnalyzer } = require('./helpers/loadRealAnalyzer');
 
 const DEMO_DIR = path.join(__dirname, '..', '..', 'src', 'public', 'demo');
 const MAIN_JSONL = path.join(DEMO_DIR, 'gmail_emails.jsonl');
 const HTML_JSONL = path.join(DEMO_DIR, 'gmail_emails_html.jsonl');
-const ANALYZER = path.join(__dirname, '..', '..', 'src', 'services', 'emailAnalyzer_browser.js');
 
-/**
- * Loads the REAL emailAnalyzer_browser.js. The file is an ES module served as-is
- * to the browser, but it lives outside of src/public/js/ (which carries the
- * package.json "type":"module"): Node would see it as CommonJS and refuse its
- * `export default`. We evaluate it as an ES module in a vm context — it is the
- * production file that is loaded, not a copy.
- */
-async function loadRealAnalyzer() {
-  const source = fs.readFileSync(ANALYZER, 'utf8');
-  const context = vm.createContext({
-    console,
-    TextDecoder,
-    atob: (s) => Buffer.from(s, 'base64').toString('binary'),
-    escape,
-    unescape,
-  });
-  const mod = new vm.SourceTextModule(source, { context, identifier: ANALYZER });
-  await mod.link(() => {
-    throw new Error('emailAnalyzer_browser.js ne doit avoir aucun import');
-  });
-  await mod.evaluate();
-  return mod.namespace.default;
-}
+// The analyzer is loaded from the production file by the shared helper.
 
 // makeReadOnlyFileHandle is the REAL factory from demo.js: only the fetch is
 // replaced by a disk read of the fixture.

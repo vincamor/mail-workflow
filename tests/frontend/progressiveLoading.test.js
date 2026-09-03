@@ -1,54 +1,15 @@
-const { describe, it, expect } = require('@jest/globals');
+const { describe, it, expect, beforeAll } = require('@jest/globals');
+const { loadRealAnalyzer } = require('./helpers/loadRealAnalyzer');
 
-// Inline core logic from emailAnalyzer_browser.js for testing
-// (ES module can't be required directly in Jest/Node)
+// These functions used to be INLINED here, with a comment saying the ES module
+// could not be required in Jest. That made the suite able to pass while the real
+// analyzer was broken. They are now loaded from the production file.
+let getSubjectsWithMinEmails;
 
-function extractSubject(email) {
-  let subject = email.subject || 'No subject';
-  subject = subject.replace(/^(Re:|Fwd:|FW:|RE:|FWD:)\s*/i, '');
-  return subject.trim();
-}
-
-function extractFrom(email) {
-  return email.from || 'Unknown';
-}
-
-function extractDate(email) {
-  if (email.internalDate) {
-    return new Date(parseInt(email.internalDate));
-  }
-  return new Date();
-}
-
-function groupBySubject(emails) {
-  const conversations = {};
-  for (const email of emails) {
-    const subject = extractSubject(email);
-    if (!conversations[subject]) conversations[subject] = [];
-    conversations[subject].push(email);
-  }
-  for (const subject in conversations) {
-    conversations[subject].sort((a, b) => extractDate(a) - extractDate(b));
-  }
-  return conversations;
-}
-
-function getSubjectsWithMinEmails(emailsClean, minCount = 3) {
-  const conversations = groupBySubject(emailsClean);
-  const validSubjects = [];
-  for (const [subject, emailList] of Object.entries(conversations)) {
-    if (emailList.length >= minCount) {
-      const participants = [...new Set(emailList.map((email) => extractFrom(email)))];
-      validSubjects.push({
-        subject,
-        emailCount: emailList.length,
-        participants,
-      });
-    }
-  }
-  validSubjects.sort((a, b) => b.emailCount - a.emailCount);
-  return validSubjects;
-}
+beforeAll(async () => {
+  const analyzer = await loadRealAnalyzer();
+  ({ getSubjectsWithMinEmails } = analyzer);
+});
 
 // ─────────────────────────────────────────────
 //  Incremental subject extraction
