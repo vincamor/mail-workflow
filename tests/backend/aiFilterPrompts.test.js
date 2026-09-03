@@ -1,55 +1,16 @@
-const { describe, it, expect } = require('@jest/globals');
+const { describe, it, expect, beforeAll } = require('@jest/globals');
 
-// Pure functions duplicated from src/public/js/aiFilter.js for testing
-function parseAIFilterResponse(text) {
-  let jsonStr = text.trim();
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch) jsonStr = jsonMatch[1].trim();
-  const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
-  if (!objectMatch) throw new Error('No JSON found in the AI response');
-  const parsed = JSON.parse(objectMatch[0]);
-  if (!parsed.exclure || !parsed.garder)
-    throw new Error('Invalid format: the "exclure" and "garder" fields are required');
-  return {
-    exclure: Array.isArray(parsed.exclure) ? parsed.exclure : [],
-    garder: Array.isArray(parsed.garder) ? parsed.garder : [],
-    incertain: Array.isArray(parsed.incertain) ? parsed.incertain : [],
-  };
-}
+// These three functions used to be COPIED here from src/public/js/aiFilter.js.
+// A copied test passes while the real code is broken, so they are now imported
+// from the production module. aiFilter.js is an ES module under src/public/js/,
+// which carries the package.json `"type":"module"` marker, so a dynamic import
+// resolves it — the same pattern aiChat.test.js already uses.
+let parseAIFilterResponse, validateFilterResults, buildPass2Batches;
 
-function validateFilterResults(aiResult, originalSubjects) {
-  const originalSet = new Set(originalSubjects);
-  return {
-    exclure: aiResult.exclure.filter((s) => originalSet.has(s)),
-    garder: aiResult.garder.filter((s) => originalSet.has(s)),
-    incertain: aiResult.incertain.filter((s) => originalSet.has(s)),
-  };
-}
-
-function estimateTokens(text) {
-  return Math.ceil(text.length / 4);
-}
-
-function buildPass2Batches(subjects, maxTokensPerBatch = 7000) {
-  const systemPromptTokens = 400;
-  const outputReserve = 300;
-  const available = maxTokensPerBatch - systemPromptTokens - outputReserve;
-  const batches = [];
-  let currentBatch = [];
-  let currentTokens = 0;
-  for (const subject of subjects) {
-    const subjectTokens = estimateTokens(subject.promptBlock);
-    if (currentBatch.length > 0 && currentTokens + subjectTokens > available) {
-      batches.push(currentBatch);
-      currentBatch = [];
-      currentTokens = 0;
-    }
-    currentBatch.push(subject);
-    currentTokens += subjectTokens;
-  }
-  if (currentBatch.length > 0) batches.push(currentBatch);
-  return batches;
-}
+beforeAll(async () => {
+  const mod = await import('../../src/public/js/aiFilter.js');
+  ({ parseAIFilterResponse, validateFilterResults, buildPass2Batches } = mod);
+});
 
 describe('parseAIFilterResponse', () => {
   it('parses valid JSON', () => {
@@ -73,12 +34,32 @@ describe('parseAIFilterResponse', () => {
     expect(result.exclure).toEqual(['A']);
   });
 
-  it('throws when there is no JSON', () => {
+  it('throws when there is no JSON and nothing quoted to fall back on', () => {
     expect(() => parseAIFilterResponse('No JSON here')).toThrow('No JSON');
   });
 
-  it('throws when the format is invalid', () => {
-    expect(() => parseAIFilterResponse('{"foo": "bar"}')).toThrow('Invalid format');
+  // The copy this suite used to test threw 'Invalid format' here. The real
+  // parser does not: normalizeResult turns any missing or non-array field into
+  // an empty array, so a well-formed object with the wrong keys is a no-op
+  // rather than an error. The AI is asked for those keys but is not trusted to
+  // return them.
+  it('normalises an object with unexpected keys to empty arrays', () => {
+    expect(parseAIFilterResponse('{"foo": "bar"}')).toEqual({
+      exclure: [],
+      garder: [],
+      incertain: [],
+    });
+  });
+
+  // This fallback path exists only in the real module — the inlined copy never
+  // had it, so it had never been tested. When the model answers without valid
+  // JSON, the parser salvages the quoted strings and treats them as exclusions.
+  it('falls back to extracting quoted subjects when the JSON is unusable', () => {
+    expect(parseAIFilterResponse('I would drop "Newsletter A" and "Receipt B".')).toEqual({
+      exclure: ['Newsletter A', 'Receipt B'],
+      garder: [],
+      incertain: [],
+    });
   });
 
   it('falls back to empty arrays for the missing fields', () => {
